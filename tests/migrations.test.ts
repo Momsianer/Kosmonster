@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createInitialState, STATE_VERSION } from '../src/core/state';
+import { BALANCING } from '../src/data/balancing';
 import { migrate, MIGRATIONS } from '../src/save/migrations';
 
 describe('Migrationen', () => {
@@ -31,6 +32,16 @@ describe('Migrationen', () => {
     const migrated = MIGRATIONS[2]!({ ...fresh, version: 2 });
     expect(migrated.version).toBe(3);
     expect(migrated.settings).toEqual({ numberFormat: 'standard' });
+  });
+
+  it('hebt Version 3 auf Version 4', () => {
+    const migrated = MIGRATIONS[3]!({ version: 3, lastTick: 777 });
+    expect(migrated.version).toBe(4);
+    expect(migrated.spheres).toBe(BALANCING.catching.startSpheres);
+    expect(migrated.collection).toEqual({});
+    expect(migrated.team).toEqual([]);
+    expect(migrated.rngState).toBe(777);
+    expect(migrated.hintsSeen).toEqual([]);
   });
 
   it('migrierter Stand hat dieselben Felder wie ein neuer Zustand', () => {
