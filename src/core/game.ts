@@ -1,4 +1,4 @@
-import { clickEnemy } from '../systems/combat';
+import { challengeBoss, clickEnemy } from '../systems/combat';
 import { startLoop, type LoopHandle } from './loop';
 import { createInitialState, type GameState } from './state';
 
@@ -20,4 +20,5 @@ export function stopGame(): void {
 
 export const actions = {
   clickEnemy: () => clickEnemy(game.state),
+  challengeBoss: () => challengeBoss(game.state),
 };

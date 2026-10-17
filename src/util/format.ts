@@ -66,3 +66,11 @@ function formatScientific(value: ReturnType<typeof D>, exponent: number): string
   }
   return `${formatPlain(mantissa, MAX_FRACTION_DIGITS)}e${exp}`;
 }
+
+/** Formatiert eine Dauer in Sekunden mit einer Nachkommastelle, z. B. 12,3 */
+export function formatSeconds(seconds: number): string {
+  return new Intl.NumberFormat(getLocale(), {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format(Math.max(0, seconds));
+}

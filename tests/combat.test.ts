@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { enemyEnergy, enemyHp } from '../src/core/formulas';
-import { createInitialState } from '../src/core/state';
+import { createInitialState, STATE_VERSION } from '../src/core/state';
 import { clickEnemy, dealDamage } from '../src/systems/combat';
 
 describe('Kampf', () => {
@@ -48,7 +48,7 @@ describe('Kampf', () => {
     const state = createInitialState(0);
     clickEnemy(state);
     const json = JSON.parse(JSON.stringify(state));
-    expect(json.version).toBe(1);
+    expect(json.version).toBe(STATE_VERSION);
     expect(json.enemy.hp).toBe('9');
   });
 });
