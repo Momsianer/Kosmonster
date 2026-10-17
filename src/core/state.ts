@@ -1,9 +1,9 @@
 import { BALANCING } from '../data/balancing';
 import { D, type Decimal } from '../util/decimal';
-import { enemyHp } from './formulas';
+import { enemyMaxHp } from './formulas';
 
 /** Version des Speicherstands, wird bei jeder Strukturänderung erhöht */
-export const STATE_VERSION = 1;
+export const STATE_VERSION = 2;
 
 export interface EnemyState {
   zone: number;
@@ -18,6 +18,14 @@ export interface GameState {
   /** Gesamte jemals verdiente Energie (für spätere Prestigeformeln) */
   totalEnergy: Decimal;
   zone: number;
+  /** Höchste bisher erreichte Zone */
+  highestZone: number;
+  /** Besiegte Gegner in der aktuellen Zone */
+  killsInZone: number;
+  /** Nach einem gescheiterten Boss: in der Zone davor bleiben */
+  farming: boolean;
+  /** Verbleibende Zeit gegen den aktuellen Boss in Sekunden, 0 außerhalb von Bosszonen */
+  bossTimeLeft: number;
   enemy: EnemyState;
   enemiesDefeated: number;
   clicks: number;
@@ -28,7 +36,7 @@ export interface GameState {
 }
 
 export function createEnemy(zone: number): EnemyState {
-  const maxHp = enemyHp(zone);
+  const maxHp = enemyMaxHp(zone);
   return { zone, hp: maxHp, maxHp };
 }
 
@@ -39,6 +47,10 @@ export function createInitialState(now: number = Date.now()): GameState {
     energy: D(0),
     totalEnergy: D(0),
     zone,
+    highestZone: zone,
+    killsInZone: 0,
+    farming: false,
+    bossTimeLeft: 0,
     enemy: createEnemy(zone),
     enemiesDefeated: 0,
     clicks: 0,

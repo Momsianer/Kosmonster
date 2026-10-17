@@ -1,13 +1,15 @@
 import { BALANCING } from '../data/balancing';
+import { updateBossTimer } from '../systems/combat';
 import type { GameState } from './state';
 
 /**
  * Ein Logikschritt mit Zeitdifferenz in Sekunden.
- * In M1 läuft nur die Spielzeit, später kommen Team DPS und Produktion dazu.
+ * Später kommen Team DPS und Produktion dazu.
  */
 export function tick(state: GameState, dtSeconds: number): void {
   if (dtSeconds <= 0) return;
   state.playTime += dtSeconds;
+  updateBossTimer(state, dtSeconds);
 }
 
 /**
