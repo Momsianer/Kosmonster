@@ -399,9 +399,20 @@ export const de = {
     onlyNew: 'Nur neue Arten fangen',
     buy: '{amount} kaufen',
     cost: '{cost} Energie',
+    total: 'Vorrat gesamt: {count}',
+    rule: 'Seltene und bessere Arten bekommen automatisch die beste vorhandene Sphäre, alle anderen die einfachste.',
+    catchMult: 'Fang ×{mult}',
+    sphere: {
+      standard: 'Standardsphäre',
+      orbit: 'Orbitsphäre',
+      nebel: 'Nebelsphäre',
+      singularitaet: 'Singularitätssphäre',
+    },
   },
   catching: {
     caught: '{name} gefangen!',
+    caughtShiny: 'Polarstern {name} gefangen!',
+    shinyEnemy: 'Polarstern!',
     noSpheres: 'Keine Fangsphären mehr. Kaufe neue im Laden.',
   },
   hints: {

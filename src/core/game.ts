@@ -10,6 +10,7 @@ import {
 import type { ModuleId } from '../data/modules';
 import type { SpeciesId } from '../data/monsters';
 import type { ResearchId } from '../data/research';
+import type { SphereType } from '../data/spheres';
 import { evolve } from '../systems/evolution';
 import { supernova } from '../systems/prestige';
 import { buyResearch } from '../systems/research';
@@ -99,7 +100,7 @@ export const actions = {
   levelUp: (id: SpeciesId, amount: number | 'max') => levelUp(game.state, id, amount),
   addToTeam: (id: SpeciesId) => addToTeam(game.state, id),
   removeFromTeam: (id: SpeciesId) => removeFromTeam(game.state, id),
-  buySpheres: (amount: number) => buySpheres(game.state, amount),
+  buySpheres: (amount: number, type: SphereType = 'standard') => buySpheres(game.state, amount, type),
   buyModule: (id: ModuleId, amount: number | 'max') => buyModule(game.state, id, amount),
   supernova: () => {
     const ok = supernova(game.state);

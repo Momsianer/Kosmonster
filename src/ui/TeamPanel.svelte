@@ -42,11 +42,15 @@
 
   {#each team as member (member.id)}
     <div class="member">
-      <MonsterSprite speciesId={member.id} scale={2} stage={member.stage} />
+      <MonsterSprite speciesId={member.id} scale={2} stage={member.stage} shiny={member.shiny} />
       <div class="info">
-        <div class="name">{member.name}</div>
+        <div class="name">
+          {member.name}
+          {#if member.stars > 0}<span class="stars">{'★'.repeat(member.stars)}</span>{/if}
+          {#if member.shiny}<span class="shinymark" title={t('collection.shiny')}>✦</span>{/if}
+        </div>
         <div class="muted">
-          <span class="type" style:color={member.typeColor}>{member.typeName}</span>
+          <span class="type" style:color={member.typeColor} title={member.ability}>{member.typeName}</span>
           · {t('team.level', { level: member.level })} · {t('team.monsterDps', { dps: member.dps })}
         </div>
         <div class="actions">
@@ -111,6 +115,13 @@
   }
   .evolve {
     border-color: #b48cff !important;
+  }
+  .stars {
+    color: var(--accent);
+    font-size: 0.85rem;
+  }
+  .shinymark {
+    color: #fff6b0;
   }
   .type {
     font-weight: 600;

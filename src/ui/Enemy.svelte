@@ -8,6 +8,9 @@
     kind,
     speciesId,
     stage = 0,
+    shiny = false,
+    rarity = '',
+    rarityColor = '',
     name,
     hp,
     maxHp,
@@ -17,6 +20,9 @@
     kind: EnemyKind;
     speciesId: SpeciesId;
     stage?: number;
+    shiny?: boolean;
+    rarity?: string;
+    rarityColor?: string;
     name: string;
     hp: string;
     maxHp: string;
@@ -34,9 +40,10 @@
     <div class="kind">{label}</div>
   {/if}
   <button class="target {kind}" type="button" aria-label="{label}: {name}" onclick={onattack}>
-    <MonsterSprite {speciesId} {stage} scale={4} big={kind !== 'normal'} />
+    <MonsterSprite {speciesId} {stage} {shiny} scale={4} big={kind !== 'normal'} />
   </button>
-  <div class="name">{name}</div>
+  {#if shiny}<div class="shiny">{t('catching.shinyEnemy')}</div>{/if}
+  <div class="name">{name} <span class="rarity" style:color={rarityColor}>· {rarity}</span></div>
   <div class="bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(fraction * 100)}>
     <div class="fill" style:width="{fraction * 100}%"></div>
   </div>
@@ -72,6 +79,15 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
+  }
+  .shiny {
+    color: #fff6b0;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+  }
+  .rarity {
+    font-weight: 400;
+    font-size: 0.9rem;
   }
   .name {
     font-weight: 600;
