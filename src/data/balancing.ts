@@ -40,8 +40,18 @@ export const BALANCING = {
     ticksPerSecond: 20,
     /** Oberflächenaktualisierungen pro Sekunde */
     uiUpdatesPerSecond: 10,
-    /** Größter Zeitschritt pro Tick in Sekunden, längere Pausen übernimmt später der Offlinefortschritt */
+    /** Größter Zeitschritt pro Tick in Sekunden. Längere Pausen werden in Schritten dieser Größe nachgeholt */
     maxTickSeconds: 1,
+  },
+  offline: {
+    /** Höchstens so viel verpasste Zeit wird nachgeholt (8 Stunden) */
+    maxSeconds: 8 * 60 * 60,
+    /** Ab dieser Abwesenheit erscheint der Hinweis „Willkommen zurück“ */
+    reportThresholdSeconds: 60,
+  },
+  save: {
+    /** Abstand zwischen zwei automatischen Speicherungen */
+    autosaveSeconds: 30,
   },
   world: {
     startZone: 1,

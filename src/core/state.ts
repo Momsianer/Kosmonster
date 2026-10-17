@@ -1,14 +1,19 @@
 import { BALANCING } from '../data/balancing';
 import { D, type Decimal } from '../util/decimal';
+import type { NumberFormat } from '../util/format';
 import { enemyMaxHp } from './formulas';
 
 /** Version des Speicherstands, wird bei jeder Strukturänderung erhöht */
-export const STATE_VERSION = 2;
+export const STATE_VERSION = 3;
 
 export interface EnemyState {
   zone: number;
   hp: Decimal;
   maxHp: Decimal;
+}
+
+export interface Settings {
+  numberFormat: NumberFormat;
 }
 
 /** Zentraler Spielzustand, komplett serialisierbar */
@@ -33,6 +38,7 @@ export interface GameState {
   playTime: number;
   /** Zeitstempel des letzten Ticks in Millisekunden (Date.now()) */
   lastTick: number;
+  settings: Settings;
 }
 
 export function createEnemy(zone: number): EnemyState {
@@ -56,5 +62,6 @@ export function createInitialState(now: number = Date.now()): GameState {
     clicks: 0,
     playTime: 0,
     lastTick: now,
+    settings: { numberFormat: 'standard' },
   };
 }

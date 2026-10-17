@@ -15,25 +15,37 @@ export function tick(state: GameState, dtSeconds: number): void {
 /**
  * Rückt den Zustand auf den Zeitpunkt `now` vor.
  * Die Zeitdifferenz wird aus Date.now() Werten berechnet, nie aus gezählten Ticks.
+ * Längere Pausen (Hintergrundtab, Offlinezeit) werden in Schritten von höchstens
+ * maxTickSeconds nachgeholt, insgesamt aber höchstens maxSeconds.
  * Gibt die tatsächlich verrechnete Zeit in Sekunden zurück.
  */
-export function advance(state: GameState, now: number): number {
+export function advance(
+  state: GameState,
+  now: number,
+  maxSeconds: number = BALANCING.offline.maxSeconds,
+): number {
   const elapsed = (now - state.lastTick) / 1000;
   state.lastTick = now;
   // Zurückgestellte Uhr: nichts verrechnen
   if (elapsed <= 0) return 0;
-  const dt = Math.min(elapsed, BALANCING.loop.maxTickSeconds);
-  tick(state, dt);
-  return dt;
+
+  const total = Math.min(elapsed, maxSeconds);
+  const step = BALANCING.loop.maxTickSeconds;
+  let remaining = total;
+  while (remaining > 0) {
+    const dt = Math.min(remaining, step);
+    tick(state, dt);
+    remaining -= dt;
+  }
+  return total;
 }
 
 export interface LoopHandle {
   stop(): void;
 }
 
-/** Startet die Tickschleife mit ca. ticksPerSecond Aufrufen pro Sekunde. */
-export function startLoop(state: GameState, now: () => number = Date.now): LoopHandle {
-  state.lastTick = now();
-  const id = setInterval(() => advance(state, now()), 1000 / BALANCING.loop.ticksPerSecond);
+/** Ruft update ca. ticksPerSecond Mal pro Sekunde mit dem aktuellen Zeitstempel auf. */
+export function startLoop(update: (now: number) => void, now: () => number = Date.now): LoopHandle {
+  const id = setInterval(() => update(now()), 1000 / BALANCING.loop.ticksPerSecond);
   return { stop: () => clearInterval(id) };
 }
