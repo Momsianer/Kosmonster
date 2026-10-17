@@ -409,6 +409,7 @@ Jeder Meilenstein muss spielbar sein, bevor der nächste beginnt.
 * Strukturänderungen am Spielzustand immer mit Speicherstandmigration.
 * Texte im Spiel auf Deutsch, ohne Gendersprache.
 * Vor größeren Änderungen kurz den Plan nennen.
+* Nach jedem abgeschlossenen Meilenstein mit grünen Tests direkt in main pushen bzw. den Pull Request selbst in main mergen. Das hat Moritz ausdrücklich erlaubt.
 
 ---
 
