@@ -1,4 +1,4 @@
-import type { SpeciesData } from '../data/monsters';
+import { spritePath, type SpeciesData } from '../data/monsters';
 
 /**
  * Alle vorhandenen Monstersprites unter assets/monster/.
@@ -11,6 +11,6 @@ const files = import.meta.glob<string>('/assets/monster/*.png', {
 });
 
 /** URL des Sprites oder null, solange die Grafik fehlt */
-export function spriteUrl(species: SpeciesData): string | null {
-  return files[`/${species.sprite}`] ?? null;
+export function spriteUrl(species: SpeciesData, stage = 0): string | null {
+  return files[`/${spritePath(species, stage)}`] ?? null;
 }

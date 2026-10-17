@@ -12,6 +12,9 @@ export const UNLOCKS = {
   team: (state: GameState) => Object.keys(state.collection).length > 0,
   station: stationUnlocked,
   shop: (state: GameState) => stationUnlocked(state) || state.spheres <= 0,
+  supernova: (state: GameState) => state.highestZone >= BALANCING.supernova.minZone || state.supernovas > 0,
+  research: (state: GameState) => state.supernovas > 0,
+  evolution: (state: GameState) => state.supernovas > 0,
 } as const;
 
 export type UnlockId = keyof typeof UNLOCKS;

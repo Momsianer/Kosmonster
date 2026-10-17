@@ -3,6 +3,7 @@
   import { BALANCING } from '../data/balancing';
   import type { ModuleId } from '../data/modules';
   import type { SpeciesId } from '../data/monsters';
+  import type { ResearchId } from '../data/research';
   import { actions, game } from '../core/game';
   import { t } from '../i18n';
   import BossTimer from './BossTimer.svelte';
@@ -12,7 +13,9 @@
   import HintBanner from './HintBanner.svelte';
   import OfflineReport from './OfflineReport.svelte';
   import Settings from './Settings.svelte';
+  import ResearchPanel from './ResearchPanel.svelte';
   import ShopPanel from './ShopPanel.svelte';
+  import SupernovaPanel from './SupernovaPanel.svelte';
   import StationPanel from './StationPanel.svelte';
   import TeamPanel from './TeamPanel.svelte';
   import { createView, type BuyAmount } from './view';
@@ -20,6 +23,7 @@
   let buyAmount = $state<BuyAmount>(1);
   let view = $state(createView(game.state, game.offlineReport));
   let showSettings = $state(false);
+  let tab = $state<'game' | 'research' | 'collection'>('game');
 
   function refresh() {
     view = createView(game.state, game.offlineReport, buyAmount);
@@ -48,6 +52,9 @@
   const buySpheres = act(actions.buySpheres);
   const setCatchOnlyNew = act(actions.setCatchOnlyNew);
   const buyModule = act((id: ModuleId) => actions.buyModule(id, buyAmount));
+  const triggerSupernova = act(actions.supernova);
+  const buyResearch = act((id: ResearchId) => actions.buyResearch(id));
+  const evolve = act((id: SpeciesId) => actions.evolve(id));
   const setBuyAmount = act((amount: BuyAmount) => (buyAmount = amount));
   const dismissHint = act(() => view.hint && actions.dismissHint(view.hint));
 </script>
@@ -77,8 +84,34 @@
     <Settings onchange={refresh} />
   {/if}
 
-  <EnergyDisplay value={view.energy} perSecond={view.stationUnlocked ? view.production : ''} />
+  <EnergyDisplay
+    value={view.energy}
+    perSecond={view.stationUnlocked ? view.production : ''}
+    stardust={view.showStardust ? view.stardust : ''}
+    bonus={view.stardustBonus}
+  />
 
+  {#if view.teamUnlocked}
+    <nav class="tabs">
+      <button type="button" class:active={tab === 'game'} onclick={() => (tab = 'game')}>{t('tabs.game')}</button>
+      {#if view.researchUnlocked}
+        <button type="button" class:active={tab === 'research'} onclick={() => (tab = 'research')}>{t('tabs.research')}</button>
+      {/if}
+      <button type="button" class:active={tab === 'collection'} onclick={() => (tab = 'collection')}>{t('tabs.collection')}</button>
+    </nav>
+  {/if}
+
+  {#if tab === 'research' && view.researchUnlocked}
+    <ResearchPanel branches={view.research} stardust={view.stardust} bonus={view.stardustBonus} onbuy={buyResearch} />
+  {:else if tab === 'collection' && view.teamUnlocked}
+    <CollectionPanel
+      entries={view.collection}
+      count={view.collectionCount}
+      teamFull={view.teamFull}
+      onadd={addToTeam}
+      onremove={removeFromTeam}
+    />
+  {:else}
   <div class="layout">
     <section class="battle">
       <header>
@@ -134,7 +167,7 @@
       <p class="hint">{t('combat.defeated', { count: view.enemiesDefeated })}</p>
     </section>
 
-    {#if view.teamUnlocked || view.stationUnlocked || view.shopUnlocked}
+    {#if view.teamUnlocked || view.stationUnlocked || view.shopUnlocked || view.supernovaUnlocked}
       <aside class="side">
         {#if view.teamUnlocked}
           <TeamPanel
@@ -146,6 +179,17 @@
             onbuyamount={setBuyAmount}
             onlevelup={levelUp}
             onremove={removeFromTeam}
+            evolutionUnlocked={view.evolutionUnlocked}
+            onevolve={evolve}
+          />
+        {/if}
+        {#if view.supernovaUnlocked}
+          <SupernovaPanel
+            gain={view.stardustGain}
+            available={view.canSupernova}
+            zone={view.supernovaZone}
+            count={view.supernovas}
+            onsupernova={triggerSupernova}
           />
         {/if}
         {#if view.stationUnlocked}
@@ -175,14 +219,6 @@
     {/if}
   </div>
 
-  {#if view.teamUnlocked}
-    <CollectionPanel
-      entries={view.collection}
-      count={view.collectionCount}
-      teamFull={view.teamFull}
-      onadd={addToTeam}
-      onremove={removeFromTeam}
-    />
   {/if}
 </main>
 
@@ -220,6 +256,25 @@
     color: var(--text);
     border: 0.125rem solid #000;
     cursor: pointer;
+  }
+  .tabs {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+    border-bottom: 0.125rem solid #2a2f4d;
+  }
+  .tabs button {
+    padding: 0.5rem 1.25rem;
+    font: inherit;
+    background: none;
+    color: var(--muted);
+    border: none;
+    border-bottom: 0.2rem solid transparent;
+    cursor: pointer;
+  }
+  .tabs button.active {
+    color: var(--text);
+    border-bottom-color: var(--accent);
   }
   .layout {
     display: grid;

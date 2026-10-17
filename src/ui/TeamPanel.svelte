@@ -14,6 +14,8 @@
     onbuyamount,
     onlevelup,
     onremove,
+    evolutionUnlocked,
+    onevolve,
   }: {
     team: TeamMemberView[];
     slots: number;
@@ -23,6 +25,8 @@
     onbuyamount: (amount: BuyAmount) => void;
     onlevelup: (id: SpeciesId) => void;
     onremove: (id: SpeciesId) => void;
+    evolutionUnlocked: boolean;
+    onevolve: (id: SpeciesId) => void;
   } = $props();
 
   const emptySlots = $derived(Math.max(0, slots - team.length));
@@ -38,7 +42,7 @@
 
   {#each team as member (member.id)}
     <div class="member">
-      <MonsterSprite speciesId={member.id} scale={2} />
+      <MonsterSprite speciesId={member.id} scale={2} stage={member.stage} />
       <div class="info">
         <div class="name">{member.name}</div>
         <div class="muted">
@@ -51,6 +55,17 @@
           </button>
           <button type="button" onclick={() => onremove(member.id)}>{t('team.remove')}</button>
         </div>
+        {#if evolutionUnlocked && member.evolutionCost}
+          <div class="actions">
+            {#if member.evolutionLevel !== null && member.level < member.evolutionLevel}
+              <span class="muted">{t('evolution.needsLevel', { level: member.evolutionLevel })}</span>
+            {:else}
+              <button type="button" class="evolve" disabled={!member.canEvolve} onclick={() => onevolve(member.id)}>
+                {t('evolution.button', { cost: member.evolutionCost })}
+              </button>
+            {/if}
+          </div>
+        {/if}
       </div>
     </div>
   {/each}
@@ -93,6 +108,9 @@
   }
   .name {
     font-weight: 600;
+  }
+  .evolve {
+    border-color: #b48cff !important;
   }
   .type {
     font-weight: 600;
