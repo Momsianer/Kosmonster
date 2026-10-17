@@ -1,0 +1,31 @@
+# Abhängigkeiten
+node_modules/
+
+# Build
+dist/
+dist-ssr/
+*.local
+
+# Tests
+coverage/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Umgebung
+.env
+.env.*
+!.env.example
+
+# Editor und System
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# Tauri (später)
+src-tauri/target/
