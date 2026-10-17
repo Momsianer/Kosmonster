@@ -439,7 +439,7 @@ export const de = {
     title: 'Supernova',
     gain: 'Eine Supernova bringt jetzt {amount} Sternenstaub.',
     locked: 'Erreiche Zone {zone}, um eine Supernova auszulösen.',
-    explain: 'Zurückgesetzt werden Energie, Zone, Monsterlevel und Module. Sammlung, Team, Sphären, Forschung und Entwicklungen bleiben.',
+    explain: 'Zurückgesetzt werden Energie, Zone und Module, Monster fallen auf Level 0. Sammlung, Team, Sphären, Forschung und Entwicklungen bleiben.',
     button: 'Supernova auslösen',
     confirm: 'Wirklich eine Supernova auslösen?',
     confirmButton: 'Ja, auslösen',

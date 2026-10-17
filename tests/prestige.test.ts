@@ -86,7 +86,7 @@ describe('Supernova', () => {
     expect(state.zone).toBe(1);
     expect(state.highestZone).toBe(1);
     expect(state.modules).toEqual({});
-    expect(state.collection.art_001!.level).toBe(1);
+    expect(state.collection.art_001!.level).toBe(0);
     expect(state.enemy.maxHp.eq(enemyMaxHp(1))).toBe(true);
   });
 
@@ -274,6 +274,6 @@ describe('Evolution', () => {
     evolve(state, 'art_001');
     supernova(state);
     expect(state.collection.art_001!.evolution).toBe(1);
-    expect(state.collection.art_001!.level).toBe(1);
+    expect(state.collection.art_001!.level).toBe(0);
   });
 });
