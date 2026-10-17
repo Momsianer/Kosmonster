@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createInitialState, STATE_VERSION } from '../src/core/state';
-import { migrate } from '../src/save/migrations';
+import { BALANCING } from '../src/data/balancing';
+import { migrate, MIGRATIONS } from '../src/save/migrations';
 
 describe('Migrationen', () => {
   it('hebt Version 1 auf die aktuelle Version', () => {
@@ -22,15 +23,28 @@ describe('Migrationen', () => {
     expect(migrated.farming).toBe(false);
     expect(migrated.bossTimeLeft).toBe(0);
     expect(migrated.clicks).toBe(31);
-    expect(migrated.settings).toEqual({ numberFormat: 'standard' });
+    expect(migrated.settings).toEqual({ numberFormat: 'standard', catchOnlyNew: true });
   });
 
   it('hebt Version 2 auf Version 3', () => {
     const fresh = JSON.parse(JSON.stringify(createInitialState(0)));
     delete fresh.settings;
-    const migrated = migrate({ ...fresh, version: 2 });
+    const migrated = MIGRATIONS[2]!({ ...fresh, version: 2 });
     expect(migrated.version).toBe(3);
     expect(migrated.settings).toEqual({ numberFormat: 'standard' });
+  });
+
+  it('hebt Version 3 auf Version 4', () => {
+    const migrated = MIGRATIONS[3]!({ version: 3, lastTick: 777 });
+    expect(migrated.version).toBe(4);
+    expect(migrated.spheres).toBe(BALANCING.catching.startSpheres);
+    expect(migrated.collection).toEqual({});
+    expect(migrated.team).toEqual([]);
+    expect(migrated.rngState).toBe(777);
+    expect(migrated.hintsSeen).toEqual([]);
+    expect(migrated.settings).toEqual({ catchOnlyNew: true });
+    const withSettings = MIGRATIONS[3]!({ version: 3, settings: { numberFormat: 'letters' } });
+    expect(withSettings.settings).toEqual({ numberFormat: 'letters', catchOnlyNew: true });
   });
 
   it('migrierter Stand hat dieselben Felder wie ein neuer Zustand', () => {

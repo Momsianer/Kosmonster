@@ -1,6 +1,8 @@
 import { BALANCING } from '../data/balancing';
 import { clickDamage, enemyReward, isBossZone } from '../core/formulas';
-import { createEnemy, type GameState } from '../core/state';
+import { spawnEnemy, type GameState } from '../core/state';
+import { tryCatch } from './catching';
+import { teamDps } from './monsters';
 import { D, type DecimalSource } from '../util/decimal';
 
 /**
@@ -11,7 +13,7 @@ export function enterZone(state: GameState, zone: number, killsInZone = 0): void
   state.zone = zone;
   state.killsInZone = killsInZone;
   state.highestZone = Math.max(state.highestZone, zone);
-  state.enemy = createEnemy(zone);
+  state.enemy = spawnEnemy(state, zone);
   state.bossTimeLeft = isBossZone(zone) ? BALANCING.boss.timeLimitSeconds : 0;
 }
 
@@ -32,7 +34,7 @@ export function dealDamage(state: GameState, amount: DecimalSource): boolean {
 }
 
 /**
- * Schreibt die Energie gut und bestimmt den nächsten Gegner:
+ * Schreibt die Energie gut, versucht normale Gegner zu fangen und bestimmt den nächsten Gegner:
  * Boss besiegt → nächste Zone. Normale Zone mit genug Kills → nächste Zone,
  * außer im Farmmodus. Sonst ein neuer Gegner in derselben Zone.
  */
@@ -44,9 +46,12 @@ export function defeatEnemy(state: GameState): void {
   state.enemiesDefeated += 1;
 
   if (isBossZone(zone)) {
+    // Bosse sind (noch) nicht fangbar
     enterZone(state, zone + 1);
     return;
   }
+
+  tryCatch(state, state.enemy.speciesId);
 
   const needed = BALANCING.world.enemiesPerZone;
   state.killsInZone = Math.min(state.killsInZone + 1, needed);
@@ -54,7 +59,7 @@ export function defeatEnemy(state: GameState): void {
     enterZone(state, zone + 1);
     return;
   }
-  state.enemy = createEnemy(zone);
+  state.enemy = spawnEnemy(state, zone);
 }
 
 /** Boss nicht rechtzeitig besiegt: zurück in die Zone davor und dort farmen. */
@@ -73,7 +78,13 @@ export function updateBossTimer(state: GameState, dtSeconds: number): void {
 /** Aktion: Spieler klickt auf den Gegner. */
 export function clickEnemy(state: GameState): boolean {
   state.clicks += 1;
-  return dealDamage(state, clickDamage());
+  return dealDamage(state, clickDamage(teamDps(state)));
+}
+
+/** Schaden des Teams über dtSeconds. Wird von der Tickschleife aufgerufen. */
+export function applyTeamDamage(state: GameState, dtSeconds: number): void {
+  if (state.team.length === 0 || dtSeconds <= 0) return;
+  dealDamage(state, teamDps(state).mul(dtSeconds));
 }
 
 /** Aktion: Farmmodus verlassen und den Boss erneut herausfordern. */

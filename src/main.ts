@@ -1,6 +1,7 @@
 import { mount } from 'svelte';
 import App from './ui/App.svelte';
 import './ui/global.css';
+import './ui/panel.css';
 import { saveGame, startGame } from './core/game';
 
 function browserStorage(): Storage | null {

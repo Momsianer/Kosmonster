@@ -12,6 +12,7 @@ import {
   saveToStorage,
   type SaveStorage,
 } from '../src/save/save';
+import { addCatch } from '../src/systems/catching';
 import { clickEnemy, enterZone } from '../src/systems/combat';
 import { D } from '../src/util/decimal';
 
@@ -112,6 +113,53 @@ describe('Textcode', () => {
     enterZone(state, 5);
     const raw = { ...JSON.parse(JSON.stringify(state)), bossTimeLeft: 0 };
     expect(decodeSave(encodeRaw(raw))!.bossTimeLeft).toBe(BALANCING.boss.timeLimitSeconds);
+  });
+});
+
+describe('Monster im Speicherstand', () => {
+  it('Sammlung, Team, Sphären und Zufall überstehen Speichern und Laden', () => {
+    const state = createInitialState(0, 31337);
+    addCatch(state, 'art_001');
+    addCatch(state, 'art_002');
+    state.collection.art_001!.level = 42;
+    state.spheres = 17;
+    state.hintsSeen = ['team'];
+    const loaded = decodeSave(encodeSave(state))!;
+    expect(loaded.collection).toEqual(state.collection);
+    expect(loaded.team).toEqual(state.team);
+    expect(loaded.spheres).toBe(17);
+    expect(loaded.rngState).toBe(state.rngState);
+    expect(loaded.enemy.speciesId).toBe(state.enemy.speciesId);
+    expect(loaded.lastCatch).toEqual(state.lastCatch);
+    expect(loaded.hintsSeen).toEqual(['team']);
+  });
+
+  it('Laden würfelt nicht neu', () => {
+    const state = createInitialState(0, 4242);
+    const code = encodeSave(state);
+    expect(decodeSave(code)!.rngState).toBe(decodeSave(code)!.rngState);
+    expect(decodeSave(code)!.rngState).toBe(state.rngState);
+  });
+
+  it('ungültige Team und Sammlungseinträge werden entfernt', () => {
+    const raw = {
+      ...JSON.parse(JSON.stringify(createInitialState(0))),
+      collection: { art_001: { caught: 2, level: 5 }, art_999: { caught: 1, level: 1 }, art_002: 'x' },
+      team: ['art_001', 'art_001', 'art_002', 'art_999'],
+    };
+    const loaded = decodeSave(encodeRaw(raw))!;
+    expect(Object.keys(loaded.collection)).toEqual(['art_001']);
+    expect(loaded.team).toEqual(['art_001']);
+  });
+
+  it('ein Gegner mit unpassender Art bekommt eine passende', () => {
+    const raw = {
+      ...JSON.parse(JSON.stringify(createInitialState(0))),
+      enemy: { zone: 1, speciesId: 'art_010', hp: '4', maxHp: '10' },
+    };
+    const loaded = decodeSave(encodeRaw(raw))!;
+    expect(['art_001', 'art_002']).toContain(loaded.enemy.speciesId);
+    expect(loaded.enemy.hp.toNumber()).toBe(4);
   });
 });
 

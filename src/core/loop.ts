@@ -1,14 +1,15 @@
 import { BALANCING } from '../data/balancing';
-import { updateBossTimer } from '../systems/combat';
+import { applyTeamDamage, updateBossTimer } from '../systems/combat';
 import type { GameState } from './state';
 
 /**
  * Ein Logikschritt mit Zeitdifferenz in Sekunden.
- * Später kommen Team DPS und Produktion dazu.
+ * Später kommt die Produktion der Raumstation dazu.
  */
 export function tick(state: GameState, dtSeconds: number): void {
   if (dtSeconds <= 0) return;
   state.playTime += dtSeconds;
+  applyTeamDamage(state, dtSeconds);
   updateBossTimer(state, dtSeconds);
 }
 

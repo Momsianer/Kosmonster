@@ -3,6 +3,7 @@ import { D } from '../src/util/decimal';
 import {
   formatDuration,
   formatNumber,
+  formatPercent,
   formatSeconds,
   getNumberFormat,
   isNumberFormat,
@@ -126,5 +127,12 @@ describe('formatDuration (deutsch)', () => {
     expect(formatDuration(125)).toBe('2 Min. 5 Sek.');
     expect(formatDuration(3600)).toBe('1 Std.');
     expect(formatDuration(2 * 3600 + 5 * 60 + 30)).toBe('2 Std. 5 Min.');
+  });
+});
+
+describe('formatPercent (deutsch)', () => {
+  it('Prozent mit Komma', () => {
+    expect(formatPercent(0.25).replace(/\s/g, ' ')).toBe('25 %');
+    expect(formatPercent(0.015).replace(/\s/g, ' ')).toBe('1,5 %');
   });
 });

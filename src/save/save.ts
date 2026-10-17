@@ -1,7 +1,15 @@
 import { compressToBase64, decompressFromBase64 } from 'lz-string';
 import { isBossZone } from '../core/formulas';
 import { BALANCING } from '../data/balancing';
-import { createEnemy, createInitialState, STATE_VERSION, type GameState } from '../core/state';
+import {
+  createEnemy,
+  createInitialState,
+  pickSpecies,
+  STATE_VERSION,
+  type CollectionEntry,
+  type GameState,
+} from '../core/state';
+import { isSpeciesId, speciesInZone, type SpeciesId } from '../data/monsters';
 import { D, type Decimal } from '../util/decimal';
 import { isNumberFormat } from '../util/format';
 import { migrate, type RawSave } from './migrations';
@@ -56,14 +64,30 @@ function toZone(value: unknown, fallback: number): number {
  * Fehlende oder kaputte Felder fallen auf Startwerte zurück.
  */
 export function hydrate(raw: RawSave): GameState {
-  const base = createInitialState(toNumber(raw.lastTick, Date.now()));
+  const lastTick = toNumber(raw.lastTick, Date.now());
+  const rng = {
+    rngState: typeof raw.rngState === 'number' && Number.isInteger(raw.rngState) ? raw.rngState : lastTick | 0,
+  };
+  const base = createInitialState(lastTick, rng.rngState);
   const zone = toZone(raw.zone, base.zone);
 
-  let enemy = createEnemy(zone);
-  if (isRecord(raw.enemy) && raw.enemy.zone === zone) {
-    const hp = toDecimal(raw.enemy.hp, enemy.maxHp);
+  // Gegner übernehmen, wenn die Zone passt. Fehlt die Art oder passt sie nicht
+  // zur Zone (alte Stände), bekommt er eine neue Art und behält seine Leben.
+  // Gewürfelt wird nur, wenn nötig, damit Neuladen den Zufall nicht verschiebt.
+  const rawEnemy = isRecord(raw.enemy) && raw.enemy.zone === zone ? raw.enemy : null;
+  const rawSpecies = rawEnemy?.speciesId;
+  const speciesId =
+    isSpeciesId(rawSpecies) && speciesInZone(zone).some((s) => s.id === rawSpecies)
+      ? rawSpecies
+      : pickSpecies(rng, zone);
+  let enemy = createEnemy(zone, speciesId);
+  if (rawEnemy) {
+    const hp = toDecimal(rawEnemy.hp, enemy.maxHp);
     if (hp.gt(0) && hp.lte(enemy.maxHp)) enemy = { ...enemy, hp };
   }
+
+  const collection = hydrateCollection(raw.collection);
+  const team = hydrateTeam(raw.team, collection);
 
   const settings = isRecord(raw.settings) ? raw.settings : {};
   const { timeLimitSeconds } = BALANCING.boss;
@@ -86,14 +110,52 @@ export function hydrate(raw: RawSave): GameState {
     enemy,
     enemiesDefeated: toNumber(raw.enemiesDefeated, 0),
     clicks: toNumber(raw.clicks, 0),
+    spheres: Math.floor(toNumber(raw.spheres, base.spheres)),
+    collection,
+    team,
+    rngState: rng.rngState,
+    lastCatch: hydrateLastCatch(raw.lastCatch),
+    hintsSeen: Array.isArray(raw.hintsSeen)
+      ? raw.hintsSeen.filter((h): h is string => typeof h === 'string')
+      : [],
     playTime: toNumber(raw.playTime, 0),
     lastTick: base.lastTick,
     settings: {
       numberFormat: isNumberFormat(settings.numberFormat)
         ? settings.numberFormat
         : base.settings.numberFormat,
+      catchOnlyNew:
+        typeof settings.catchOnlyNew === 'boolean' ? settings.catchOnlyNew : base.settings.catchOnlyNew,
     },
   };
+}
+
+function hydrateCollection(value: unknown): Partial<Record<SpeciesId, CollectionEntry>> {
+  const collection: Partial<Record<SpeciesId, CollectionEntry>> = {};
+  if (!isRecord(value)) return collection;
+  for (const [id, entry] of Object.entries(value)) {
+    if (!isSpeciesId(id) || !isRecord(entry)) continue;
+    collection[id] = {
+      caught: Math.max(1, Math.floor(toNumber(entry.caught, 1))),
+      level: Math.floor(toNumber(entry.level, 1)),
+    };
+  }
+  return collection;
+}
+
+/** Nur gefangene Arten, keine doppelten, höchstens so viele wie Teamplätze */
+function hydrateTeam(value: unknown, collection: Partial<Record<SpeciesId, CollectionEntry>>): SpeciesId[] {
+  if (!Array.isArray(value)) return [];
+  const team: SpeciesId[] = [];
+  for (const id of value) {
+    if (isSpeciesId(id) && collection[id] && !team.includes(id)) team.push(id);
+  }
+  return team.slice(0, BALANCING.monster.teamSlots);
+}
+
+function hydrateLastCatch(value: unknown): GameState['lastCatch'] {
+  if (!isRecord(value) || !isSpeciesId(value.speciesId)) return null;
+  return { speciesId: value.speciesId, time: toNumber(value.time, 0) };
 }
 
 export function saveToStorage(storage: SaveStorage, state: GameState): boolean {

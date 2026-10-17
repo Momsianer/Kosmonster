@@ -7,7 +7,11 @@ import {
   saveToStorage,
   type SaveStorage,
 } from '../save/save';
+import type { SpeciesId } from '../data/monsters';
+import { buySpheres } from '../systems/catching';
 import { challengeBoss, clickEnemy } from '../systems/combat';
+import { addToTeam, levelUp, removeFromTeam } from '../systems/monsters';
+import { dismissHint, type UnlockId } from '../systems/unlocks';
 import type { Decimal } from '../util/decimal';
 import { setNumberFormat, type NumberFormat } from '../util/format';
 import { advance, startLoop, type LoopHandle } from './loop';
@@ -85,6 +89,15 @@ export function saveGame(): boolean {
 export const actions = {
   clickEnemy: () => clickEnemy(game.state),
   challengeBoss: () => challengeBoss(game.state),
+  levelUp: (id: SpeciesId, amount: number | 'max') => levelUp(game.state, id, amount),
+  addToTeam: (id: SpeciesId) => addToTeam(game.state, id),
+  removeFromTeam: (id: SpeciesId) => removeFromTeam(game.state, id),
+  buySpheres: (amount: number) => buySpheres(game.state, amount),
+  dismissHint: (id: UnlockId) => dismissHint(game.state, id),
+
+  setCatchOnlyNew(value: boolean): void {
+    game.state.settings.catchOnlyNew = value;
+  },
 
   setNumberFormat(format: NumberFormat): void {
     game.state.settings.numberFormat = format;
