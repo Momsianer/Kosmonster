@@ -25,7 +25,7 @@
   <div class="grid">
     {#each entries as entry (entry.id)}
       <div class="entry" class:unknown={!entry.caught}>
-        <MonsterSprite speciesId={entry.id} scale={2} unknown={!entry.caught} />
+        <MonsterSprite speciesId={entry.id} scale={2} unknown={!entry.caught} stage={entry.stage} />
         {#if entry.caught}
           <div class="name">{entry.name}</div>
           <div class="muted">{entry.typeName} · {entry.rarityName}</div>

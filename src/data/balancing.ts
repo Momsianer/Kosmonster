@@ -38,6 +38,8 @@ export const BALANCING = {
     teamShare: 0.01,
     /** Klickbonus ohne Forschung */
     baseClickBonus: 1,
+    /** Schadensmultiplikator kritischer Klicks ohne Forschung */
+    critMult: 5,
   },
   monster: {
     /** Plätze im Team zu Beginn */
@@ -93,6 +95,50 @@ export const BALANCING = {
     /** Ab diesen Stückzahlen verdoppelt sich die Produktion eines Moduls */
     upgradeThresholds: [25, 50, 100, 150, 200],
     upgradeMult: 2,
+  },
+  supernova: {
+    /** Supernova möglich ab dieser Zone im aktuellen Zyklus */
+    minZone: 60,
+    /** sternenstaub = floor( (zyklusEnergie / energyDivisor)^exponent ) */
+    energyDivisor: 1e9,
+    exponent: 0.5,
+    /** passiver Bonus: ×(1 + bonusPerStardust * unausgegebenerSternenstaub) */
+    bonusPerStardust: 0.02,
+  },
+  evolution: {
+    /** Evolution: basisDPS × dpsMult je Stufe */
+    dpsMult: 5,
+    /** Mindestlevel für Stufe 1 und Stufe 2 */
+    levelRequirements: [100, 500],
+    /** Sternenstaubkosten für Stufe 1 und Stufe 2 bei Art Nummer 1 */
+    costs: [5, 200],
+    /** Kosten wachsen je Artnummer mit costGrowthPerSpecies^(nummer − 1) */
+    costGrowthPerSpecies: 1.6,
+  },
+  /**
+   * Forschungsknoten: maxLevel Stufen, Kosten = baseCost * costGrowth^stufe,
+   * perLevel ist die Wirkung je Stufe (Bedeutung siehe src/data/research.ts).
+   */
+  research: {
+    costGrowth: 3,
+    nodes: {
+      klickkraft: { maxLevel: 10, baseCost: 1, perLevel: 1 },
+      teamstaerke: { maxLevel: 20, baseCost: 2, perLevel: 0.25 },
+      kritchance: { maxLevel: 10, baseCost: 3, perLevel: 0.02 },
+      kritschaden: { maxLevel: 5, baseCost: 5, perLevel: 1 },
+      bosszeit: { maxLevel: 10, baseCost: 4, perLevel: 3 },
+      bossschaden: { maxLevel: 5, baseCost: 10, perLevel: 0.5 },
+      fangglueck: { maxLevel: 10, baseCost: 1, perLevel: 0.1 },
+      sphaerenrabatt: { maxLevel: 10, baseCost: 2, perLevel: 0.05 },
+      teamplatz: { maxLevel: 3, baseCost: 25, perLevel: 1 },
+      startsphaeren: { maxLevel: 5, baseCost: 3, perLevel: 5 },
+      produktion: { maxLevel: 20, baseCost: 1, perLevel: 0.25 },
+      modulrabatt: { maxLevel: 10, baseCost: 3, perLevel: 0.03 },
+      umwandlung: { maxLevel: 10, baseCost: 8, perLevel: 0.01 },
+      offlinebonus: { maxLevel: 10, baseCost: 2, perLevel: 0.1 },
+      offlinelimit: { maxLevel: 8, baseCost: 5, perLevel: 3600 },
+      startzone: { maxLevel: 6, baseCost: 10, perLevel: 5 },
+    },
   },
   offline: {
     /** Höchstens so viel verpasste Zeit wird nachgeholt (8 Stunden) */

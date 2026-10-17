@@ -173,6 +173,35 @@ describe('Module im Speicherstand', () => {
   });
 });
 
+describe('Prestige im Speicherstand', () => {
+  it('Sternenstaub, Forschung, Evolution und Zyklus überstehen Speichern und Laden', () => {
+    const state = createInitialState(0);
+    addCatch(state, 'art_001');
+    state.collection.art_001!.evolution = 1;
+    state.stardust = D('1.5e20');
+    state.cycleEnergy = D('3e15');
+    state.supernovas = 4;
+    state.research = { klickkraft: 3, teamplatz: 2 };
+    const loaded = decodeSave(encodeSave(state))!;
+    expect(loaded.stardust.eq(state.stardust)).toBe(true);
+    expect(loaded.cycleEnergy.eq(state.cycleEnergy)).toBe(true);
+    expect(loaded.supernovas).toBe(4);
+    expect(loaded.research).toEqual({ klickkraft: 3, teamplatz: 2 });
+    expect(loaded.collection.art_001!.evolution).toBe(1);
+  });
+
+  it('ungültige Forschung und zu hohe Evolution werden begrenzt', () => {
+    const raw = {
+      ...JSON.parse(JSON.stringify(createInitialState(0))),
+      research: { klickkraft: 99, zauberei: 3, teamplatz: -1 },
+      collection: { art_001: { caught: 1, level: 1, evolution: 9 } },
+    };
+    const loaded = decodeSave(encodeRaw(raw))!;
+    expect(loaded.research).toEqual({ klickkraft: BALANCING.research.nodes.klickkraft.maxLevel });
+    expect(loaded.collection.art_001!.evolution).toBe(1);
+  });
+});
+
 describe('Speicherplatz', () => {
   it('speichert und lädt über den Speicher', () => {
     const storage = memoryStorage();

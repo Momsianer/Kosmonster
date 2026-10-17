@@ -1,9 +1,11 @@
 import { BALANCING } from '../data/balancing';
 import { clickDamage, enemyReward, isBossZone } from '../core/formulas';
-import { spawnEnemy, type GameState } from '../core/state';
+import { addEnergy, spawnEnemy, type GameState } from '../core/state';
 import { tryCatch } from './catching';
 import { teamDps } from './monsters';
-import { D, type DecimalSource } from '../util/decimal';
+import { D, type Decimal, type DecimalSource } from '../util/decimal';
+import { nextRandom } from '../util/random';
+import { bossDamageMult, bossTimeLimit, clickBonus, critChance, critMult } from './research';
 
 /**
  * Wechselt in eine Zone und lässt dort den ersten Gegner erscheinen.
@@ -14,7 +16,7 @@ export function enterZone(state: GameState, zone: number, killsInZone = 0): void
   state.killsInZone = killsInZone;
   state.highestZone = Math.max(state.highestZone, zone);
   state.enemy = spawnEnemy(state, zone);
-  state.bossTimeLeft = isBossZone(zone) ? BALANCING.boss.timeLimitSeconds : 0;
+  state.bossTimeLeft = isBossZone(zone) ? bossTimeLimit(state) : 0;
 }
 
 /**
@@ -40,9 +42,7 @@ export function dealDamage(state: GameState, amount: DecimalSource): boolean {
  */
 export function defeatEnemy(state: GameState): void {
   const zone = state.enemy.zone;
-  const reward = enemyReward(zone);
-  state.energy = state.energy.add(reward);
-  state.totalEnergy = state.totalEnergy.add(reward);
+  addEnergy(state, enemyReward(zone));
   state.enemiesDefeated += 1;
 
   if (isBossZone(zone)) {
@@ -79,16 +79,26 @@ export function updateBossTimer(state: GameState, dtSeconds: number): void {
   if (state.bossTimeLeft === 0) failBoss(state);
 }
 
-/** Aktion: Spieler klickt auf den Gegner. */
+/** Schadensmultiplikator gegen den aktuellen Gegner (Forschung „Bossschaden“) */
+function targetMult(state: GameState): Decimal {
+  return isBossZone(state.enemy.zone) ? bossDamageMult(state) : D(1);
+}
+
+/** Aktion: Klick auf den Gegner. Mit Forschung können Klicks kritisch treffen. */
 export function clickEnemy(state: GameState): boolean {
   state.clicks += 1;
-  return dealDamage(state, clickDamage(teamDps(state)));
+  let damage = clickDamage(teamDps(state), clickBonus(state)).mul(targetMult(state));
+  const chance = critChance(state);
+  if (chance > 0 && nextRandom(state) < chance) damage = damage.mul(critMult(state));
+  return dealDamage(state, damage);
 }
 
 /** Schaden des Teams über dtSeconds. Wird von der Tickschleife aufgerufen. */
 export function applyTeamDamage(state: GameState, dtSeconds: number): void {
-  if (state.team.length === 0 || dtSeconds <= 0) return;
-  dealDamage(state, teamDps(state).mul(dtSeconds));
+  if (dtSeconds <= 0) return;
+  const dps = teamDps(state);
+  if (dps.lte(0)) return;
+  dealDamage(state, dps.mul(dtSeconds).mul(targetMult(state)));
 }
 
 /**

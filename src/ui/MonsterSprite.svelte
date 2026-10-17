@@ -8,13 +8,14 @@
     scale = 2,
     big = false,
     unknown = false,
-  }: { speciesId: SpeciesId; scale?: number; big?: boolean; unknown?: boolean } = $props();
+    stage = 0,
+  }: { speciesId: SpeciesId; scale?: number; big?: boolean; unknown?: boolean; stage?: number } = $props();
 
   const species = $derived(getSpecies(speciesId));
-  const url = $derived(species && !unknown ? spriteUrl(species) : null);
+  const url = $derived(species && !unknown ? spriteUrl(species, stage) : null);
   const size = $derived((big ? 64 : 32) * scale);
   const color = $derived(species && !unknown ? TYPE_COLORS[species.type] : '#2a2f4d');
-  const label = $derived(species ? String(species.number).padStart(3, '0') : '');
+  const label = $derived(species ? String(species.number).padStart(3, '0') + (stage > 0 ? '+'.repeat(stage) : '') : '');
 </script>
 
 <div class="sprite" style:width="{size / 16}rem" style:height="{size / 16}rem">

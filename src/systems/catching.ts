@@ -2,7 +2,9 @@ import { BALANCING } from '../data/balancing';
 import { getSpecies, type SpeciesId } from '../data/monsters';
 import { catchChance, sphereCost } from '../core/formulas';
 import type { GameState } from '../core/state';
+import type { Decimal } from '../util/decimal';
 import { nextRandom } from '../util/random';
+import { catchResearchBonus, sphereCostMult } from './research';
 import { addToTeam } from './monsters';
 
 /**
@@ -15,7 +17,11 @@ export function tryCatch(state: GameState, speciesId: SpeciesId): boolean {
   if (!species || state.spheres <= 0) return false;
   if (state.settings.catchOnlyNew && state.collection[speciesId]) return false;
   state.spheres -= 1;
-  const chance = catchChance(BALANCING.rarity[species.rarity].catchChance);
+  const chance = catchChance(
+    BALANCING.rarity[species.rarity].catchChance,
+    BALANCING.catching.standardSphereMult,
+    catchResearchBonus(state),
+  );
   if (nextRandom(state) >= chance) return false;
   addCatch(state, speciesId);
   return true;
@@ -27,16 +33,21 @@ export function addCatch(state: GameState, speciesId: SpeciesId): void {
   if (entry) {
     entry.caught += 1;
   } else {
-    state.collection[speciesId] = { caught: 1, level: 1 };
+    state.collection[speciesId] = { caught: 1, level: 1, evolution: 0 };
     addToTeam(state, speciesId);
   }
   state.lastCatch = { speciesId, time: state.playTime };
 }
 
+/** Preis einer Standardsphäre in der aktuellen Zone nach Forschungsrabatt */
+export function currentSphereCost(state: GameState): Decimal {
+  return sphereCost(state.zone).mul(sphereCostMult(state));
+}
+
 /** Kauft `amount` Standardsphären zum Preis der aktuellen Zone. */
 export function buySpheres(state: GameState, amount: number): boolean {
   if (amount <= 0) return false;
-  const cost = sphereCost(state.zone).mul(amount);
+  const cost = currentSphereCost(state).mul(amount);
   if (state.energy.lt(cost)) return false;
   state.energy = state.energy.sub(cost);
   state.spheres += amount;

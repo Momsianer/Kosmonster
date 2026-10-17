@@ -1,7 +1,9 @@
 import { BALANCING } from '../data/balancing';
 import { applyTeamDamage, updateBossTimer } from '../systems/combat';
+import { offlineBonus, offlineLimitSeconds } from '../systems/research';
 import { applyProduction } from '../systems/station';
-import type { GameState } from './state';
+import type { Decimal } from '../util/decimal';
+import { addEnergy, type GameState } from './state';
 
 /**
  * Ein Logikschritt mit Zeitdifferenz in Sekunden:
@@ -41,6 +43,23 @@ export function advance(
     remaining -= dt;
   }
   return total;
+}
+
+/**
+ * Rückt den Zustand nach einer Pause (Laden, Hintergrundtab) vor. Längere Pausen
+ * bekommen den Offlinebonus der Forschung, das Limit kommt ebenfalls aus der Forschung.
+ * Gibt die verrechnete Zeit und die dabei verdiente Energie zurück.
+ */
+export function catchUp(state: GameState, now: number): { seconds: number; energy: Decimal } {
+  const before = state.totalEnergy;
+  const seconds = advance(state, now, offlineLimitSeconds(state));
+  let energy = state.totalEnergy.sub(before).max(0);
+  if (seconds >= BALANCING.offline.reportThresholdSeconds) {
+    const bonus = energy.mul(offlineBonus(state));
+    addEnergy(state, bonus);
+    energy = energy.add(bonus);
+  }
+  return { seconds, energy };
 }
 
 export interface LoopHandle {

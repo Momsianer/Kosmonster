@@ -9,6 +9,10 @@ import {
 } from '../save/save';
 import type { ModuleId } from '../data/modules';
 import type { SpeciesId } from '../data/monsters';
+import type { ResearchId } from '../data/research';
+import { evolve } from '../systems/evolution';
+import { supernova } from '../systems/prestige';
+import { buyResearch } from '../systems/research';
 import { buySpheres } from '../systems/catching';
 import { challengeBoss, changeZone, clickEnemy, setAutoProgress } from '../systems/combat';
 import { addToTeam, levelUp, removeFromTeam } from '../systems/monsters';
@@ -16,7 +20,7 @@ import { buyModule } from '../systems/station';
 import { dismissHint, type UnlockId } from '../systems/unlocks';
 import type { Decimal } from '../util/decimal';
 import { setNumberFormat, type NumberFormat } from '../util/format';
-import { advance, startLoop, type LoopHandle } from './loop';
+import { catchUp, startLoop, type LoopHandle } from './loop';
 import { createInitialState, type GameState } from './state';
 
 /** Zusammenfassung nach längerer Abwesenheit */
@@ -54,10 +58,9 @@ function applySettings(state: GameState): void {
  * (Offline, Hintergrundtab), entsteht ein Offlinebericht.
  */
 export function update(now: number = Date.now()): void {
-  const before = game.state.totalEnergy;
-  const seconds = advance(game.state, now);
+  const { seconds, energy } = catchUp(game.state, now);
   if (seconds >= BALANCING.offline.reportThresholdSeconds) {
-    game.offlineReport = { seconds, energy: game.state.totalEnergy.sub(before).max(0) };
+    game.offlineReport = { seconds, energy };
   }
 }
 
@@ -98,6 +101,13 @@ export const actions = {
   removeFromTeam: (id: SpeciesId) => removeFromTeam(game.state, id),
   buySpheres: (amount: number) => buySpheres(game.state, amount),
   buyModule: (id: ModuleId, amount: number | 'max') => buyModule(game.state, id, amount),
+  supernova: () => {
+    const ok = supernova(game.state);
+    if (ok) saveGame();
+    return ok;
+  },
+  buyResearch: (id: ResearchId) => buyResearch(game.state, id),
+  evolve: (id: SpeciesId) => evolve(game.state, id),
   dismissHint: (id: UnlockId) => dismissHint(game.state, id),
 
   setCatchOnlyNew(value: boolean): void {

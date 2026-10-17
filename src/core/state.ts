@@ -1,5 +1,6 @@
 import { BALANCING } from '../data/balancing';
 import type { ModuleId } from '../data/modules';
+import type { ResearchId } from '../data/research';
 import { speciesInZone, type SpeciesId } from '../data/monsters';
 import { D, type Decimal } from '../util/decimal';
 import type { NumberFormat } from '../util/format';
@@ -7,7 +8,7 @@ import { weightedPick } from '../util/random';
 import { enemyMaxHp } from './formulas';
 
 /** Version des Speicherstands, wird bei jeder Strukturänderung erhöht */
-export const STATE_VERSION = 5;
+export const STATE_VERSION = 6;
 
 export interface EnemyState {
   zone: number;
@@ -20,6 +21,8 @@ export interface CollectionEntry {
   /** Wie oft die Art gefangen wurde (Grundlage für Sterne in M8) */
   caught: number;
   level: number;
+  /** Erreichte Evolutionsstufe (0 = keine), bleibt über Resets erhalten */
+  evolution: number;
 }
 
 export interface Settings {
@@ -32,8 +35,16 @@ export interface Settings {
 export interface GameState {
   version: number;
   energy: Decimal;
-  /** Gesamte jemals verdiente Energie (für spätere Prestigeformeln) */
+  /** Gesamte jemals verdiente Energie */
   totalEnergy: Decimal;
+  /** Verdiente Energie seit der letzten Supernova (Grundlage für Sternenstaub) */
+  cycleEnergy: Decimal;
+  /** Unausgegebener Sternenstaub */
+  stardust: Decimal;
+  /** Anzahl ausgelöster Supernovas */
+  supernovas: number;
+  /** Gekaufte Forschungsstufen */
+  research: Partial<Record<ResearchId, number>>;
   zone: number;
   /** Höchste bisher erreichte Zone */
   highestZone: number;
@@ -67,6 +78,14 @@ export interface GameState {
   settings: Settings;
 }
 
+/** Schreibt verdiente Energie gut (Vorrat, Gesamtsumme und Zyklus) */
+export function addEnergy(state: GameState, amount: Decimal): void {
+  if (amount.lte(0)) return;
+  state.energy = state.energy.add(amount);
+  state.totalEnergy = state.totalEnergy.add(amount);
+  state.cycleEnergy = state.cycleEnergy.add(amount);
+}
+
 export function createEnemy(zone: number, speciesId: SpeciesId): EnemyState {
   const maxHp = enemyMaxHp(zone);
   return { zone, speciesId, hp: maxHp, maxHp };
@@ -95,6 +114,10 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     version: STATE_VERSION,
     energy: D(0),
     totalEnergy: D(0),
+    cycleEnergy: D(0),
+    stardust: D(0),
+    supernovas: 0,
+    research: {},
     zone,
     highestZone: zone,
     killsInZone: 0,

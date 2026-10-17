@@ -42,6 +42,8 @@ export interface SpeciesData {
   minZone: number;
   /** Letzte Zone, in der die Art erscheint, null = ohne Ende */
   maxZone: number | null;
+  /** Mögliche Evolutionsstufen (1 oder 2) */
+  evolutions: number;
   sprite: string;
 }
 
@@ -53,21 +55,27 @@ function species(
   baseCost: number,
   minZone: number,
   maxZone: number | null,
+  evolutions = 1,
 ): SpeciesData {
   const id = `art_${String(number).padStart(3, '0')}` as SpeciesId;
-  return { id, number, type, rarity, baseDps, baseCost, minZone, maxZone, sprite: `assets/monster/${id}.png` };
+  return { id, number, type, rarity, baseDps, baseCost, minZone, maxZone, evolutions, sprite: `assets/monster/${id}.png` };
+}
+
+/** Spritepfad je Evolutionsstufe: art_001.png, art_001_e1.png, art_001_e2.png */
+export function spritePath(species: SpeciesData, stage: number): string {
+  return stage > 0 ? `assets/monster/${species.id}_e${stage}.png` : species.sprite;
 }
 
 export const SPECIES: readonly SpeciesData[] = [
   species(1, 'prim', 'common', 1, 40, 1, 15),
   species(2, 'fibonacci', 'common', 1, 40, 1, 15),
-  species(3, 'prim', 'uncommon', 3, 80, 3, 25),
+  species(3, 'prim', 'uncommon', 3, 80, 3, 25, 2),
   species(4, 'fibonacci', 'uncommon', 7, 200, 5, 25),
   species(5, 'prim', 'common', 27, 700, 8, 35),
-  species(6, 'fibonacci', 'common', 155, 4100, 12, 40),
+  species(6, 'fibonacci', 'common', 155, 4100, 12, 40, 2),
   species(7, 'prim', 'uncommon', 2150, 57_000, 18, 50),
   species(8, 'fibonacci', 'uncommon', 46_000, 1.2e6, 25, 60),
-  species(9, 'prim', 'common', 1.5e6, 4e7, 33, null),
+  species(9, 'prim', 'common', 1.5e6, 4e7, 33, null, 2),
   species(10, 'fibonacci', 'common', 8e7, 2.1e9, 42, null),
 ];
 

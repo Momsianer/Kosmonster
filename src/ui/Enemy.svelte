@@ -7,6 +7,7 @@
   let {
     kind,
     speciesId,
+    stage = 0,
     name,
     hp,
     maxHp,
@@ -15,6 +16,7 @@
   }: {
     kind: EnemyKind;
     speciesId: SpeciesId;
+    stage?: number;
     name: string;
     hp: string;
     maxHp: string;
@@ -32,7 +34,7 @@
     <div class="kind">{label}</div>
   {/if}
   <button class="target {kind}" type="button" aria-label="{label}: {name}" onclick={onattack}>
-    <MonsterSprite {speciesId} scale={4} big={kind !== 'normal'} />
+    <MonsterSprite {speciesId} {stage} scale={4} big={kind !== 'normal'} />
   </button>
   <div class="name">{name}</div>
   <div class="bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(fraction * 100)}>

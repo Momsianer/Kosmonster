@@ -10,7 +10,9 @@ import {
   type GameState,
 } from '../core/state';
 import { isModuleId, type ModuleId } from '../data/modules';
-import { isSpeciesId, speciesInZone, type SpeciesId } from '../data/monsters';
+import { isResearchId, type ResearchId } from '../data/research';
+import { bossTimeLimitFor, teamSlotsFor } from '../systems/research';
+import { getSpecies, isSpeciesId, speciesInZone, type SpeciesId } from '../data/monsters';
 import { D, type Decimal } from '../util/decimal';
 import { isNumberFormat } from '../util/format';
 import { migrate, type RawSave } from './migrations';
@@ -87,17 +89,22 @@ export function hydrate(raw: RawSave): GameState {
     if (hp.gt(0) && hp.lte(enemy.maxHp)) enemy = { ...enemy, hp };
   }
 
+  const research = hydrateResearch(raw.research);
   const collection = hydrateCollection(raw.collection);
-  const team = hydrateTeam(raw.team, collection);
+  const team = hydrateTeam(raw.team, collection, teamSlotsFor(research));
 
   const settings = isRecord(raw.settings) ? raw.settings : {};
-  const { timeLimitSeconds } = BALANCING.boss;
+  const timeLimitSeconds = bossTimeLimitFor(research);
   const bossTime = toNumber(raw.bossTimeLeft, 0);
 
   return {
     version: STATE_VERSION,
     energy: toDecimal(raw.energy, base.energy),
     totalEnergy: toDecimal(raw.totalEnergy, base.totalEnergy),
+    cycleEnergy: toDecimal(raw.cycleEnergy, base.cycleEnergy),
+    stardust: toDecimal(raw.stardust, base.stardust),
+    supernovas: Math.floor(toNumber(raw.supernovas, 0)),
+    research,
     zone,
     highestZone: Math.max(zone, toZone(raw.highestZone, zone)),
     killsInZone: Math.min(toNumber(raw.killsInZone, 0), BALANCING.world.enemiesPerZone),
@@ -140,19 +147,35 @@ function hydrateCollection(value: unknown): Partial<Record<SpeciesId, Collection
     collection[id] = {
       caught: Math.max(1, Math.floor(toNumber(entry.caught, 1))),
       level: Math.floor(toNumber(entry.level, 1)),
+      evolution: Math.min(getSpecies(id)?.evolutions ?? 0, Math.floor(toNumber(entry.evolution, 0))),
     };
   }
   return collection;
 }
 
+function hydrateResearch(value: unknown): Partial<Record<ResearchId, number>> {
+  const research: Partial<Record<ResearchId, number>> = {};
+  if (!isRecord(value)) return research;
+  for (const [id, level] of Object.entries(value)) {
+    if (!isResearchId(id)) continue;
+    const n = Math.min(Math.floor(toNumber(level, 0)), BALANCING.research.nodes[id].maxLevel);
+    if (n > 0) research[id] = n;
+  }
+  return research;
+}
+
 /** Nur gefangene Arten, keine doppelten, höchstens so viele wie Teamplätze */
-function hydrateTeam(value: unknown, collection: Partial<Record<SpeciesId, CollectionEntry>>): SpeciesId[] {
+function hydrateTeam(
+  value: unknown,
+  collection: Partial<Record<SpeciesId, CollectionEntry>>,
+  slots: number,
+): SpeciesId[] {
   if (!Array.isArray(value)) return [];
   const team: SpeciesId[] = [];
   for (const id of value) {
     if (isSpeciesId(id) && collection[id] && !team.includes(id)) team.push(id);
   }
-  return team.slice(0, BALANCING.monster.teamSlots);
+  return team.slice(0, slots);
 }
 
 function hydrateModules(value: unknown): Partial<Record<ModuleId, number>> {

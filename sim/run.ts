@@ -4,7 +4,7 @@
  */
 import { formatTime, MILESTONES, PROFILES, simulate } from './simulate';
 
-const MAX_SECONDS = 12 * 3600;
+const MAX_SECONDS = 16 * 3600;
 const SEEDS = [1, 2, 3];
 
 function median(values: (number | null)[]): number | null {
@@ -23,5 +23,5 @@ for (const profile of Object.values(PROFILES)) {
     const target = m.target === null ? '' : formatTime(m.target);
     console.log(m.label.padEnd(26) + formatTime(time).padEnd(18) + target);
   }
-  console.log(`Endzone: ${results.map((r) => r.finalZone).join(', ')}`);
+  console.log(`Supernovas: ${results.map((r) => r.supernovas).join(', ')} · Endzone: ${results.map((r) => r.finalZone).join(', ')}`);
 }
