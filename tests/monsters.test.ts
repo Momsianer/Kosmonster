@@ -32,10 +32,10 @@ describe('Monster DPS', () => {
     expect(monsterDps(state, 'art_001').eq(normal.mul(BALANCING.types.primeZoneMult))).toBe(true);
   });
 
-  it('Fibonacci bekommt ×1,5 je Fibonacci Level', () => {
+  it('Fibonacci bekommt ×fibonacciMult je Fibonacci Level', () => {
     const state = stateWith('art_002');
-    // Level 1: basisDPS 1 * 1 * ×1,5 (Fibonacci Zahl 1)
-    expect(monsterDps(state, 'art_002').toNumber()).toBeCloseTo(1.5, 10);
+    // Level 1: basisDPS 1 * 1 * ×fibonacciMult (Fibonacci Zahl 1)
+    expect(monsterDps(state, 'art_002').toNumber()).toBeCloseTo(BALANCING.types.fibonacciMult, 10);
   });
 
   it('Seltenheit fließt ein', () => {

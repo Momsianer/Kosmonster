@@ -8,7 +8,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "svelte-check --tsconfig ./tsconfig.json"
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "sim": "tsx sim/run.ts"
   },
   "repository": {
     "type": "git",
@@ -30,6 +31,7 @@
     "@tsconfig/svelte": "^5.0.8",
     "svelte": "^5.57.2",
     "svelte-check": "^4.7.7",
+    "tsx": "^4.23.15",
     "typescript": "^6.0.3",
     "vite": "^8.3.4",
     "vitest": "^5.0.5"

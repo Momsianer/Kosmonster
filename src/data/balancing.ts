@@ -65,7 +65,7 @@ export const BALANCING = {
     /** Prim: ×primeZoneMult in Zonen mit Primzahlnummer */
     primeZoneMult: 2,
     /** Fibonacci: ×fibonacciMult für jedes Fibonacci Level bis zum aktuellen Level */
-    fibonacciMult: 1.5,
+    fibonacciMult: 1.25,
   },
   catching: {
     /** Fangsphären zu Spielbeginn */

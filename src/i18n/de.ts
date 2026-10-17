@@ -44,11 +44,11 @@ export const de = {
   types: {
     prim: {
       name: 'Prim',
-      ability: '×2 Schaden in Zonen mit Primzahlnummer',
+      ability: '×{mult} Schaden in Zonen mit Primzahlnummer',
     },
     fibonacci: {
       name: 'Fibonacci',
-      ability: 'Zusätzlich ×1,5 bei jedem Fibonacci Level (1, 2, 3, 5, 8, 13, …)',
+      ability: 'Zusätzlich ×{mult} bei jedem Fibonacci Level (1, 2, 3, 5, 8, 13, …)',
     },
   },
   rarity: {

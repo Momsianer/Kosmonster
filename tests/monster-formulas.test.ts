@@ -78,8 +78,8 @@ describe('Fibonacci', () => {
     expect(fibonacciCount(21)).toBe(7);
   });
 
-  it('×1,5 je Fibonacci Level', () => {
-    expect(fibonacciMult(5).toNumber()).toBeCloseTo(1.5 ** 4, 10);
+  it('×fibonacciMult je Fibonacci Level', () => {
+    expect(fibonacciMult(5).toNumber()).toBeCloseTo(BALANCING.types.fibonacciMult ** 4, 10);
   });
 });
 
