@@ -9,6 +9,7 @@ import {
   type CollectionEntry,
   type GameState,
 } from '../core/state';
+import { isModuleId, type ModuleId } from '../data/modules';
 import { isSpeciesId, speciesInZone, type SpeciesId } from '../data/monsters';
 import { D, type Decimal } from '../util/decimal';
 import { isNumberFormat } from '../util/format';
@@ -115,6 +116,7 @@ export function hydrate(raw: RawSave): GameState {
     team,
     rngState: rng.rngState,
     lastCatch: hydrateLastCatch(raw.lastCatch),
+    modules: hydrateModules(raw.modules),
     hintsSeen: Array.isArray(raw.hintsSeen)
       ? raw.hintsSeen.filter((h): h is string => typeof h === 'string')
       : [],
@@ -151,6 +153,18 @@ function hydrateTeam(value: unknown, collection: Partial<Record<SpeciesId, Colle
     if (isSpeciesId(id) && collection[id] && !team.includes(id)) team.push(id);
   }
   return team.slice(0, BALANCING.monster.teamSlots);
+}
+
+function hydrateModules(value: unknown): Partial<Record<ModuleId, number>> {
+  const modules: Partial<Record<ModuleId, number>> = {};
+  if (!isRecord(value)) return modules;
+  for (const [id, count] of Object.entries(value)) {
+    if (isModuleId(id)) {
+      const n = Math.floor(toNumber(count, 0));
+      if (n > 0) modules[id] = n;
+    }
+  }
+  return modules;
 }
 
 function hydrateLastCatch(value: unknown): GameState['lastCatch'] {

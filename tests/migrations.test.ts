@@ -47,6 +47,12 @@ describe('Migrationen', () => {
     expect(withSettings.settings).toEqual({ numberFormat: 'letters', catchOnlyNew: true });
   });
 
+  it('hebt Version 4 auf Version 5', () => {
+    const migrated = MIGRATIONS[4]!({ version: 4 });
+    expect(migrated.version).toBe(5);
+    expect(migrated.modules).toEqual({});
+  });
+
   it('migrierter Stand hat dieselben Felder wie ein neuer Zustand', () => {
     const fresh = JSON.parse(JSON.stringify(createInitialState(0)));
     const migrated = migrate({ ...fresh, version: 1 });

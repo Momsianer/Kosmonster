@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
   import { BALANCING } from '../data/balancing';
+  import type { ModuleId } from '../data/modules';
   import type { SpeciesId } from '../data/monsters';
   import { actions, game } from '../core/game';
   import { t } from '../i18n';
@@ -12,6 +13,7 @@
   import OfflineReport from './OfflineReport.svelte';
   import Settings from './Settings.svelte';
   import ShopPanel from './ShopPanel.svelte';
+  import StationPanel from './StationPanel.svelte';
   import TeamPanel from './TeamPanel.svelte';
   import { createView, type BuyAmount } from './view';
 
@@ -42,11 +44,12 @@
   const removeFromTeam = act(actions.removeFromTeam);
   const buySpheres = act(actions.buySpheres);
   const setCatchOnlyNew = act(actions.setCatchOnlyNew);
+  const buyModule = act((id: ModuleId) => actions.buyModule(id, buyAmount));
   const setBuyAmount = act((amount: BuyAmount) => (buyAmount = amount));
   const dismissHint = act(() => view.hint && actions.dismissHint(view.hint));
 </script>
 
-<main class:wide={view.teamUnlocked}>
+<main class:wide={view.teamUnlocked || view.stationUnlocked}>
   <div class="top">
     <h1>{t('game.title')}</h1>
     <button type="button" class="toggle" onclick={() => (showSettings = !showSettings)}>
@@ -71,7 +74,7 @@
     <Settings onchange={refresh} />
   {/if}
 
-  <EnergyDisplay value={view.energy} />
+  <EnergyDisplay value={view.energy} perSecond={view.stationUnlocked ? view.production : ''} />
 
   <div class="layout">
     <section class="battle">
@@ -116,7 +119,7 @@
       <p class="hint">{t('combat.defeated', { count: view.enemiesDefeated })}</p>
     </section>
 
-    {#if view.teamUnlocked || view.shopUnlocked}
+    {#if view.teamUnlocked || view.stationUnlocked || view.shopUnlocked}
       <aside class="side">
         {#if view.teamUnlocked}
           <TeamPanel
@@ -128,6 +131,15 @@
             onbuyamount={setBuyAmount}
             onlevelup={levelUp}
             onremove={removeFromTeam}
+          />
+        {/if}
+        {#if view.stationUnlocked}
+          <StationPanel
+            modules={view.modules}
+            production={view.production}
+            {buyAmount}
+            onbuyamount={setBuyAmount}
+            onbuy={buyModule}
           />
         {/if}
         {#if view.shopUnlocked}

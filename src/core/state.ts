@@ -1,4 +1,5 @@
 import { BALANCING } from '../data/balancing';
+import type { ModuleId } from '../data/modules';
 import { speciesInZone, type SpeciesId } from '../data/monsters';
 import { D, type Decimal } from '../util/decimal';
 import type { NumberFormat } from '../util/format';
@@ -6,7 +7,7 @@ import { weightedPick } from '../util/random';
 import { enemyMaxHp } from './formulas';
 
 /** Version des Speicherstands, wird bei jeder Strukturänderung erhöht */
-export const STATE_VERSION = 4;
+export const STATE_VERSION = 5;
 
 export interface EnemyState {
   zone: number;
@@ -55,6 +56,8 @@ export interface GameState {
   rngState: number;
   /** Letzter erfolgreicher Fang, time = playTime beim Fang */
   lastCatch: { speciesId: SpeciesId; time: number } | null;
+  /** Gebaute Module der Raumstation */
+  modules: Partial<Record<ModuleId, number>>;
   /** Bereits bestätigte einmalige Hinweise */
   hintsSeen: string[];
   /** Gespielte Zeit in Sekunden */
@@ -105,6 +108,7 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     team: [],
     rngState: rng.rngState,
     lastCatch: null,
+    modules: {},
     hintsSeen: [],
     playTime: 0,
     lastTick: now,

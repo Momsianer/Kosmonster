@@ -1,8 +1,9 @@
 <script lang="ts">
   import type { SpeciesId } from '../data/monsters';
   import { t } from '../i18n';
+  import BuyAmountSelect from './BuyAmountSelect.svelte';
   import MonsterSprite from './MonsterSprite.svelte';
-  import { BUY_AMOUNTS, type BuyAmount, type TeamMemberView } from './view';
+  import type { BuyAmount, TeamMemberView } from './view';
 
   let {
     team,
@@ -33,14 +34,7 @@
     <span>{t('team.dps', { dps })}</span>
     <span>{t('team.clickDamage', { damage: clickDamage })}</span>
   </div>
-  <div class="amounts">
-    <span class="muted">{t('team.buyAmount')}</span>
-    {#each BUY_AMOUNTS as amount (amount)}
-      <button type="button" class:active={buyAmount === amount} onclick={() => onbuyamount(amount)}>
-        {amount === 'max' ? t('team.max') : `×${amount}`}
-      </button>
-    {/each}
-  </div>
+  <BuyAmountSelect value={buyAmount} onchange={onbuyamount} />
 
   {#each team as member (member.id)}
     <div class="member">
@@ -72,7 +66,6 @@
     gap: 0.25rem 1rem;
     font-variant-numeric: tabular-nums;
   }
-  .amounts,
   .actions {
     display: flex;
     flex-wrap: wrap;

@@ -1,5 +1,5 @@
 import { BALANCING } from '../data/balancing';
-import { D, type Decimal, type DecimalSource } from '../util/decimal';
+import { D, powInt, type Decimal, type DecimalSource } from '../util/decimal';
 
 export type EnemyKind = 'normal' | 'boss' | 'systemBoss';
 
@@ -88,9 +88,7 @@ export function milestoneMult(level: number): Decimal {
   // Vielfache von hundredStep oberhalb des letzten festen Meilensteins
   const hundreds = Math.max(0, Math.floor(level / hundredStep) - Math.floor(lastFixed / hundredStep));
   const thousands = Math.floor(level / thousandStep);
-  return D(mult)
-    .pow(fixed + hundreds - thousands)
-    .mul(D(thousandMult).pow(thousands));
+  return powInt(mult, fixed + hundreds - thousands).mul(powInt(thousandMult, thousands));
 }
 
 /** Anzahl verschiedener Fibonacci Zahlen von 1 bis level (1, 2, 3, 5, 8, …) */
@@ -107,7 +105,7 @@ export function fibonacciCount(level: number): number {
 
 /** Fibonacci Typ: ×fibonacciMult für jedes Fibonacci Level bis zum aktuellen Level */
 export function fibonacciMult(level: number): Decimal {
-  return D(BALANCING.types.fibonacciMult).pow(fibonacciCount(level));
+  return powInt(BALANCING.types.fibonacciMult, fibonacciCount(level));
 }
 
 export function isPrime(n: number): boolean {
@@ -147,6 +145,30 @@ export function catchChance(
 /** Preis einer Fangsphäre in Zone z */
 export function sphereCost(zone: number): Decimal {
   return enemyEnergy(zone).mul(BALANCING.catching.sphereCostKills);
+}
+
+// ─── Raumstation ────────────────────────────────────────────
+
+/** Kosten des nächsten Moduls, wenn schon n gebaut sind: basis * costGrowth^n */
+export function moduleCost(baseCost: DecimalSource, owned: number): Decimal {
+  return D(BALANCING.station.costGrowth).pow(owned).mul(baseCost);
+}
+
+/** Modulmultiplikator: ×upgradeMult für jede erreichte Stückzahl aus upgradeThresholds */
+export function moduleMult(owned: number): Decimal {
+  const { upgradeThresholds, upgradeMult } = BALANCING.station;
+  return powInt(upgradeMult, upgradeThresholds.filter((t) => owned >= t).length);
+}
+
+/** Nächste Stückzahl, ab der sich die Produktion verdoppelt, null wenn alle erreicht */
+export function nextModuleUpgrade(owned: number): number | null {
+  return BALANCING.station.upgradeThresholds.find((t) => owned < t) ?? null;
+}
+
+/** produktion_i = prod_i * n * modulMult_i (Energie pro Sekunde) */
+export function moduleProduction(production: DecimalSource, owned: number): Decimal {
+  if (owned <= 0) return D(0);
+  return D(production).mul(owned).mul(moduleMult(owned));
 }
 
 // ─── Mehrfachkauf ───────────────────────────────────────────

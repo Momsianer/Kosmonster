@@ -386,7 +386,7 @@ Wählbar: deutsch (1,5 Mio., 2,3 Mrd.), wissenschaftlich (1,5e6), technisch (1,5
 | ✅ | M2 | Zonen, Gegnerleben, Bosse mit Zeitlimit |
 | ✅ | M3 | Speichern/Laden, Offlinefortschritt, Zahlenformatierung |
 | ✅ | M4 | Monster, Fangen, Team, Level, Meilensteine (erst 2 Typen, 10 Arten) |
-| ⬜ | M5 | Raumstation mit Mehrfachkauf |
+| ✅ | M5 | Raumstation mit Mehrfachkauf |
 | ⬜ | M6 | Simulator, erste Balancingrunde bis Zone 60 |
 | ⬜ | M7 | Supernova, Forschungsbaum, Evolution |
 | ⬜ | M8 | Alle 8 Typen, Planetentypen, Seltenheit, Sterne, Shinies |

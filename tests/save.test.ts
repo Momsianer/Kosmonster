@@ -163,6 +163,16 @@ describe('Monster im Speicherstand', () => {
   });
 });
 
+describe('Module im Speicherstand', () => {
+  it('überstehen Speichern und Laden, ungültige Einträge fallen weg', () => {
+    const raw = {
+      ...JSON.parse(JSON.stringify(createInitialState(0))),
+      modules: { solarpanel: 12, dysonring: 3, warpantrieb: 5, fusionsreaktor: -2, quasarspiegel: 'x' },
+    };
+    expect(decodeSave(encodeRaw(raw))!.modules).toEqual({ solarpanel: 12, dysonring: 3 });
+  });
+});
+
 describe('Speicherplatz', () => {
   it('speichert und lädt über den Speicher', () => {
     const storage = memoryStorage();

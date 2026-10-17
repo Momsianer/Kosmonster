@@ -1,9 +1,17 @@
 import type { GameState } from '../core/state';
+import { BALANCING } from '../data/balancing';
 
-/** Freischaltungen der Oberfläche in Reihenfolge, jede mit einmaligem Hinweis */
+const stationUnlocked = (state: GameState) =>
+  state.playTime >= BALANCING.station.unlockSeconds || Object.keys(state.modules).length > 0;
+
+/**
+ * Freischaltungen der Oberfläche in Reihenfolge (CLAUDE.md Abschnitt 17),
+ * jede mit einmaligem Hinweis. Der Laden erscheint auch früher, wenn die Sphären ausgehen.
+ */
 export const UNLOCKS = {
   team: (state: GameState) => Object.keys(state.collection).length > 0,
-  shop: (state: GameState) => Object.keys(state.collection).length > 0 || state.spheres <= 0,
+  station: stationUnlocked,
+  shop: (state: GameState) => stationUnlocked(state) || state.spheres <= 0,
 } as const;
 
 export type UnlockId = keyof typeof UNLOCKS;

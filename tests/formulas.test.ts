@@ -10,6 +10,7 @@ import {
   starSystem,
 } from '../src/core/formulas';
 import { BALANCING } from '../src/data/balancing';
+import { powInt } from '../src/util/decimal';
 
 const { baseHp, hpGrowth, hpBreakZone, hpGrowthLate } = BALANCING.enemy;
 
@@ -102,5 +103,17 @@ describe('starSystem', () => {
     expect(starSystem(10)).toBe(1);
     expect(starSystem(11)).toBe(2);
     expect(starSystem(140)).toBe(14);
+  });
+});
+
+describe('powInt', () => {
+  it('rechnet kleine Potenzen exakt', () => {
+    expect(powInt(2, 12).toNumber()).toBe(4096);
+    expect(powInt(1.5, 4).toNumber()).toBe(5.0625);
+    expect(powInt(10, 0).toNumber()).toBe(1);
+  });
+
+  it('weicht bei großen Potenzen auf Decimal aus', () => {
+    expect(powInt(10, 400).log10().toNumber()).toBeCloseTo(400, 6);
   });
 });

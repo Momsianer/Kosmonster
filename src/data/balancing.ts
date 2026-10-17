@@ -85,6 +85,15 @@ export const BALANCING = {
     /** Größter Zeitschritt pro Tick in Sekunden. Längere Pausen werden in Schritten dieser Größe nachgeholt */
     maxTickSeconds: 1,
   },
+  station: {
+    /** Freischaltung der Raumstation nach so vielen Sekunden Spielzeit */
+    unlockSeconds: 5 * 60,
+    /** Wachstum der Modulkosten: modulKosten(i, n) = basis_i * costGrowth^n */
+    costGrowth: 1.15,
+    /** Ab diesen Stückzahlen verdoppelt sich die Produktion eines Moduls */
+    upgradeThresholds: [25, 50, 100, 150, 200],
+    upgradeMult: 2,
+  },
   offline: {
     /** Höchstens so viel verpasste Zeit wird nachgeholt (8 Stunden) */
     maxSeconds: 8 * 60 * 60,
