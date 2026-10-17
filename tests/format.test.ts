@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { D } from '../src/util/decimal';
-import { formatNumber } from '../src/util/format';
+import { formatNumber, formatSeconds } from '../src/util/format';
 
 describe('formatNumber (deutsch)', () => {
   it('kleine Zahlen mit Dezimalkomma', () => {
@@ -38,5 +38,17 @@ describe('formatNumber (deutsch)', () => {
 
   it('negative Zahlen', () => {
     expect(formatNumber(-1.5e6)).toBe('−1,5 Mio.');
+  });
+});
+
+describe('formatSeconds (deutsch)', () => {
+  it('eine Nachkommastelle mit Komma', () => {
+    expect(formatSeconds(30)).toBe('30,0');
+    expect(formatSeconds(12.34)).toBe('12,3');
+    expect(formatSeconds(0.05)).toBe('0,1');
+  });
+
+  it('nie negativ', () => {
+    expect(formatSeconds(-1)).toBe('0,0');
   });
 });
