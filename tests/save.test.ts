@@ -202,6 +202,24 @@ describe('Prestige im Speicherstand', () => {
   });
 });
 
+describe('M8 im Speicherstand', () => {
+  it('Sphärentypen, Polarsterne, Euler und Leerlauf überstehen Speichern und Laden', () => {
+    const state = createInitialState(0);
+    addCatch(state, 'art_001', true);
+    state.spheres = { standard: 1, orbit: 2, nebel: 3, singularitaet: 4 };
+    state.cycleStart = 123;
+    state.lastClick = 456;
+    state.enemy.shiny = true;
+    const loaded = decodeSave(encodeSave(state))!;
+    expect(loaded.spheres).toEqual(state.spheres);
+    expect(loaded.collection.art_001!.shiny).toBe(true);
+    expect(loaded.lastCatch?.shiny).toBe(true);
+    expect(loaded.cycleStart).toBe(123);
+    expect(loaded.lastClick).toBe(456);
+    expect(loaded.enemy.shiny).toBe(true);
+  });
+});
+
 describe('Speicherplatz', () => {
   it('speichert und lädt über den Speicher', () => {
     const storage = memoryStorage();
