@@ -10,7 +10,7 @@ import {
 import type { ModuleId } from '../data/modules';
 import type { SpeciesId } from '../data/monsters';
 import { buySpheres } from '../systems/catching';
-import { challengeBoss, clickEnemy } from '../systems/combat';
+import { challengeBoss, changeZone, clickEnemy, setAutoProgress } from '../systems/combat';
 import { addToTeam, levelUp, removeFromTeam } from '../systems/monsters';
 import { buyModule } from '../systems/station';
 import { dismissHint, type UnlockId } from '../systems/unlocks';
@@ -91,6 +91,8 @@ export function saveGame(): boolean {
 export const actions = {
   clickEnemy: () => clickEnemy(game.state),
   challengeBoss: () => challengeBoss(game.state),
+  changeZone: (zone: number) => changeZone(game.state, zone),
+  setAutoProgress: (on: boolean) => setAutoProgress(game.state, on),
   levelUp: (id: SpeciesId, amount: number | 'max') => levelUp(game.state, id, amount),
   addToTeam: (id: SpeciesId) => addToTeam(game.state, id),
   removeFromTeam: (id: SpeciesId) => removeFromTeam(game.state, id),
