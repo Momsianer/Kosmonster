@@ -1,4 +1,5 @@
 import { STATE_VERSION } from '../core/state';
+import { BALANCING } from '../data/balancing';
 
 /** Roher Speicherstand nach JSON.parse, vor der Umwandlung in Decimal */
 export type RawSave = Record<string, unknown> & { version: number };
@@ -22,6 +23,18 @@ export const MIGRATIONS: Record<number, (save: RawSave) => RawSave> = {
     ...save,
     version: 3,
     settings: { numberFormat: 'standard' },
+  }),
+  // 3 → 4: Monster, Sammlung, Team, Fangsphären, Zufall und Hinweise.
+  // Der Gegner bekommt beim Laden eine Art (siehe hydrate).
+  3: (save) => ({
+    ...save,
+    version: 4,
+    spheres: BALANCING.catching.startSpheres,
+    collection: {},
+    team: [],
+    rngState: typeof save.lastTick === 'number' ? save.lastTick | 0 : 1,
+    lastCatch: null,
+    hintsSeen: [],
   }),
 };
 

@@ -1,15 +1,24 @@
 import { BALANCING } from '../data/balancing';
+import { speciesInZone, type SpeciesId } from '../data/monsters';
 import { D, type Decimal } from '../util/decimal';
 import type { NumberFormat } from '../util/format';
+import { weightedPick } from '../util/random';
 import { enemyMaxHp } from './formulas';
 
 /** Version des Speicherstands, wird bei jeder Strukturänderung erhöht */
-export const STATE_VERSION = 3;
+export const STATE_VERSION = 4;
 
 export interface EnemyState {
   zone: number;
+  speciesId: SpeciesId;
   hp: Decimal;
   maxHp: Decimal;
+}
+
+export interface CollectionEntry {
+  /** Wie oft die Art gefangen wurde (Grundlage für Sterne in M8) */
+  caught: number;
+  level: number;
 }
 
 export interface Settings {
@@ -34,6 +43,18 @@ export interface GameState {
   enemy: EnemyState;
   enemiesDefeated: number;
   clicks: number;
+  /** Fangsphären (Standard) */
+  spheres: number;
+  /** Gefangene Arten, bleiben über alle Resets erhalten */
+  collection: Partial<Record<SpeciesId, CollectionEntry>>;
+  /** Arten im Team, Reihenfolge wie angezeigt */
+  team: SpeciesId[];
+  /** Zustand des Zufallsgenerators */
+  rngState: number;
+  /** Letzter erfolgreicher Fang, time = playTime beim Fang */
+  lastCatch: { speciesId: SpeciesId; time: number } | null;
+  /** Bereits bestätigte einmalige Hinweise */
+  hintsSeen: string[];
   /** Gespielte Zeit in Sekunden */
   playTime: number;
   /** Zeitstempel des letzten Ticks in Millisekunden (Date.now()) */
@@ -41,13 +62,30 @@ export interface GameState {
   settings: Settings;
 }
 
-export function createEnemy(zone: number): EnemyState {
+export function createEnemy(zone: number, speciesId: SpeciesId): EnemyState {
   const maxHp = enemyMaxHp(zone);
-  return { zone, hp: maxHp, maxHp };
+  return { zone, speciesId, hp: maxHp, maxHp };
 }
 
-export function createInitialState(now: number = Date.now()): GameState {
+/** Wählt eine Art aus dem Pool der Zone, gewichtet nach Seltenheit */
+export function pickSpecies(holder: { rngState: number }, zone: number): SpeciesId {
+  const pool = speciesInZone(zone);
+  const picked = weightedPick(holder, pool, (s) => BALANCING.rarity[s.rarity].spawnWeight);
+  const fallback = pool[0] ?? speciesInZone(BALANCING.world.startZone)[0];
+  const species = picked ?? fallback;
+  if (!species) throw new Error(`Keine Art für Zone ${zone}`);
+  return species.id;
+}
+
+/** Lässt in Zone z einen neuen Gegner mit zufälliger Art erscheinen */
+export function spawnEnemy(state: { rngState: number }, zone: number): EnemyState {
+  return createEnemy(zone, pickSpecies(state, zone));
+}
+
+export function createInitialState(now: number = Date.now(), seed: number = now): GameState {
   const zone = BALANCING.world.startZone;
+  const rng = { rngState: seed | 0 };
+  const enemy = spawnEnemy(rng, zone);
   return {
     version: STATE_VERSION,
     energy: D(0),
@@ -57,9 +95,15 @@ export function createInitialState(now: number = Date.now()): GameState {
     killsInZone: 0,
     farming: false,
     bossTimeLeft: 0,
-    enemy: createEnemy(zone),
+    enemy,
     enemiesDefeated: 0,
     clicks: 0,
+    spheres: BALANCING.catching.startSpheres,
+    collection: {},
+    team: [],
+    rngState: rng.rngState,
+    lastCatch: null,
+    hintsSeen: [],
     playTime: 0,
     lastTick: now,
     settings: { numberFormat: 'standard' },

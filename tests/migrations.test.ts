@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createInitialState, STATE_VERSION } from '../src/core/state';
-import { migrate } from '../src/save/migrations';
+import { migrate, MIGRATIONS } from '../src/save/migrations';
 
 describe('Migrationen', () => {
   it('hebt Version 1 auf die aktuelle Version', () => {
@@ -28,7 +28,7 @@ describe('Migrationen', () => {
   it('hebt Version 2 auf Version 3', () => {
     const fresh = JSON.parse(JSON.stringify(createInitialState(0)));
     delete fresh.settings;
-    const migrated = migrate({ ...fresh, version: 2 });
+    const migrated = MIGRATIONS[2]!({ ...fresh, version: 2 });
     expect(migrated.version).toBe(3);
     expect(migrated.settings).toEqual({ numberFormat: 'standard' });
   });

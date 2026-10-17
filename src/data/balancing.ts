@@ -34,6 +34,48 @@ export const BALANCING = {
   click: {
     /** Grundschaden eines Klicks */
     baseDamage: 1,
+    /** klickschaden = baseDamage + teamShare * teamDPS * klickbonus */
+    teamShare: 0.01,
+    /** Klickbonus ohne Forschung */
+    baseClickBonus: 1,
+  },
+  monster: {
+    /** Plätze im Team zu Beginn */
+    teamSlots: 3,
+    /** Wachstum der Levelkosten: levelKosten(l) = basisKosten * levelCostGrowth^l */
+    levelCostGrowth: 1.07,
+    /** Feste Meilensteinlevel mit ×milestoneMult */
+    milestoneLevels: [10, 25, 50, 100],
+    milestoneMult: 2,
+    /** Danach alle hundredStep Level ×milestoneMult … */
+    hundredStep: 100,
+    /** … und alle thousandStep Level ×thousandMult statt ×milestoneMult */
+    thousandStep: 1000,
+    thousandMult: 10,
+  },
+  rarity: {
+    common: { catchChance: 0.25, dpsMult: 1, spawnWeight: 3 },
+    uncommon: { catchChance: 0.12, dpsMult: 2, spawnWeight: 1 },
+    rare: { catchChance: 0.05, dpsMult: 5, spawnWeight: 0.4 },
+    epic: { catchChance: 0.015, dpsMult: 15, spawnWeight: 0.15 },
+    legendary: { catchChance: 0.003, dpsMult: 50, spawnWeight: 0 },
+    mythic: { catchChance: 0, dpsMult: 200, spawnWeight: 0 },
+  },
+  types: {
+    /** Prim: ×primeZoneMult in Zonen mit Primzahlnummer */
+    primeZoneMult: 2,
+    /** Fibonacci: ×fibonacciMult für jedes Fibonacci Level bis zum aktuellen Level */
+    fibonacciMult: 1.5,
+  },
+  catching: {
+    /** Fangsphären zu Spielbeginn */
+    startSpheres: 5,
+    /** Multiplikator der Standardsphäre */
+    standardSphereMult: 1,
+    /** Fangbonus ohne Forschung */
+    baseResearchBonus: 0,
+    /** Preis einer Sphäre = sphereCostKills * Energie eines normalen Gegners der aktuellen Zone */
+    sphereCostKills: 5,
   },
   loop: {
     /** Logikticks pro Sekunde */
