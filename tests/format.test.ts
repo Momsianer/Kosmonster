@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { D } from '../src/util/decimal';
-import { formatNumber, formatSeconds } from '../src/util/format';
+import {
+  formatNumber,
+  formatSeconds,
+  getNumberFormat,
+  isNumberFormat,
+  letterSuffix,
+  setNumberFormat,
+} from '../src/util/format';
 
 describe('formatNumber (deutsch)', () => {
   it('kleine Zahlen mit Dezimalkomma', () => {
@@ -50,5 +57,62 @@ describe('formatSeconds (deutsch)', () => {
 
   it('nie negativ', () => {
     expect(formatSeconds(-1)).toBe('0,0');
+  });
+});
+
+describe('formatNumber wissenschaftlich', () => {
+  it('Exponent in Einerschritten', () => {
+    expect(formatNumber(999_999, 'scientific')).toBe('999.999');
+    expect(formatNumber(1.5e6, 'scientific')).toBe('1,5e6');
+    expect(formatNumber(1.234e7, 'scientific')).toBe('1,23e7');
+    expect(formatNumber(9.999e8, 'scientific')).toBe('1e9');
+  });
+});
+
+describe('formatNumber technisch', () => {
+  it('Exponent in Dreierschritten', () => {
+    expect(formatNumber(1.5e6, 'engineering')).toBe('1,5e6');
+    expect(formatNumber(1.5e7, 'engineering')).toBe('15e6');
+    expect(formatNumber(1.5e8, 'engineering')).toBe('150e6');
+    expect(formatNumber(1.5e9, 'engineering')).toBe('1,5e9');
+    expect(formatNumber(999.999e6, 'engineering')).toBe('1e9');
+  });
+});
+
+describe('formatNumber Buchstaben', () => {
+  it('Kurzschreibweise ab 1000', () => {
+    expect(formatNumber(999, 'letters')).toBe('999');
+    expect(formatNumber(1500, 'letters')).toBe('1,5K');
+    expect(formatNumber(2.5e6, 'letters')).toBe('2,5M');
+    expect(formatNumber(3e9, 'letters')).toBe('3B');
+    expect(formatNumber(4e12, 'letters')).toBe('4T');
+    expect(formatNumber(1.5e15, 'letters')).toBe('1,5aa');
+    expect(formatNumber(1.5e18, 'letters')).toBe('1,5ab');
+  });
+
+  it('Kürzelfolge aa … zz, dann aaa', () => {
+    expect(letterSuffix(1)).toBe('K');
+    expect(letterSuffix(4)).toBe('T');
+    expect(letterSuffix(5)).toBe('aa');
+    expect(letterSuffix(5 + 25)).toBe('az');
+    expect(letterSuffix(5 + 26)).toBe('ba');
+    expect(letterSuffix(5 + 675)).toBe('zz');
+    expect(letterSuffix(5 + 676)).toBe('aaa');
+  });
+});
+
+describe('Anzeigeart einstellen', () => {
+  it('setNumberFormat ändert die Standardanzeige', () => {
+    expect(getNumberFormat()).toBe('standard');
+    setNumberFormat('scientific');
+    expect(formatNumber(1.5e6)).toBe('1,5e6');
+    setNumberFormat('standard');
+    expect(formatNumber(1.5e6)).toBe('1,5 Mio.');
+  });
+
+  it('isNumberFormat erkennt gültige Werte', () => {
+    expect(isNumberFormat('letters')).toBe(true);
+    expect(isNumberFormat('roman')).toBe(false);
+    expect(isNumberFormat(3)).toBe(false);
   });
 });

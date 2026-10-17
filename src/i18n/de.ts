@@ -26,6 +26,8 @@ export const de = {
     defeated: 'Besiegte Gegner: {count}',
   },
   number: {
+    /** Erste Kürzel der Buchstabenschreibweise ab 1e3, danach folgen aa, ab, … */
+    letterBase: ['K', 'M', 'B', 'T'],
     /** Suffixe ab 1e6 in Dreierschritten: Index 0 = 1e6, Index 1 = 1e9, ... */
     suffixes: [
       'Mio.',
