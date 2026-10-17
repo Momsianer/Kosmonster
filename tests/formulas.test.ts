@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { clickDamage, enemyEnergy, enemyHp } from '../src/core/formulas';
+import {
+  clickDamage,
+  enemyEnergy,
+  enemyHp,
+  enemyKind,
+  enemyMaxHp,
+  enemyReward,
+  isBossZone,
+  starSystem,
+} from '../src/core/formulas';
 import { BALANCING } from '../src/data/balancing';
 
 const { baseHp, hpGrowth, hpBreakZone, hpGrowthLate } = BALANCING.enemy;
@@ -48,5 +57,50 @@ describe('enemyEnergy', () => {
 describe('clickDamage', () => {
   it('entspricht in M1 dem Grundschaden', () => {
     expect(clickDamage().toNumber()).toBe(BALANCING.click.baseDamage);
+  });
+});
+
+describe('enemyKind', () => {
+  it('Boss jede 5. Zone, Systemboss jede 10. Zone', () => {
+    expect(enemyKind(1)).toBe('normal');
+    expect(enemyKind(4)).toBe('normal');
+    expect(enemyKind(5)).toBe('boss');
+    expect(enemyKind(10)).toBe('systemBoss');
+    expect(enemyKind(15)).toBe('boss');
+    expect(enemyKind(20)).toBe('systemBoss');
+    expect(isBossZone(9)).toBe(false);
+    expect(isBossZone(25)).toBe(true);
+  });
+});
+
+describe('enemyMaxHp', () => {
+  it('normale Gegner haben die Grundleben', () => {
+    expect(enemyMaxHp(3).eq(enemyHp(3))).toBe(true);
+  });
+
+  it('Boss × bossHpMult, Systemboss × systemBossHpMult', () => {
+    expect(enemyMaxHp(5).eq(enemyHp(5).mul(BALANCING.boss.bossHpMult))).toBe(true);
+    expect(enemyMaxHp(10).eq(enemyHp(10).mul(BALANCING.boss.systemBossHpMult))).toBe(true);
+  });
+});
+
+describe('enemyReward', () => {
+  it('normale Gegner geben die Grundenergie', () => {
+    expect(enemyReward(7).eq(enemyEnergy(7))).toBe(true);
+  });
+
+  it('Bosse und Systembosse geben × bossEnergyMult', () => {
+    const mult = BALANCING.reward.bossEnergyMult;
+    expect(enemyReward(5).eq(enemyEnergy(5).mul(mult))).toBe(true);
+    expect(enemyReward(10).eq(enemyEnergy(10).mul(mult))).toBe(true);
+  });
+});
+
+describe('starSystem', () => {
+  it('fasst je 10 Zonen zu einem Sternsystem zusammen', () => {
+    expect(starSystem(1)).toBe(1);
+    expect(starSystem(10)).toBe(1);
+    expect(starSystem(11)).toBe(2);
+    expect(starSystem(140)).toBe(14);
   });
 });
