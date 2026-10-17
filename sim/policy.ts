@@ -75,7 +75,7 @@ function arrangeTeam(state: GameState): void {
   const ranked = (Object.keys(state.collection) as SpeciesId[])
     .map((id) => ({ id, dps: monsterDps(state, id).toNumber() }))
     .sort((a, b) => b.dps - a.dps)
-    .slice(0, teamSlots())
+    .slice(0, teamSlots(state))
     .map((x) => x.id);
   for (const id of [...state.team]) if (!ranked.includes(id)) removeFromTeam(state, id);
   for (const id of ranked) addToTeam(state, id);

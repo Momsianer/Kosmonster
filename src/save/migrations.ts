@@ -43,6 +43,20 @@ export const MIGRATIONS: Record<number, (save: RawSave) => RawSave> = {
     version: 5,
     modules: {},
   }),
+  // 5 → 6: Supernova, Sternenstaub, Forschung und Evolution
+  5: (save) => ({
+    ...save,
+    version: 6,
+    cycleEnergy: typeof save.totalEnergy === 'string' ? save.totalEnergy : '0',
+    stardust: '0',
+    supernovas: 0,
+    research: {},
+    collection: Object.fromEntries(
+      Object.entries(typeof save.collection === 'object' && save.collection ? save.collection : {}).map(
+        ([id, entry]) => [id, { ...(entry as object), evolution: 0 }],
+      ),
+    ),
+  }),
 };
 
 /** Hebt einen Speicherstand schrittweise auf die aktuelle Version. */

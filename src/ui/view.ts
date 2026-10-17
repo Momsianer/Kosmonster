@@ -209,8 +209,8 @@ export function createView(
     team: state.team
       .map((id) => teamMember(state, id, buyAmount))
       .filter((m): m is TeamMemberView => m !== null),
-    teamSlots: teamSlots(),
-    teamFull: state.team.length >= teamSlots(),
+    teamSlots: teamSlots(state),
+    teamFull: state.team.length >= teamSlots(state),
     collection: SPECIES.map((s) => {
       const entry = state.collection[s.id];
       return {

@@ -9,6 +9,10 @@ import {
 } from '../core/formulas';
 import type { GameState } from '../core/state';
 import { D, type Decimal } from '../util/decimal';
+import { evolutionMult } from './evolution';
+import { stardustBonus } from './prestige';
+import { productionToDpsShare, teamDpsResearchMult, teamSlotsFor } from './research';
+import { totalProduction } from './station';
 
 /** Typmultiplikator einer Art in der aktuellen Lage */
 export function typeMult(speciesId: SpeciesId, level: number, zone: number): Decimal {
@@ -22,26 +26,33 @@ export function typeMult(speciesId: SpeciesId, level: number, zone: number): Dec
   }
 }
 
+/** globalMult: passiver Sternenstaubbonus und Forschung „Teamstärke“ */
+export function globalDpsMult(state: GameState): Decimal {
+  return stardustBonus(state).mul(teamDpsResearchMult(state));
+}
+
 /** DPS einer gefangenen Art im aktuellen Zustand */
 export function monsterDps(state: GameState, speciesId: SpeciesId): Decimal {
   const species = getSpecies(speciesId);
   const entry = state.collection[speciesId];
   if (!species || !entry) return D(0);
   return monsterDpsBase(
-    species.baseDps,
+    evolutionMult(entry.evolution).mul(species.baseDps),
     entry.level,
     BALANCING.rarity[species.rarity].dpsMult,
     typeMult(speciesId, entry.level, state.zone),
-  );
+  ).mul(globalDpsMult(state));
 }
 
-/** teamDPS = Summe aller Monster im Team */
+/** teamDPS = Summe aller Monster im Team, dazu der umgewandelte Teil der Produktion */
 export function teamDps(state: GameState): Decimal {
-  return state.team.reduce((sum, id) => sum.add(monsterDps(state, id)), D(0));
+  const monsters = state.team.reduce((sum, id) => sum.add(monsterDps(state, id)), D(0));
+  const share = productionToDpsShare(state);
+  return share > 0 ? monsters.add(totalProduction(state).mul(share)) : monsters;
 }
 
-export function teamSlots(): number {
-  return BALANCING.monster.teamSlots;
+export function teamSlots(state: GameState): number {
+  return teamSlotsFor(state.research);
 }
 
 /** Kauft bis zu `amount` Level, 'max' = so viele wie bezahlbar. Gibt die Zahl gekaufter Level zurück. */
@@ -76,7 +87,7 @@ export function levelUpCost(
 export function addToTeam(state: GameState, speciesId: SpeciesId): boolean {
   if (!state.collection[speciesId]) return false;
   if (state.team.includes(speciesId)) return false;
-  if (state.team.length >= teamSlots()) return false;
+  if (state.team.length >= teamSlots(state)) return false;
   state.team.push(speciesId);
   return true;
 }

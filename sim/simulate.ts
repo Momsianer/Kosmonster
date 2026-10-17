@@ -2,7 +2,7 @@
  * Simulator für das Balancing. Spielt mit der echten Spiellogik und einem Bot
  * und misst, wann die Pacingziele aus CLAUDE.md Abschnitt 16 erreicht werden.
  */
-import { advance } from '../src/core/loop';
+import { advance, catchUp } from '../src/core/loop';
 import { createInitialState, type GameState } from '../src/core/state';
 import { clickEnemy } from '../src/systems/combat';
 import { isUnlocked } from '../src/systems/unlocks';
@@ -81,7 +81,7 @@ export function simulate(profile: Profile, maxSeconds: number, seed = 1): SimRes
     if (done()) break;
     // Pause offline: die Spiellogik holt die Zeit beim nächsten Laden nach
     t = Math.min(t + profile.offlineSeconds, maxSeconds);
-    advance(state, t * 1000);
+    catchUp(state, t * 1000);
     record(t);
     nextDecision = t;
   }
