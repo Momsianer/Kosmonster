@@ -1,5 +1,6 @@
 import { BALANCING } from '../data/balancing';
 import { applyTeamDamage, updateBossTimer } from '../systems/combat';
+import { typeCountInTeam } from '../systems/monsters';
 import { offlineBonus, offlineLimitSeconds } from '../systems/research';
 import { applyProduction } from '../systems/station';
 import type { Decimal } from '../util/decimal';
@@ -55,7 +56,9 @@ export function catchUp(state: GameState, now: number): { seconds: number; energ
   const seconds = advance(state, now, offlineLimitSeconds(state));
   let energy = state.totalEnergy.sub(before).max(0);
   if (seconds >= BALANCING.offline.reportThresholdSeconds) {
-    const bonus = energy.mul(offlineBonus(state));
+    // Null im Team verdoppelt den Offlineertrag, die Forschung kommt obendrauf
+    const nullMult = typeCountInTeam(state, 'null') > 0 ? BALANCING.types.nullOfflineMult : 1;
+    const bonus = energy.mul(nullMult * (1 + offlineBonus(state)) - 1);
     addEnergy(state, bonus);
     energy = energy.add(bonus);
   }

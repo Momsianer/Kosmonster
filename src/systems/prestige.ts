@@ -1,5 +1,6 @@
 import { BALANCING } from '../data/balancing';
-import { createEnemy, pickSpecies, type GameState } from '../core/state';
+import type { GameState } from '../core/state';
+import { spawnEnemy } from './spawning';
 import { D, type Decimal } from '../util/decimal';
 import { startSpheresBonus, supernovaStartZone } from './research';
 
@@ -43,7 +44,8 @@ export function supernova(state: GameState): boolean {
   state.killsInZone = 0;
   state.farming = false;
   state.bossTimeLeft = 0;
-  state.enemy = createEnemy(zone, pickSpecies(state, zone));
-  state.spheres += startSpheresBonus(state);
+  state.enemy = spawnEnemy(state, zone);
+  state.spheres.standard += startSpheresBonus(state);
+  state.cycleStart = state.playTime;
   return true;
 }

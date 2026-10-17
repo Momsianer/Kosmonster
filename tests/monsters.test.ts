@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { bulkCost, clickDamage, enemyMaxHp } from '../src/core/formulas';
+import { bulkCost, clickDamage, enemyMaxHp, planetMult } from '../src/core/formulas';
+import { planetForZone } from '../src/data/planets';
 import { advance } from '../src/core/loop';
 import { createInitialState, type GameState } from '../src/core/state';
 import { BALANCING } from '../src/data/balancing';
@@ -42,7 +43,9 @@ describe('Monster DPS', () => {
     const state = stateWith('art_003');
     enterZone(state, 4);
     const s = getSpecies('art_003')!;
-    expect(monsterDps(state, 'art_003').toNumber()).toBeCloseTo(s.baseDps * 2, 10);
+    const planet = planetForZone(4);
+    const planetFactor = planetMult(s.type, planet.boosted, planet.weakened).toNumber();
+    expect(monsterDps(state, 'art_003').toNumber()).toBeCloseTo(s.baseDps * 2 * planetFactor, 10);
   });
 
   it('Team DPS ist die Summe des Teams', () => {
@@ -141,16 +144,16 @@ describe('Level', () => {
 describe('Fangen', () => {
   it('ein Versuch verbraucht eine Sphäre', () => {
     const state = createInitialState(0, 5);
-    const before = state.spheres;
+    const before = state.spheres.standard;
     tryCatch(state, 'art_001');
-    expect(state.spheres).toBe(before - 1);
+    expect(state.spheres.standard).toBe(before - 1);
   });
 
   it('ohne Sphären kein Fang', () => {
     const state = createInitialState(0, 5);
-    state.spheres = 0;
+    state.spheres.standard = 0;
     expect(tryCatch(state, 'art_001')).toBe(false);
-    expect(state.spheres).toBe(0);
+    expect(state.spheres.standard).toBe(0);
   });
 
   it('die Fangquote entspricht der Basischance', () => {
@@ -158,7 +161,7 @@ describe('Fangen', () => {
     state.settings.catchOnlyNew = false;
     let caught = 0;
     const trials = 8000;
-    state.spheres = trials;
+    state.spheres.standard = trials;
     for (let i = 0; i < trials; i++) {
       if (tryCatch(state, 'art_001')) caught += 1;
     }
@@ -167,38 +170,38 @@ describe('Fangen', () => {
 
   it('„Nur neue Arten“ spart Sphären bei bekannten Arten', () => {
     const state = stateWith('art_001');
-    state.spheres = 5;
+    state.spheres.standard = 5;
     expect(tryCatch(state, 'art_001')).toBe(false);
-    expect(state.spheres).toBe(5);
+    expect(state.spheres.standard).toBe(5);
     state.settings.catchOnlyNew = false;
     tryCatch(state, 'art_001');
-    expect(state.spheres).toBe(4);
+    expect(state.spheres.standard).toBe(4);
   });
 
   it('Duplikate zählen mit', () => {
     const state = stateWith('art_001', 'art_001', 'art_001');
-    expect(state.collection.art_001).toEqual({ caught: 3, level: 1, evolution: 0 });
+    expect(state.collection.art_001).toEqual({ caught: 3, level: 1, evolution: 0, shiny: false });
     expect(state.team).toEqual(['art_001']);
     expect(state.lastCatch?.speciesId).toBe('art_001');
   });
 
   it('besiegte normale Gegner werden gefangen, Bosse nicht', () => {
     const state = createInitialState(0, 1);
-    state.spheres = 3;
+    state.spheres.standard = 3;
     dealDamage(state, state.enemy.hp);
-    expect(state.spheres).toBe(2);
+    expect(state.spheres.standard).toBe(2);
     enterZone(state, 5);
     dealDamage(state, state.enemy.hp);
-    expect(state.spheres).toBe(2);
+    expect(state.spheres.standard).toBe(2);
   });
 
   it('Sphären kaufen kostet den Zonenpreis', () => {
     const state = createInitialState(0);
-    const before = state.spheres;
+    const before = state.spheres.standard;
     expect(buySpheres(state, 2)).toBe(false);
     state.energy = D(100);
     expect(buySpheres(state, 2)).toBe(true);
-    expect(state.spheres).toBe(before + 2);
+    expect(state.spheres.standard).toBe(before + 2);
     expect(state.energy.toNumber()).toBeCloseTo(100 - 2 * (10 / 15) * BALANCING.catching.sphereCostKills, 6);
   });
 });
@@ -221,7 +224,7 @@ describe('Hinweise', () => {
 
   it('der Laden erscheint auch, wenn die Sphären ausgehen', () => {
     const state = createInitialState(0);
-    state.spheres = 0;
+    state.spheres.standard = 0;
     expect(activeHint(state)).toBe('shop');
   });
 });

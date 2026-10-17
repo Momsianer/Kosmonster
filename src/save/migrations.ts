@@ -57,6 +57,25 @@ export const MIGRATIONS: Record<number, (save: RawSave) => RawSave> = {
       ),
     ),
   }),
+  // 6 → 7: Sphärentypen, Polarsterne, Euler und Leerlauf
+  6: (save) => ({
+    ...save,
+    version: 7,
+    spheres: {
+      standard: typeof save.spheres === 'number' ? save.spheres : 0,
+      orbit: 0,
+      nebel: 0,
+      singularitaet: 0,
+    },
+    collection: Object.fromEntries(
+      Object.entries(typeof save.collection === 'object' && save.collection ? save.collection : {}).map(
+        ([id, entry]) => [id, { ...(entry as object), shiny: false }],
+      ),
+    ),
+    enemy: typeof save.enemy === 'object' && save.enemy ? { ...save.enemy, shiny: false } : save.enemy,
+    cycleStart: 0,
+    lastClick: typeof save.playTime === 'number' ? save.playTime : 0,
+  }),
 };
 
 /** Hebt einen Speicherstand schrittweise auf die aktuelle Version. */

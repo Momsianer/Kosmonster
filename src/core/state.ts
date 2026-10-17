@@ -1,18 +1,21 @@
 import { BALANCING } from '../data/balancing';
 import type { ModuleId } from '../data/modules';
 import type { ResearchId } from '../data/research';
-import { speciesInZone, type SpeciesId } from '../data/monsters';
+import { legendariesInZone, speciesInZone, type SpeciesId } from '../data/monsters';
+import { SPHERE_TYPES, type SphereType } from '../data/spheres';
 import { D, type Decimal } from '../util/decimal';
 import type { NumberFormat } from '../util/format';
 import { weightedPick } from '../util/random';
 import { enemyMaxHp } from './formulas';
 
 /** Version des Speicherstands, wird bei jeder Strukturänderung erhöht */
-export const STATE_VERSION = 6;
+export const STATE_VERSION = 7;
 
 export interface EnemyState {
   zone: number;
   speciesId: SpeciesId;
+  /** Polarstern Variante */
+  shiny: boolean;
   hp: Decimal;
   maxHp: Decimal;
 }
@@ -23,6 +26,8 @@ export interface CollectionEntry {
   level: number;
   /** Erreichte Evolutionsstufe (0 = keine), bleibt über Resets erhalten */
   evolution: number;
+  /** Polarstern Variante gefangen */
+  shiny: boolean;
 }
 
 export interface Settings {
@@ -57,8 +62,8 @@ export interface GameState {
   enemy: EnemyState;
   enemiesDefeated: number;
   clicks: number;
-  /** Fangsphären (Standard) */
-  spheres: number;
+  /** Fangsphären je Typ */
+  spheres: Record<SphereType, number>;
   /** Gefangene Arten, bleiben über alle Resets erhalten */
   collection: Partial<Record<SpeciesId, CollectionEntry>>;
   /** Arten im Team, Reihenfolge wie angezeigt */
@@ -66,7 +71,11 @@ export interface GameState {
   /** Zustand des Zufallsgenerators */
   rngState: number;
   /** Letzter erfolgreicher Fang, time = playTime beim Fang */
-  lastCatch: { speciesId: SpeciesId; time: number } | null;
+  lastCatch: { speciesId: SpeciesId; time: number; shiny: boolean } | null;
+  /** playTime beim letzten Reset (Supernova), Grundlage für Euler */
+  cycleStart: number;
+  /** playTime des letzten Klicks, Grundlage für den Leerlaufbonus von Null */
+  lastClick: number;
   /** Gebaute Module der Raumstation */
   modules: Partial<Record<ModuleId, number>>;
   /** Bereits bestätigte einmalige Hinweise */
@@ -86,30 +95,45 @@ export function addEnergy(state: GameState, amount: Decimal): void {
   state.cycleEnergy = state.cycleEnergy.add(amount);
 }
 
-export function createEnemy(zone: number, speciesId: SpeciesId): EnemyState {
+export function createEnemy(zone: number, speciesId: SpeciesId, shiny = false): EnemyState {
   const maxHp = enemyMaxHp(zone);
-  return { zone, speciesId, hp: maxHp, maxHp };
+  return { zone, speciesId, shiny, hp: maxHp, maxHp };
 }
 
-/** Wählt eine Art aus dem Pool der Zone, gewichtet nach Seltenheit */
-export function pickSpecies(holder: { rngState: number }, zone: number): SpeciesId {
+export function emptySpheres(): Record<SphereType, number> {
+  return Object.fromEntries(SPHERE_TYPES.map((t) => [t, 0])) as Record<SphereType, number>;
+}
+
+/**
+ * Wählt eine Art aus dem Pool der Zone, gewichtet nach Seltenheit.
+ * Systembosse sind legendär, wenn es in der Zone eine legendäre Art gibt.
+ * rareBoost verstärkt das Gewicht seltener und epischer Arten.
+ */
+export function pickSpecies(
+  holder: { rngState: number },
+  zone: number,
+  systemBoss = false,
+  rareBoost = 1,
+): SpeciesId {
+  if (systemBoss) {
+    const legendary = weightedPick(holder, legendariesInZone(zone), () => 1);
+    if (legendary) return legendary.id;
+  }
   const pool = speciesInZone(zone);
-  const picked = weightedPick(holder, pool, (s) => BALANCING.rarity[s.rarity].spawnWeight);
+  const picked = weightedPick(holder, pool, (s) => {
+    const weight = BALANCING.rarity[s.rarity].spawnWeight;
+    return s.rarity === 'rare' || s.rarity === 'epic' ? weight * rareBoost : weight;
+  });
   const fallback = pool[0] ?? speciesInZone(BALANCING.world.startZone)[0];
   const species = picked ?? fallback;
   if (!species) throw new Error(`Keine Art für Zone ${zone}`);
   return species.id;
 }
 
-/** Lässt in Zone z einen neuen Gegner mit zufälliger Art erscheinen */
-export function spawnEnemy(state: { rngState: number }, zone: number): EnemyState {
-  return createEnemy(zone, pickSpecies(state, zone));
-}
-
 export function createInitialState(now: number = Date.now(), seed: number = now): GameState {
   const zone = BALANCING.world.startZone;
   const rng = { rngState: seed | 0 };
-  const enemy = spawnEnemy(rng, zone);
+  const enemy = createEnemy(zone, pickSpecies(rng, zone));
   return {
     version: STATE_VERSION,
     energy: D(0),
@@ -126,11 +150,13 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     enemy,
     enemiesDefeated: 0,
     clicks: 0,
-    spheres: BALANCING.catching.startSpheres,
+    spheres: { ...emptySpheres(), standard: BALANCING.catching.startSpheres },
     collection: {},
     team: [],
     rngState: rng.rngState,
     lastCatch: null,
+    cycleStart: 0,
+    lastClick: 0,
     modules: {},
     hintsSeen: [],
     playTime: 0,

@@ -93,11 +93,11 @@ describe('Supernova', () => {
   it('behält Sammlung, Team, Sphären, Forschung und Gesamtenergie', () => {
     const state = readyForSupernova();
     state.research = { klickkraft: 2 };
-    state.spheres = 7;
+    state.spheres.standard = 7;
     supernova(state);
     expect(Object.keys(state.collection)).toEqual(['art_001', 'art_002']);
     expect(state.team).toEqual(['art_001', 'art_002']);
-    expect(state.spheres).toBe(7);
+    expect(state.spheres.standard).toBe(7);
     expect(state.research).toEqual({ klickkraft: 2 });
     expect(state.totalEnergy.toNumber()).toBe(4e12);
   });
@@ -105,16 +105,16 @@ describe('Supernova', () => {
   it('Forschung Startzone und Startsphären wirken nach der Supernova', () => {
     const state = readyForSupernova();
     state.research = { offlinebonus: 1, offlinelimit: 1, startzone: 2, fangglueck: 1, sphaerenrabatt: 1, teamplatz: 1, startsphaeren: 1 };
-    const spheres = state.spheres;
+    const spheres = state.spheres.standard;
     supernova(state);
     expect(state.zone).toBe(1 + 2 * BALANCING.research.nodes.startzone.perLevel);
-    expect(state.spheres).toBe(spheres + BALANCING.research.nodes.startsphaeren.perLevel);
+    expect(state.spheres.standard).toBe(spheres + BALANCING.research.nodes.startsphaeren.perLevel);
   });
 });
 
 describe('Forschungsbaum', () => {
   it('jeder Knoten hat Balancingwerte, Namen und Beschreibung', () => {
-    expect(RESEARCH_IDS).toHaveLength(16);
+    expect(RESEARCH_IDS).toHaveLength(18);
     for (const id of RESEARCH_IDS) {
       expect(BALANCING.research.nodes[id].maxLevel).toBeGreaterThan(0);
       expect(t(`research.${id}.name`)).not.toBe(`research.${id}.name`);
@@ -192,7 +192,7 @@ describe('Forschungsbaum', () => {
     state.settings.catchOnlyNew = false;
     state.research = { fangglueck: 10 };
     let caught = 0;
-    state.spheres = 4000;
+    state.spheres.standard = 4000;
     for (let i = 0; i < 4000; i++) if (tryCatch(state, 'art_001')) caught += 1;
     expect(caught / 4000).toBeCloseTo(BALANCING.rarity.common.catchChance * 2, 1);
   });

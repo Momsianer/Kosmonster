@@ -6,7 +6,7 @@ import type { GameState } from '../src/core/state';
 import { BALANCING } from '../src/data/balancing';
 import { MODULES, type ModuleId } from '../src/data/modules';
 import { getSpecies, speciesInZone, type SpeciesId } from '../src/data/monsters';
-import { buySpheres, currentSphereCost } from '../src/systems/catching';
+import { buySpheres, currentSphereCost, totalSpheres } from '../src/systems/catching';
 import { challengeBoss, setAutoProgress } from '../src/systems/combat';
 import { addToTeam, levelUp, monsterDps, removeFromTeam, teamDps, teamSlots } from '../src/systems/monsters';
 import { bossDamageMult, bossTimeLimit, clickBonus, moduleCostMult } from '../src/systems/research';
@@ -170,7 +170,7 @@ function arrangeTeam(state: GameState): void {
 
 /** Kauft eine Sphäre, wenn in der Zone noch ungefangene Arten vorkommen */
 function buySpheresIfUseful(state: GameState): void {
-  if (!isUnlocked(state, 'shop') || state.spheres > 0) return;
+  if (!isUnlocked(state, 'shop') || totalSpheres(state) > 0) return;
   const missing = speciesInZone(state.zone).some((s) => !state.collection[s.id]);
   if (missing && state.energy.gte(currentSphereCost(state).mul(2))) buySpheres(state, 1);
 }

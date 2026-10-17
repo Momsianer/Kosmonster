@@ -1,8 +1,10 @@
 import { BALANCING } from '../data/balancing';
 import { clickDamage, enemyReward, isBossZone } from '../core/formulas';
-import { addEnergy, spawnEnemy, type GameState } from '../core/state';
+import { addEnergy, type GameState } from '../core/state';
+import { getSpecies } from '../data/monsters';
+import { spawnEnemy } from './spawning';
 import { tryCatch } from './catching';
-import { teamDps } from './monsters';
+import { teamDps, typeCountInTeam } from './monsters';
 import { D, type Decimal, type DecimalSource } from '../util/decimal';
 import { nextRandom } from '../util/random';
 import { bossDamageMult, bossTimeLimit, clickBonus, critChance, critMult } from './research';
@@ -46,13 +48,16 @@ export function defeatEnemy(state: GameState): void {
   state.enemiesDefeated += 1;
 
   if (isBossZone(zone)) {
-    // Bosse sind (noch) nicht fangbar
+    // Fangbar sind nur legendäre Systembosse
+    if (getSpecies(state.enemy.speciesId)?.rarity === 'legendary') {
+      tryCatch(state, state.enemy.speciesId, state.enemy.shiny);
+    }
     state.highestZone = Math.max(state.highestZone, zone + 1);
     enterZone(state, state.farming ? zone : zone + 1);
     return;
   }
 
-  tryCatch(state, state.enemy.speciesId);
+  tryCatch(state, state.enemy.speciesId, state.enemy.shiny);
 
   const needed = BALANCING.world.enemiesPerZone;
   state.killsInZone = Math.min(state.killsInZone + 1, needed);
@@ -87,7 +92,11 @@ function targetMult(state: GameState): Decimal {
 /** Aktion: Klick auf den Gegner. Mit Forschung können Klicks kritisch treffen. */
 export function clickEnemy(state: GameState): boolean {
   state.clicks += 1;
-  let damage = clickDamage(teamDps(state), clickBonus(state)).mul(targetMult(state));
+  state.lastClick = state.playTime;
+  const dps = teamDps(state);
+  // Pi: +π % der Team DPS je Pi Monster
+  const piBonus = dps.mul(BALANCING.types.piClickShare * typeCountInTeam(state, 'pi'));
+  let damage = clickDamage(dps, clickBonus(state)).add(piBonus).mul(targetMult(state));
   const chance = critChance(state);
   if (chance > 0 && nextRandom(state) < chance) damage = damage.mul(critMult(state));
   return dealDamage(state, damage);
