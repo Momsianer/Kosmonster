@@ -7,10 +7,12 @@ import {
   saveToStorage,
   type SaveStorage,
 } from '../save/save';
+import type { ModuleId } from '../data/modules';
 import type { SpeciesId } from '../data/monsters';
 import { buySpheres } from '../systems/catching';
 import { challengeBoss, clickEnemy } from '../systems/combat';
 import { addToTeam, levelUp, removeFromTeam } from '../systems/monsters';
+import { buyModule } from '../systems/station';
 import { dismissHint, type UnlockId } from '../systems/unlocks';
 import type { Decimal } from '../util/decimal';
 import { setNumberFormat, type NumberFormat } from '../util/format';
@@ -93,6 +95,7 @@ export const actions = {
   addToTeam: (id: SpeciesId) => addToTeam(game.state, id),
   removeFromTeam: (id: SpeciesId) => removeFromTeam(game.state, id),
   buySpheres: (amount: number) => buySpheres(game.state, amount),
+  buyModule: (id: ModuleId, amount: number | 'max') => buyModule(game.state, id, amount),
   dismissHint: (id: UnlockId) => dismissHint(game.state, id),
 
   setCatchOnlyNew(value: boolean): void {

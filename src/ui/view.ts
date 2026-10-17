@@ -7,6 +7,9 @@ import { t } from '../i18n';
 import { catchChance, clickDamage } from '../core/formulas';
 import { levelUpCost, monsterDps, teamDps, teamSlots } from '../systems/monsters';
 import { activeHint, isUnlocked, type UnlockId } from '../systems/unlocks';
+import { MODULES, type ModuleId } from '../data/modules';
+import { moduleMult, nextModuleUpgrade } from '../core/formulas';
+import { moduleBuyCost, moduleCount, productionOf, totalProduction } from '../systems/station';
 import { formatDuration, formatNumber, formatPercent, formatSeconds } from '../util/format';
 
 /** Wie lange die Fangmeldung sichtbar bleibt (Spielzeit in Sekunden) */
@@ -27,6 +30,18 @@ export interface TeamMemberView {
   level: number;
   dps: string;
   levels: number;
+  cost: string;
+  affordable: boolean;
+}
+
+export interface ModuleView {
+  id: ModuleId;
+  name: string;
+  owned: number;
+  production: string;
+  mult: string;
+  nextUpgrade: number | null;
+  count: number;
   cost: string;
   affordable: boolean;
 }
@@ -67,7 +82,10 @@ export interface GameView {
   offline: { duration: string; energy: string; hasEnergy: boolean } | null;
 
   teamUnlocked: boolean;
+  stationUnlocked: boolean;
   shopUnlocked: boolean;
+  production: string;
+  modules: ModuleView[];
   teamDps: string;
   clickDamage: string;
   team: TeamMemberView[];
@@ -107,6 +125,30 @@ function teamMember(state: GameState, id: SpeciesId, amount: BuyAmount): TeamMem
     cost: formatNumber(cost),
     affordable: state.energy.gte(cost),
   };
+}
+
+/** Sichtbar sind gebaute Module und jeweils das nächste noch unbekannte */
+function stationModules(state: GameState, amount: BuyAmount): ModuleView[] {
+  const views: ModuleView[] = [];
+  MODULES.forEach((m, i) => {
+    const owned = moduleCount(state, m.id);
+    const previous = MODULES[i - 1];
+    const visible = i === 0 || owned > 0 || (previous !== undefined && moduleCount(state, previous.id) > 0);
+    if (!visible) return;
+    const { count, cost } = moduleBuyCost(state, m.id, amount);
+    views.push({
+      id: m.id,
+      name: t(`station.${m.id}.name`),
+      owned,
+      production: formatNumber(productionOf(state, m.id)),
+      mult: formatNumber(moduleMult(owned)),
+      nextUpgrade: nextModuleUpgrade(owned),
+      count,
+      cost: formatNumber(cost),
+      affordable: state.energy.gte(cost),
+    });
+  });
+  return views;
 }
 
 export function createView(
@@ -151,7 +193,10 @@ export function createView(
       : null,
 
     teamUnlocked: isUnlocked(state, 'team'),
+    stationUnlocked: isUnlocked(state, 'station'),
     shopUnlocked: isUnlocked(state, 'shop'),
+    production: formatNumber(totalProduction(state)),
+    modules: stationModules(state, buyAmount),
     teamDps: formatNumber(dps),
     clickDamage: formatNumber(clickDamage(dps)),
     team: state.team
