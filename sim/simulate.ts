@@ -6,7 +6,7 @@ import { advance, catchUp } from '../src/core/loop';
 import { createInitialState, type GameState } from '../src/core/state';
 import { clickEnemy } from '../src/systems/combat';
 import { isUnlocked } from '../src/systems/unlocks';
-import { decide } from './policy';
+import { createMemory, decide } from './policy';
 
 export interface Profile {
   name: string;
@@ -33,9 +33,12 @@ export const MILESTONES = [
   ...[10, 20, 30, 40, 50, 60].map((z) => ({
     id: `zone${z}`,
     label: `Zone ${z} erreicht`,
-    target: z === 60 ? 3 * 3600 : null,
-    reached: (s: GameState) => s.highestZone >= z,
+    target: null,
+    reached: (s: GameState) => s.highestZone >= z || s.supernovas > 0,
   })),
+  { id: 'firstSupernova', label: 'Erste Supernova', target: 3 * 3600, reached: (s: GameState) => s.supernovas >= 1 },
+  { id: 'fiveSupernovas', label: '5 Supernovas', target: null, reached: (s: GameState) => s.supernovas >= 5 },
+  { id: 'tenSupernovas', label: '10 Supernovas', target: 12 * 3600, reached: (s: GameState) => s.supernovas >= 10 },
 ] as const;
 
 export interface SimResult {
@@ -43,6 +46,7 @@ export interface SimResult {
   /** Erreichte Zeit je Meilenstein in Sekunden, null = nicht erreicht */
   times: Record<string, number | null>;
   finalZone: number;
+  supernovas: number;
   simulatedSeconds: number;
 }
 
@@ -56,10 +60,11 @@ export function simulate(profile: Profile, maxSeconds: number, seed = 1): SimRes
   };
 
   const options = { clicksPerSecond: profile.clicksPerSecond };
+  const memory = createMemory();
   let t = 0;
   let clickBudget = 0;
   let nextDecision = 0;
-  const done = () => t >= maxSeconds || times.zone60 !== null;
+  const done = () => t >= maxSeconds || times.tenSupernovas !== null;
 
   while (!done()) {
     // Sitzung online
@@ -73,7 +78,7 @@ export function simulate(profile: Profile, maxSeconds: number, seed = 1): SimRes
       t += STEP_SECONDS;
       advance(state, t * 1000);
       if (t >= nextDecision) {
-        decide(state, options);
+        decide(state, options, memory, t);
         nextDecision = t + profile.decisionSeconds;
       }
       record(t);
@@ -86,7 +91,7 @@ export function simulate(profile: Profile, maxSeconds: number, seed = 1): SimRes
     nextDecision = t;
   }
 
-  return { profile: profile.name, times, finalZone: state.highestZone, simulatedSeconds: t };
+  return { profile: profile.name, times, finalZone: state.highestZone, supernovas: state.supernovas, simulatedSeconds: t };
 }
 
 export function formatTime(seconds: number | null): string {
