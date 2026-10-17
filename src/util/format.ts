@@ -1,4 +1,4 @@
-import { getLocale, getTranslations } from '../i18n';
+import { getLocale, getTranslations, t } from '../i18n';
 import { D, type Decimal, type DecimalSource } from './decimal';
 
 /**
@@ -150,4 +150,21 @@ export function formatSeconds(seconds: number): string {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
   }).format(Math.max(0, seconds));
+}
+
+/** Formatiert eine längere Dauer, z. B. „2 Std. 5 Min.“ oder „45 Sek.“ */
+export function formatDuration(totalSeconds: number): string {
+  const s = Math.max(0, Math.floor(totalSeconds));
+  const hours = Math.floor(s / 3600);
+  const minutes = Math.floor((s % 3600) / 60);
+  const seconds = s % 60;
+  if (hours > 0) {
+    const h = t('time.hours', { n: hours });
+    return minutes > 0 ? `${h} ${t('time.minutes', { n: minutes })}` : h;
+  }
+  if (minutes > 0) {
+    const m = t('time.minutes', { n: minutes });
+    return seconds > 0 ? `${m} ${t('time.seconds', { n: seconds })}` : m;
+  }
+  return t('time.seconds', { n: seconds });
 }

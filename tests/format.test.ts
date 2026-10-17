@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { D } from '../src/util/decimal';
 import {
+  formatDuration,
   formatNumber,
   formatSeconds,
   getNumberFormat,
@@ -114,5 +115,16 @@ describe('Anzeigeart einstellen', () => {
     expect(isNumberFormat('letters')).toBe(true);
     expect(isNumberFormat('roman')).toBe(false);
     expect(isNumberFormat(3)).toBe(false);
+  });
+});
+
+describe('formatDuration (deutsch)', () => {
+  it('Sekunden, Minuten und Stunden', () => {
+    expect(formatDuration(0)).toBe('0 Sek.');
+    expect(formatDuration(45.9)).toBe('45 Sek.');
+    expect(formatDuration(60)).toBe('1 Min.');
+    expect(formatDuration(125)).toBe('2 Min. 5 Sek.');
+    expect(formatDuration(3600)).toBe('1 Std.');
+    expect(formatDuration(2 * 3600 + 5 * 60 + 30)).toBe('2 Std. 5 Min.');
   });
 });

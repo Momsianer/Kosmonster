@@ -1,7 +1,8 @@
 import { enemyKind, starSystem, type EnemyKind } from '../core/formulas';
+import type { OfflineReport } from '../core/game';
 import type { GameState } from '../core/state';
 import { BALANCING } from '../data/balancing';
-import { formatNumber, formatSeconds } from '../util/format';
+import { formatDuration, formatNumber, formatSeconds } from '../util/format';
 
 /** Aufbereitete Werte für die Oberfläche, damit Komponenten keine Spiellogik brauchen */
 export interface GameView {
@@ -23,13 +24,14 @@ export interface GameView {
   bossTimeLimit: number;
   farming: boolean;
   enemiesDefeated: number;
+  offline: { duration: string; energy: string; hasEnergy: boolean } | null;
 }
 
 function clamp01(value: number): number {
   return Math.min(1, Math.max(0, value));
 }
 
-export function createView(state: GameState): GameView {
+export function createView(state: GameState, offline: OfflineReport | null = null): GameView {
   const { enemy } = state;
   const kind = enemyKind(enemy.zone);
   const limit = BALANCING.boss.timeLimitSeconds;
@@ -50,5 +52,12 @@ export function createView(state: GameState): GameView {
     bossTimeLimit: limit,
     farming: state.farming,
     enemiesDefeated: state.enemiesDefeated,
+    offline: offline
+      ? {
+          duration: formatDuration(offline.seconds),
+          energy: formatNumber(offline.energy),
+          hasEnergy: offline.energy.gt(0),
+        }
+      : null,
   };
 }
