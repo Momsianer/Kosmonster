@@ -204,12 +204,16 @@ describe('Fangen', () => {
 });
 
 describe('Hinweise', () => {
-  it('erscheinen nach der Freischaltung einmal', () => {
+  it('erscheinen nach der Freischaltung einmal in Reihenfolge', () => {
     const state = createInitialState(0);
     expect(activeHint(state)).toBeNull();
     addCatch(state, 'art_001');
     expect(activeHint(state)).toBe('team');
     dismissHint(state, 'team');
+    expect(activeHint(state)).toBeNull();
+    state.playTime = BALANCING.station.unlockSeconds;
+    expect(activeHint(state)).toBe('station');
+    dismissHint(state, 'station');
     expect(activeHint(state)).toBe('shop');
     dismissHint(state, 'shop');
     expect(activeHint(state)).toBeNull();
