@@ -400,7 +400,7 @@ export const de = {
     buy: '{amount} kaufen',
     cost: '{cost} Energie',
     total: 'Vorrat gesamt: {count}',
-    rule: 'Seltene und bessere Arten bekommen automatisch die beste vorhandene Sphäre, alle anderen die einfachste.',
+    rule: 'Gewöhnliche und ungewöhnliche Arten werden nur mit Standardsphären gefangen. Seltene und bessere bekommen automatisch die beste vorhandene Sphäre.',
     catchMult: 'Fang ×{mult}',
     sphere: {
       standard: 'Standardsphäre',

@@ -13,14 +13,14 @@ export function totalSpheres(state: GameState): number {
 }
 
 /**
- * Welche Sphäre für einen Fang benutzt wird: für seltene und bessere Arten
- * die stärkste vorhandene, sonst die einfachste vorhandene. null = keine da.
+ * Welche Sphäre für einen Fang benutzt wird: Seltene und bessere Arten bekommen die
+ * stärkste vorhandene, gewöhnliche und ungewöhnliche nur Standardsphären,
+ * damit teure Sphären nicht für häufige Arten verbraucht werden. null = keine passende da.
  */
 export function chooseSphere(state: GameState, rarity: Rarity): SphereType | null {
+  if (rarity === 'common' || rarity === 'uncommon') return state.spheres.standard > 0 ? 'standard' : null;
   const available = SPHERE_TYPES.filter((t) => state.spheres[t] > 0);
-  if (available.length === 0) return null;
-  const valuable = rarity !== 'common' && rarity !== 'uncommon';
-  return (valuable ? available[available.length - 1] : available[0]) ?? null;
+  return available[available.length - 1] ?? null;
 }
 
 /**

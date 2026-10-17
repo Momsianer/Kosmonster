@@ -230,13 +230,15 @@ describe('Sphärentypen', () => {
     expect(totalSpheres(state)).toBe(BALANCING.catching.startSpheres + 2);
   });
 
-  it('seltene Arten bekommen die beste Sphäre, gewöhnliche die einfachste', () => {
+  it('seltene Arten bekommen die beste Sphäre, häufige nur Standardsphären', () => {
     const state = createInitialState(0);
     state.spheres = { standard: 3, orbit: 2, nebel: 0, singularitaet: 1 };
     expect(chooseSphere(state, 'common')).toBe('standard');
     expect(chooseSphere(state, 'rare')).toBe('singularitaet');
     state.spheres = { standard: 0, orbit: 2, nebel: 0, singularitaet: 0 };
-    expect(chooseSphere(state, 'common')).toBe('orbit');
+    expect(chooseSphere(state, 'common')).toBeNull();
+    expect(chooseSphere(state, 'uncommon')).toBeNull();
+    expect(chooseSphere(state, 'rare')).toBe('orbit');
     state.spheres = { standard: 0, orbit: 0, nebel: 0, singularitaet: 0 };
     expect(chooseSphere(state, 'epic')).toBeNull();
   });
