@@ -53,6 +53,20 @@ describe('Migrationen', () => {
     expect(migrated.modules).toEqual({});
   });
 
+  it('hebt Version 5 auf Version 6', () => {
+    const migrated = MIGRATIONS[5]!({
+      version: 5,
+      totalEnergy: '123',
+      collection: { art_001: { caught: 2, level: 40 } },
+    });
+    expect(migrated.version).toBe(6);
+    expect(migrated.cycleEnergy).toBe('123');
+    expect(migrated.stardust).toBe('0');
+    expect(migrated.supernovas).toBe(0);
+    expect(migrated.research).toEqual({});
+    expect(migrated.collection).toEqual({ art_001: { caught: 2, level: 40, evolution: 0 } });
+  });
+
   it('migrierter Stand hat dieselben Felder wie ein neuer Zustand', () => {
     const fresh = JSON.parse(JSON.stringify(createInitialState(0)));
     const migrated = migrate({ ...fresh, version: 1 });
