@@ -62,6 +62,7 @@ export function startGame(storage: SaveStorage | null, now: number = Date.now())
   const loaded = storage ? loadFromStorage(storage) : null;
   game.state = loaded ?? createInitialState(now);
   applySettings(game.state);
+  game.offlineReport = null;
   update(now);
   game.loop = startLoop(update);
   game.autosave = setInterval(saveGame, BALANCING.save.autosaveSeconds * 1000);

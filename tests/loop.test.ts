@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { advance } from '../src/core/loop';
 import { createInitialState } from '../src/core/state';
 import { BALANCING } from '../src/data/balancing';
+import { enterZone } from '../src/systems/combat';
 
 describe('Tickschleife', () => {
   it('verrechnet die Zeitdifferenz zwischen zwei Zeitstempeln', () => {
@@ -20,11 +21,33 @@ describe('Tickschleife', () => {
     expect(b.playTime).toBeCloseTo(1, 10);
   });
 
-  it('begrenzt einzelne Zeitschritte', () => {
+  it('holt lange Pausen vollständig nach', () => {
     const state = createInitialState(0);
     const dt = advance(state, 60_000);
-    expect(dt).toBe(BALANCING.loop.maxTickSeconds);
+    expect(dt).toBeCloseTo(60, 10);
+    expect(state.playTime).toBeCloseTo(60, 10);
     expect(state.lastTick).toBe(60_000);
+  });
+
+  it('begrenzt die nachgeholte Zeit auf das Offlinelimit', () => {
+    const state = createInitialState(0);
+    const max = BALANCING.offline.maxSeconds;
+    const dt = advance(state, (max + 3600) * 1000);
+    expect(dt).toBe(max);
+    expect(state.playTime).toBeCloseTo(max, 6);
+  });
+
+  it('nimmt ein eigenes Limit an', () => {
+    const state = createInitialState(0);
+    expect(advance(state, 10_000, 3)).toBe(3);
+  });
+
+  it('ein Boss scheitert auch während nachgeholter Zeit', () => {
+    const state = createInitialState(0);
+    enterZone(state, 5);
+    advance(state, (BALANCING.boss.timeLimitSeconds + 5) * 1000);
+    expect(state.zone).toBe(4);
+    expect(state.farming).toBe(true);
   });
 
   it('ignoriert eine zurückgestellte Uhr', () => {
