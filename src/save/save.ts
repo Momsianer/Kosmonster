@@ -124,6 +124,8 @@ export function hydrate(raw: RawSave): GameState {
       numberFormat: isNumberFormat(settings.numberFormat)
         ? settings.numberFormat
         : base.settings.numberFormat,
+      catchOnlyNew:
+        typeof settings.catchOnlyNew === 'boolean' ? settings.catchOnlyNew : base.settings.catchOnlyNew,
     },
   };
 }

@@ -115,7 +115,7 @@ describe('Level', () => {
 
   it('kauft höchstens so viel wie bezahlbar', () => {
     const state = stateWith('art_001');
-    state.energy = D(20);
+    state.energy = D(getSpecies('art_001')!.baseCost * 5);
     const bought = levelUp(state, 'art_001', 100);
     expect(bought).toBeGreaterThan(0);
     expect(bought).toBeLessThan(100);
@@ -124,7 +124,7 @@ describe('Level', () => {
 
   it('Max kauft alles Bezahlbare', () => {
     const state = stateWith('art_001');
-    state.energy = D(1000);
+    state.energy = D(getSpecies('art_001')!.baseCost * 50);
     const preview = levelUpCost(state, 'art_001', 'max');
     expect(levelUp(state, 'art_001', 'max')).toBe(preview.levels);
     expect(levelUpCost(state, 'art_001', 1).cost.gt(state.energy)).toBe(true);
@@ -155,6 +155,7 @@ describe('Fangen', () => {
 
   it('die Fangquote entspricht der Basischance', () => {
     const state = createInitialState(0, 99);
+    state.settings.catchOnlyNew = false;
     let caught = 0;
     const trials = 8000;
     state.spheres = trials;
@@ -162,6 +163,16 @@ describe('Fangen', () => {
       if (tryCatch(state, 'art_001')) caught += 1;
     }
     expect(caught / trials).toBeCloseTo(BALANCING.rarity.common.catchChance, 1);
+  });
+
+  it('„Nur neue Arten“ spart Sphären bei bekannten Arten', () => {
+    const state = stateWith('art_001');
+    state.spheres = 5;
+    expect(tryCatch(state, 'art_001')).toBe(false);
+    expect(state.spheres).toBe(5);
+    state.settings.catchOnlyNew = false;
+    tryCatch(state, 'art_001');
+    expect(state.spheres).toBe(4);
   });
 
   it('Duplikate zählen mit', () => {

@@ -1,0 +1,39 @@
+/* Gemeinsame Stile für Seitenpanels */
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 1rem 1.25rem;
+  background: var(--panel);
+}
+.panel h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+.panel .muted {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.panel button {
+  padding: 0.3rem 0.7rem;
+  font: inherit;
+  font-size: 0.85rem;
+  background: #2a2f4d;
+  color: var(--text);
+  border: 0.125rem solid #000;
+  cursor: pointer;
+}
+.panel button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.panel button.primary {
+  background: var(--accent);
+  color: #000;
+  font-weight: 700;
+}
+.panel button.active {
+  outline: 0.125rem solid var(--accent);
+}

@@ -24,7 +24,7 @@ export const MIGRATIONS: Record<number, (save: RawSave) => RawSave> = {
     version: 3,
     settings: { numberFormat: 'standard' },
   }),
-  // 3 → 4: Monster, Sammlung, Team, Fangsphären, Zufall und Hinweise.
+  // 3 → 4: Monster, Sammlung, Team, Fangsphären, Zufall, Hinweise und Fangeinstellung.
   // Der Gegner bekommt beim Laden eine Art (siehe hydrate).
   3: (save) => ({
     ...save,
@@ -35,6 +35,7 @@ export const MIGRATIONS: Record<number, (save: RawSave) => RawSave> = {
     rngState: typeof save.lastTick === 'number' ? save.lastTick | 0 : 1,
     lastCatch: null,
     hintsSeen: [],
+    settings: { ...(typeof save.settings === 'object' ? save.settings : {}), catchOnlyNew: true },
   }),
 };
 

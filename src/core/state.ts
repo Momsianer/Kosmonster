@@ -23,6 +23,8 @@ export interface CollectionEntry {
 
 export interface Settings {
   numberFormat: NumberFormat;
+  /** Fangsphären nur für Arten verwenden, die noch nicht in der Sammlung sind */
+  catchOnlyNew: boolean;
 }
 
 /** Zentraler Spielzustand, komplett serialisierbar */
@@ -106,6 +108,6 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     hintsSeen: [],
     playTime: 0,
     lastTick: now,
-    settings: { numberFormat: 'standard' },
+    settings: { numberFormat: 'standard', catchOnlyNew: true },
   };
 }

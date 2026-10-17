@@ -59,16 +59,16 @@ function species(
 }
 
 export const SPECIES: readonly SpeciesData[] = [
-  species(1, 'prim', 'common', 1, 4, 1, 15),
-  species(2, 'fibonacci', 'common', 1, 4, 1, 15),
-  species(3, 'prim', 'uncommon', 3, 8, 3, 25),
-  species(4, 'fibonacci', 'uncommon', 7, 20, 5, 25),
-  species(5, 'prim', 'common', 27, 70, 8, 35),
-  species(6, 'fibonacci', 'common', 155, 410, 12, 40),
-  species(7, 'prim', 'uncommon', 2150, 5700, 18, 50),
-  species(8, 'fibonacci', 'uncommon', 46_000, 120_000, 25, 60),
-  species(9, 'prim', 'common', 1.5e6, 4e6, 33, null),
-  species(10, 'fibonacci', 'common', 8e7, 2.1e8, 42, null),
+  species(1, 'prim', 'common', 1, 40, 1, 15),
+  species(2, 'fibonacci', 'common', 1, 40, 1, 15),
+  species(3, 'prim', 'uncommon', 3, 80, 3, 25),
+  species(4, 'fibonacci', 'uncommon', 7, 200, 5, 25),
+  species(5, 'prim', 'common', 27, 700, 8, 35),
+  species(6, 'fibonacci', 'common', 155, 4100, 12, 40),
+  species(7, 'prim', 'uncommon', 2150, 57_000, 18, 50),
+  species(8, 'fibonacci', 'uncommon', 46_000, 1.2e6, 25, 60),
+  species(9, 'prim', 'common', 1.5e6, 4e7, 33, null),
+  species(10, 'fibonacci', 'common', 8e7, 2.1e9, 42, null),
 ];
 
 const BY_ID = new Map<string, SpeciesData>(SPECIES.map((s) => [s.id, s]));

@@ -80,6 +80,7 @@ export const de = {
     title: 'Fangsphären',
     owned: 'Vorrat: {count}',
     chance: 'Fangchance gewöhnlich {common}, ungewöhnlich {uncommon}',
+    onlyNew: 'Nur neue Arten fangen',
     buy: '{amount} kaufen',
     cost: '{cost} Energie',
   },

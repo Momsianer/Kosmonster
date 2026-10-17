@@ -7,11 +7,13 @@ import { addToTeam } from './monsters';
 
 /**
  * Versucht automatisch, einen besiegten Gegner mit einer Fangsphäre zu fangen.
- * Verbraucht eine Sphäre, wenn vorhanden. Gibt true bei Erfolg zurück.
+ * Verbraucht eine Sphäre, wenn vorhanden. Mit „Nur neue Arten“ werden bereits
+ * gefangene Arten übersprungen. Gibt true bei Erfolg zurück.
  */
 export function tryCatch(state: GameState, speciesId: SpeciesId): boolean {
   const species = getSpecies(speciesId);
   if (!species || state.spheres <= 0) return false;
+  if (state.settings.catchOnlyNew && state.collection[speciesId]) return false;
   state.spheres -= 1;
   const chance = catchChance(BALANCING.rarity[species.rarity].catchChance);
   if (nextRandom(state) >= chance) return false;

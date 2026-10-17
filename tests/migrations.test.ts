@@ -23,7 +23,7 @@ describe('Migrationen', () => {
     expect(migrated.farming).toBe(false);
     expect(migrated.bossTimeLeft).toBe(0);
     expect(migrated.clicks).toBe(31);
-    expect(migrated.settings).toEqual({ numberFormat: 'standard' });
+    expect(migrated.settings).toEqual({ numberFormat: 'standard', catchOnlyNew: true });
   });
 
   it('hebt Version 2 auf Version 3', () => {
@@ -42,6 +42,9 @@ describe('Migrationen', () => {
     expect(migrated.team).toEqual([]);
     expect(migrated.rngState).toBe(777);
     expect(migrated.hintsSeen).toEqual([]);
+    expect(migrated.settings).toEqual({ catchOnlyNew: true });
+    const withSettings = MIGRATIONS[3]!({ version: 3, settings: { numberFormat: 'letters' } });
+    expect(withSettings.settings).toEqual({ numberFormat: 'letters', catchOnlyNew: true });
   });
 
   it('migrierter Stand hat dieselben Felder wie ein neuer Zustand', () => {
