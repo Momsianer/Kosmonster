@@ -25,7 +25,51 @@ export const de = {
     clickHint: 'Klicke auf den Gegner, um ihn anzugreifen.',
     defeated: 'Besiegte Gegner: {count}',
   },
+  settings: {
+    open: 'Einstellungen',
+    close: 'Schließen',
+    title: 'Einstellungen',
+    numberFormat: 'Zahlenformat',
+    format: {
+      standard: 'Deutsch (1,5 Mio.)',
+      scientific: 'Wissenschaftlich (1,5e6)',
+      engineering: 'Technisch (15e6)',
+      letters: 'Buchstaben (1,5aa)',
+    },
+  },
+  save: {
+    title: 'Spielstand',
+    saveNow: 'Jetzt speichern',
+    saved: 'Gespeichert.',
+    saveFailed: 'Speichern nicht möglich.',
+    autosave: 'Das Spiel speichert automatisch alle {seconds} Sekunden.',
+    export: 'Exportieren',
+    exportHint: 'Diesen Code sicher aufbewahren, um den Spielstand später wiederherzustellen.',
+    copy: 'Kopieren',
+    copied: 'Kopiert.',
+    import: 'Importieren',
+    importPlaceholder: 'Speichercode hier einfügen',
+    importSuccess: 'Spielstand geladen.',
+    importError: 'Ungültiger Speichercode.',
+    hardReset: 'Spielstand löschen',
+    hardResetWarning: 'Wirklich alles löschen? Das kann nicht rückgängig gemacht werden.',
+    hardResetConfirm: 'Endgültig löschen',
+    cancel: 'Abbrechen',
+  },
+  offline: {
+    title: 'Willkommen zurück!',
+    away: 'Du warst {duration} weg.',
+    energy: 'In dieser Zeit verdient: {energy} Energie',
+    close: 'Weiter',
+  },
+  time: {
+    hours: '{n} Std.',
+    minutes: '{n} Min.',
+    seconds: '{n} Sek.',
+  },
   number: {
+    /** Erste Kürzel der Buchstabenschreibweise ab 1e3, danach folgen aa, ab, … */
+    letterBase: ['K', 'M', 'B', 'T'],
     /** Suffixe ab 1e6 in Dreierschritten: Index 0 = 1e6, Index 1 = 1e9, ... */
     suffixes: [
       'Mio.',

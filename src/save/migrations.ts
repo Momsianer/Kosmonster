@@ -17,6 +17,12 @@ export const MIGRATIONS: Record<number, (save: RawSave) => RawSave> = {
     farming: false,
     bossTimeLeft: 0,
   }),
+  // 2 → 3: Einstellungen mit Zahlenformat
+  2: (save) => ({
+    ...save,
+    version: 3,
+    settings: { numberFormat: 'standard' },
+  }),
 };
 
 /** Hebt einen Speicherstand schrittweise auf die aktuelle Version. */

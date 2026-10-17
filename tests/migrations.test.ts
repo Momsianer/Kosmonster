@@ -22,6 +22,15 @@ describe('Migrationen', () => {
     expect(migrated.farming).toBe(false);
     expect(migrated.bossTimeLeft).toBe(0);
     expect(migrated.clicks).toBe(31);
+    expect(migrated.settings).toEqual({ numberFormat: 'standard' });
+  });
+
+  it('hebt Version 2 auf Version 3', () => {
+    const fresh = JSON.parse(JSON.stringify(createInitialState(0)));
+    delete fresh.settings;
+    const migrated = migrate({ ...fresh, version: 2 });
+    expect(migrated.version).toBe(3);
+    expect(migrated.settings).toEqual({ numberFormat: 'standard' });
   });
 
   it('migrierter Stand hat dieselben Felder wie ein neuer Zustand', () => {

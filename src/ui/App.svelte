@@ -6,12 +6,15 @@
   import BossTimer from './BossTimer.svelte';
   import Enemy from './Enemy.svelte';
   import EnergyDisplay from './EnergyDisplay.svelte';
+  import OfflineReport from './OfflineReport.svelte';
+  import Settings from './Settings.svelte';
   import { createView } from './view';
 
-  let view = $state(createView(game.state));
+  let view = $state(createView(game.state, game.offlineReport));
+  let showSettings = $state(false);
 
   function refresh() {
-    view = createView(game.state);
+    view = createView(game.state, game.offlineReport);
   }
 
   const timer = setInterval(refresh, 1000 / BALANCING.loop.uiUpdatesPerSecond);
@@ -26,10 +29,34 @@
     actions.challengeBoss();
     refresh();
   }
+
+  function dismissOffline() {
+    actions.dismissOfflineReport();
+    refresh();
+  }
 </script>
 
 <main>
-  <h1>{t('game.title')}</h1>
+  <div class="top">
+    <h1>{t('game.title')}</h1>
+    <button type="button" class="toggle" onclick={() => (showSettings = !showSettings)}>
+      {showSettings ? t('settings.close') : t('settings.open')}
+    </button>
+  </div>
+
+  {#if view.offline}
+    <OfflineReport
+      duration={view.offline.duration}
+      energy={view.offline.energy}
+      hasEnergy={view.offline.hasEnergy}
+      onclose={dismissOffline}
+    />
+  {/if}
+
+  {#if showSettings}
+    <Settings onchange={refresh} />
+  {/if}
+
   <EnergyDisplay value={view.energy} />
   <section class="battle">
     <header>
@@ -77,9 +104,26 @@
     margin: 0 auto;
     padding: 2rem 1rem;
   }
+  .top {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+  }
   h1 {
     margin: 0;
     letter-spacing: 0.1em;
+  }
+  .toggle {
+    position: absolute;
+    right: 0;
+    padding: 0.4rem 0.8rem;
+    font: inherit;
+    background: #2a2f4d;
+    color: var(--text);
+    border: 0.125rem solid #000;
+    cursor: pointer;
   }
   .battle {
     display: flex;
