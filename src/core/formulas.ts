@@ -149,6 +149,30 @@ export function sphereCost(zone: number): Decimal {
   return enemyEnergy(zone).mul(BALANCING.catching.sphereCostKills);
 }
 
+// ─── Raumstation ────────────────────────────────────────────
+
+/** Kosten des nächsten Moduls, wenn schon n gebaut sind: basis * costGrowth^n */
+export function moduleCost(baseCost: DecimalSource, owned: number): Decimal {
+  return D(BALANCING.station.costGrowth).pow(owned).mul(baseCost);
+}
+
+/** Modulmultiplikator: ×upgradeMult für jede erreichte Stückzahl aus upgradeThresholds */
+export function moduleMult(owned: number): Decimal {
+  const { upgradeThresholds, upgradeMult } = BALANCING.station;
+  return D(upgradeMult).pow(upgradeThresholds.filter((t) => owned >= t).length);
+}
+
+/** Nächste Stückzahl, ab der sich die Produktion verdoppelt, null wenn alle erreicht */
+export function nextModuleUpgrade(owned: number): number | null {
+  return BALANCING.station.upgradeThresholds.find((t) => owned < t) ?? null;
+}
+
+/** produktion_i = prod_i * n * modulMult_i (Energie pro Sekunde) */
+export function moduleProduction(production: DecimalSource, owned: number): Decimal {
+  if (owned <= 0) return D(0);
+  return D(production).mul(owned).mul(moduleMult(owned));
+}
+
 // ─── Mehrfachkauf ───────────────────────────────────────────
 
 /**

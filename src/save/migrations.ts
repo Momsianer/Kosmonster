@@ -37,6 +37,12 @@ export const MIGRATIONS: Record<number, (save: RawSave) => RawSave> = {
     hintsSeen: [],
     settings: { ...(typeof save.settings === 'object' ? save.settings : {}), catchOnlyNew: true },
   }),
+  // 4 → 5: Module der Raumstation
+  4: (save) => ({
+    ...save,
+    version: 5,
+    modules: {},
+  }),
 };
 
 /** Hebt einen Speicherstand schrittweise auf die aktuelle Version. */
