@@ -67,6 +67,22 @@ describe('Migrationen', () => {
     expect(migrated.collection).toEqual({ art_001: { caught: 2, level: 40, evolution: 0 } });
   });
 
+  it('hebt Version 6 auf Version 7', () => {
+    const migrated = MIGRATIONS[6]!({
+      version: 6,
+      spheres: 12,
+      playTime: 300,
+      collection: { art_001: { caught: 2, level: 4, evolution: 0 } },
+      enemy: { zone: 1, speciesId: 'art_001', hp: '5', maxHp: '10' },
+    });
+    expect(migrated.version).toBe(7);
+    expect(migrated.spheres).toEqual({ standard: 12, orbit: 0, nebel: 0, singularitaet: 0 });
+    expect(migrated.collection).toEqual({ art_001: { caught: 2, level: 4, evolution: 0, shiny: false } });
+    expect(migrated.enemy).toEqual({ zone: 1, speciesId: 'art_001', hp: '5', maxHp: '10', shiny: false });
+    expect(migrated.cycleStart).toBe(0);
+    expect(migrated.lastClick).toBe(300);
+  });
+
   it('migrierter Stand hat dieselben Felder wie ein neuer Zustand', () => {
     const fresh = JSON.parse(JSON.stringify(createInitialState(0)));
     const migrated = migrate({ ...fresh, version: 1 });

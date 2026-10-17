@@ -4,6 +4,7 @@
   import type { ModuleId } from '../data/modules';
   import type { SpeciesId } from '../data/monsters';
   import type { ResearchId } from '../data/research';
+  import type { SphereType } from '../data/spheres';
   import { actions, game } from '../core/game';
   import { t } from '../i18n';
   import BossTimer from './BossTimer.svelte';
@@ -49,7 +50,7 @@
   const levelUp = act((id: SpeciesId) => actions.levelUp(id, buyAmount));
   const addToTeam = act(actions.addToTeam);
   const removeFromTeam = act(actions.removeFromTeam);
-  const buySpheres = act(actions.buySpheres);
+  const buySpheres = act((amount: number, type: SphereType) => actions.buySpheres(amount, type));
   const setCatchOnlyNew = act(actions.setCatchOnlyNew);
   const buyModule = act((id: ModuleId) => actions.buyModule(id, buyAmount));
   const triggerSupernova = act(actions.supernova);
@@ -107,6 +108,7 @@
     <CollectionPanel
       entries={view.collection}
       count={view.collectionCount}
+      shinyCount={view.shinyCount}
       teamFull={view.teamFull}
       onadd={addToTeam}
       onremove={removeFromTeam}
@@ -125,6 +127,10 @@
         <div class="sub">
           {t('combat.starSystem', { system: view.starSystem })} · {t('combat.highestZone', { zone: view.highestZone })}
         </div>
+        <div class="planet">
+          <span style:color={view.planetColor}>{view.planetName}</span> · {view.planetEffect}
+        </div>
+        <div class="sub">{view.planetRecommended}</div>
         <label class="auto">
           <input type="checkbox" checked={!view.farming} onchange={(e) => setAutoProgress(e.currentTarget.checked)} />
           {t('combat.autoProgress')}
@@ -142,6 +148,9 @@
         kind={view.enemyKind}
         speciesId={view.enemySpecies}
         name={view.enemyName}
+        shiny={view.enemyShiny}
+        rarity={view.enemyRarity}
+        rarityColor={view.enemyRarityColor}
         hp={view.enemyHp}
         maxHp={view.enemyMaxHp}
         fraction={view.enemyHpFraction}
@@ -159,7 +168,7 @@
         <p class="hint">{t('combat.farming')}</p>
       {/if}
 
-      {#if view.shopUnlocked && view.spheres === 0}
+      {#if view.shopUnlocked && view.totalSpheres === 0}
         <p class="hint">{t('catching.noSpheres')}</p>
       {/if}
 
@@ -204,10 +213,7 @@
         {#if view.shopUnlocked}
           <ShopPanel
             spheres={view.spheres}
-            cost1={view.sphereCost1}
-            cost10={view.sphereCost10}
-            canBuy1={view.canBuy1}
-            canBuy10={view.canBuy10}
+            total={view.totalSpheres}
             chanceCommon={view.catchChanceCommon}
             chanceUncommon={view.catchChanceUncommon}
             onlyNew={view.catchOnlyNew}
@@ -333,6 +339,9 @@
   .zone {
     font-size: 1.25rem;
     font-weight: 600;
+  }
+  .planet {
+    font-size: 0.9rem;
   }
   .sub,
   .progress {

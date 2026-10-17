@@ -88,6 +88,14 @@ export function startSpheresBonus(state: GameState): number {
   return effect(state.research, 'startsphaeren');
 }
 
+export function rareSpawnBoost(state: GameState): number {
+  return 1 + effect(state.research, 'seltenheit');
+}
+
+export function shinyChanceMult(state: GameState): number {
+  return 1 + effect(state.research, 'polarstern');
+}
+
 export function productionResearchMult(state: GameState): Decimal {
   return D(1 + effect(state.research, 'produktion'));
 }

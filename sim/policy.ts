@@ -6,7 +6,7 @@ import type { GameState } from '../src/core/state';
 import { BALANCING } from '../src/data/balancing';
 import { MODULES, type ModuleId } from '../src/data/modules';
 import { getSpecies, speciesInZone, type SpeciesId } from '../src/data/monsters';
-import { buySpheres, currentSphereCost } from '../src/systems/catching';
+import { buySpheres, currentSphereCost, totalSpheres } from '../src/systems/catching';
 import { challengeBoss, setAutoProgress } from '../src/systems/combat';
 import { addToTeam, levelUp, monsterDps, removeFromTeam, teamDps, teamSlots } from '../src/systems/monsters';
 import { bossDamageMult, bossTimeLimit, clickBonus, moduleCostMult } from '../src/systems/research';
@@ -60,6 +60,8 @@ const RESEARCH_PRIORITY: ResearchId[] = [
 const STARDUST_SHARE = 0.25;
 /** So lange ohne Zonenfortschritt ab Zone 60, dann Supernova */
 const STALL_SECONDS = 15 * 60;
+/** Supernova, sobald der Gewinn diesen Anteil des bisher verdienten Sternenstaubs erreicht */
+const GAIN_SHARE = 0.5;
 
 /** Forschung und Evolution, solange ein Kauf höchstens STARDUST_SHARE des Sternenstaubs kostet */
 function spendStardust(state: GameState): void {
@@ -84,14 +86,14 @@ function spendStardust(state: GameState): void {
 }
 
 /**
- * Supernova beim ersten Erreichen von Zone 60, später wenn der Gewinn den bisher
- * verdienten Sternenstaub erreicht (Verdopplung) oder länger kein Fortschritt kommt.
+ * Supernova beim ersten Erreichen von Zone 60, später wenn der Gewinn einen Anteil
+ * des bisher verdienten Sternenstaubs erreicht oder länger kein Fortschritt kommt.
  */
 function handleSupernova(state: GameState, memory: PolicyMemory, now: number): void {
   if (!canSupernova(state)) return;
   const gain = stardustGain(state);
   const stalled = now - memory.lastProgress >= STALL_SECONDS;
-  if (state.supernovas === 0 || gain.gte(memory.stardustEarned) || stalled) {
+  if (state.supernovas === 0 || gain.gte(memory.stardustEarned * GAIN_SHARE) || stalled) {
     memory.stardustEarned += gain.toNumber();
     supernova(state);
     memory.lastHighest = state.highestZone;
@@ -157,10 +159,26 @@ function spend(state: GameState, bossBlocked: boolean): void {
   }
 }
 
+/**
+ * Schaden einer Art, mindestens auf Level 1 gerechnet (Level 0 nach einer Supernova).
+ * Arten auf Level 0 zählen nur, wenn das erste Level bezahlbar ist.
+ */
+function potentialDps(state: GameState, id: SpeciesId): number {
+  const entry = state.collection[id];
+  const species = getSpecies(id);
+  if (!entry || !species) return 0;
+  if (entry.level > 0) return monsterDps(state, id).toNumber();
+  if (state.energy.lt(species.baseCost)) return 0;
+  entry.level = 1;
+  const dps = monsterDps(state, id).toNumber();
+  entry.level = 0;
+  return dps;
+}
+
 /** Stellt die stärksten gefangenen Arten ins Team */
 function arrangeTeam(state: GameState): void {
   const ranked = (Object.keys(state.collection) as SpeciesId[])
-    .map((id) => ({ id, dps: monsterDps(state, id).toNumber() }))
+    .map((id) => ({ id, dps: potentialDps(state, id) }))
     .sort((a, b) => b.dps - a.dps)
     .slice(0, teamSlots(state))
     .map((x) => x.id);
@@ -170,7 +188,7 @@ function arrangeTeam(state: GameState): void {
 
 /** Kauft eine Sphäre, wenn in der Zone noch ungefangene Arten vorkommen */
 function buySpheresIfUseful(state: GameState): void {
-  if (!isUnlocked(state, 'shop') || state.spheres > 0) return;
+  if (!isUnlocked(state, 'shop') || totalSpheres(state) > 0) return;
   const missing = speciesInZone(state.zone).some((s) => !state.collection[s.id]);
   if (missing && state.energy.gte(currentSphereCost(state).mul(2))) buySpheres(state, 1);
 }

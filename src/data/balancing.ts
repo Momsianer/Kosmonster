@@ -68,6 +68,47 @@ export const BALANCING = {
     primeZoneMult: 2,
     /** Fibonacci: ×fibonacciMult für jedes Fibonacci Level bis zum aktuellen Level */
     fibonacciMult: 1.25,
+    /** Pi: Klickschaden + piClickShare * teamDPS je Pi Monster im Team (π %) */
+    piClickShare: Math.PI / 100,
+    /** Euler: ×(1 + ln(1 + t / eulerTimeScale)), t = Sekunden seit dem letzten Reset */
+    eulerTimeScale: 60,
+    /** Null: ×nullIdleMult, wenn seit nullIdleSeconds nicht geklickt wurde */
+    nullIdleSeconds: 60,
+    nullIdleMult: 2,
+    /** Null: Offlineertrag ×nullOfflineMult, wenn ein Null Monster im Team ist */
+    nullOfflineMult: 2,
+    /** Unendlich: +infinityPerSpecies je gefangener Art */
+    infinityPerSpecies: 0.01,
+    /** Fraktal: ×fractalBase^(n − 1), n = Fraktal Monster im Team */
+    fractalBase: 1.25,
+    /** Vektor: ×vectorBossMult gegen Bosse */
+    vectorBossMult: 3,
+  },
+  planet: {
+    /** Gestärkter Typ im Sternsystem */
+    boostMult: 2,
+    /** Geschwächter Typ im Sternsystem */
+    weakenMult: 0.5,
+  },
+  stars: {
+    maxStars: 5,
+    /** kopienFürStern(s) = copiesBase * copiesGrowth^(s − 1) */
+    copiesBase: 5,
+    copiesGrowth: 2,
+    /** sterneMult = starMult^sterne */
+    starMult: 1.5,
+  },
+  shiny: {
+    /** Chance auf eine Polarstern Variante pro Begegnung */
+    chance: 1 / 8192,
+    /** Bonus, sobald die Polarstern Variante einer Art gefangen ist */
+    mult: 2,
+  },
+  spheres: {
+    standard: { catchMult: 1, costMult: 1 },
+    orbit: { catchMult: 1.5, costMult: 3 },
+    nebel: { catchMult: 2.5, costMult: 10 },
+    singularitaet: { catchMult: 5, costMult: 40 },
   },
   catching: {
     /** Fangsphären zu Spielbeginn */
@@ -132,6 +173,8 @@ export const BALANCING = {
       sphaerenrabatt: { maxLevel: 10, baseCost: 2, perLevel: 0.05 },
       teamplatz: { maxLevel: 3, baseCost: 25, perLevel: 1 },
       startsphaeren: { maxLevel: 5, baseCost: 3, perLevel: 5 },
+      seltenheit: { maxLevel: 10, baseCost: 4, perLevel: 0.25 },
+      polarstern: { maxLevel: 10, baseCost: 6, perLevel: 0.5 },
       produktion: { maxLevel: 20, baseCost: 1, perLevel: 0.25 },
       modulrabatt: { maxLevel: 10, baseCost: 3, perLevel: 0.03 },
       umwandlung: { maxLevel: 10, baseCost: 8, perLevel: 0.01 },

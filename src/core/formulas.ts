@@ -122,6 +122,60 @@ export function primeZoneMult(zone: number): Decimal {
   return D(isPrime(zone) ? BALANCING.types.primeZoneMult : 1);
 }
 
+/** Euler: ×(1 + ln(1 + t / eulerTimeScale)), t = Sekunden seit dem letzten Reset */
+export function eulerMult(secondsSinceReset: number): Decimal {
+  const t = Math.max(0, secondsSinceReset);
+  return D(1 + Math.log(1 + t / BALANCING.types.eulerTimeScale));
+}
+
+/** Fraktal: ×fractalBase^(n − 1), n = Anzahl Fraktal Monster im Team */
+export function fractalMult(count: number): Decimal {
+  return powInt(BALANCING.types.fractalBase, Math.max(0, count - 1));
+}
+
+/** Unendlich: ×(1 + infinityPerSpecies * gefangeneArten) */
+export function infinityMult(caughtSpecies: number): Decimal {
+  return D(1 + BALANCING.types.infinityPerSpecies * caughtSpecies);
+}
+
+/** Planetentyp: gestärkter Typ ×boostMult, geschwächter ×weakenMult, sonst ×1 */
+export function planetMult(type: string, boosted: string, weakened: string): Decimal {
+  if (type === boosted) return D(BALANCING.planet.boostMult);
+  if (type === weakened) return D(BALANCING.planet.weakenMult);
+  return D(1);
+}
+
+/** kopienFürStern(s) = copiesBase * copiesGrowth^(s − 1): Kopien für den Schritt auf Stern s */
+export function copiesForStar(star: number): number {
+  const { copiesBase, copiesGrowth } = BALANCING.stars;
+  return copiesBase * copiesGrowth ** (star - 1);
+}
+
+/** Sterne aus der Zahl der Duplikate (alle Fänge außer dem ersten), höchstens maxStars */
+export function starsFor(copies: number): number {
+  let stars = 0;
+  let remaining = copies;
+  while (stars < BALANCING.stars.maxStars && remaining >= copiesForStar(stars + 1)) {
+    remaining -= copiesForStar(stars + 1);
+    stars += 1;
+  }
+  return stars;
+}
+
+/** Kopien seit dem letzten Stern und Bedarf für den nächsten, null wenn alle Sterne erreicht */
+export function starProgress(copies: number): { have: number; need: number } | null {
+  const stars = starsFor(copies);
+  if (stars >= BALANCING.stars.maxStars) return null;
+  let used = 0;
+  for (let s = 1; s <= stars; s++) used += copiesForStar(s);
+  return { have: copies - used, need: copiesForStar(stars + 1) };
+}
+
+/** sterneMult = starMult^sterne */
+export function starsMult(stars: number): Decimal {
+  return powInt(BALANCING.stars.starMult, stars);
+}
+
 /** Grundformel: monsterDPS = basisDPS * level * meilensteinMult * seltenheitMult * typMult */
 export function monsterDpsBase(
   baseDps: DecimalSource,

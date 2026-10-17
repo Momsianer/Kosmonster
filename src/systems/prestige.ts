@@ -1,5 +1,6 @@
 import { BALANCING } from '../data/balancing';
-import { createEnemy, pickSpecies, type GameState } from '../core/state';
+import type { GameState } from '../core/state';
+import { spawnEnemy } from './spawning';
 import { D, type Decimal } from '../util/decimal';
 import { startSpheresBonus, supernovaStartZone } from './research';
 
@@ -26,6 +27,8 @@ export function canSupernova(state: GameState): boolean {
 /**
  * Supernova: gibt Sternenstaub und setzt Energie, Zone, Monsterlevel und Module zurück.
  * Sammlung, Team, Sphären, Forschung, Entwicklungen und Einstellungen bleiben.
+ * Monster fallen auf Level 0: Das erste Level kostet wieder die Basiskosten,
+ * sonst würden starke späte Arten die frühen Zonen kostenlos überrollen.
  */
 export function supernova(state: GameState): boolean {
   if (!canSupernova(state)) return false;
@@ -35,7 +38,7 @@ export function supernova(state: GameState): boolean {
   state.cycleEnergy = D(0);
   state.modules = {};
   for (const entry of Object.values(state.collection)) {
-    if (entry) entry.level = 1;
+    if (entry) entry.level = 0;
   }
   const zone = supernovaStartZone(state);
   state.zone = zone;
@@ -43,7 +46,8 @@ export function supernova(state: GameState): boolean {
   state.killsInZone = 0;
   state.farming = false;
   state.bossTimeLeft = 0;
-  state.enemy = createEnemy(zone, pickSpecies(state, zone));
-  state.spheres += startSpheresBonus(state);
+  state.enemy = spawnEnemy(state, zone);
+  state.spheres.standard += startSpheresBonus(state);
+  state.cycleStart = state.playTime;
   return true;
 }

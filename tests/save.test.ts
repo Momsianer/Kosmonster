@@ -122,12 +122,12 @@ describe('Monster im Speicherstand', () => {
     addCatch(state, 'art_001');
     addCatch(state, 'art_002');
     state.collection.art_001!.level = 42;
-    state.spheres = 17;
+    state.spheres.standard = 17;
     state.hintsSeen = ['team'];
     const loaded = decodeSave(encodeSave(state))!;
     expect(loaded.collection).toEqual(state.collection);
     expect(loaded.team).toEqual(state.team);
-    expect(loaded.spheres).toBe(17);
+    expect(loaded.spheres.standard).toBe(17);
     expect(loaded.rngState).toBe(state.rngState);
     expect(loaded.enemy.speciesId).toBe(state.enemy.speciesId);
     expect(loaded.lastCatch).toEqual(state.lastCatch);
@@ -199,6 +199,24 @@ describe('Prestige im Speicherstand', () => {
     const loaded = decodeSave(encodeRaw(raw))!;
     expect(loaded.research).toEqual({ klickkraft: BALANCING.research.nodes.klickkraft.maxLevel });
     expect(loaded.collection.art_001!.evolution).toBe(1);
+  });
+});
+
+describe('M8 im Speicherstand', () => {
+  it('Sphärentypen, Polarsterne, Euler und Leerlauf überstehen Speichern und Laden', () => {
+    const state = createInitialState(0);
+    addCatch(state, 'art_001', true);
+    state.spheres = { standard: 1, orbit: 2, nebel: 3, singularitaet: 4 };
+    state.cycleStart = 123;
+    state.lastClick = 456;
+    state.enemy.shiny = true;
+    const loaded = decodeSave(encodeSave(state))!;
+    expect(loaded.spheres).toEqual(state.spheres);
+    expect(loaded.collection.art_001!.shiny).toBe(true);
+    expect(loaded.lastCatch?.shiny).toBe(true);
+    expect(loaded.cycleStart).toBe(123);
+    expect(loaded.lastClick).toBe(456);
+    expect(loaded.enemy.shiny).toBe(true);
   });
 });
 

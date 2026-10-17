@@ -2,10 +2,13 @@ import type { OfflineReport } from '../core/game';
 import { enemyKind, isBossZone, starSystem, type EnemyKind } from '../core/formulas';
 import type { GameState } from '../core/state';
 import { BALANCING } from '../data/balancing';
-import { getSpecies, SPECIES, TYPE_COLORS, type SpeciesId } from '../data/monsters';
+import { getSpecies, RARITY_COLORS, SPECIES, TYPE_COLORS, type MonsterType, type SpeciesId } from '../data/monsters';
+import { planetForZone } from '../data/planets';
+import { SPHERE_TYPES, type SphereType } from '../data/spheres';
+import { starProgress, starsFor } from '../core/formulas';
 import { t, type TranslationKey } from '../i18n';
 import { RESEARCH_BRANCHES, RESEARCH_TREE, researchPrerequisite, type ResearchBranch, type ResearchId } from '../data/research';
-import { currentSphereCost } from '../systems/catching';
+import { currentSphereCost, totalSpheres } from '../systems/catching';
 import { canEvolve, evolutionCost, evolutionLevel, hasNextEvolution } from '../systems/evolution';
 import { canSupernova, stardustBonus, stardustGain } from '../systems/prestige';
 import {
@@ -19,7 +22,7 @@ import {
   researchLevel,
 } from '../systems/research';
 import { catchChance, clickDamage } from '../core/formulas';
-import { levelUpCost, monsterDps, teamDps, teamSlots } from '../systems/monsters';
+import { levelUpCost, monsterDps, speciesStars, teamDps, teamSlots } from '../systems/monsters';
 import { activeHint, isUnlocked, type UnlockId } from '../systems/unlocks';
 import { MODULES, type ModuleId } from '../data/modules';
 import { moduleMult, nextModuleUpgrade } from '../core/formulas';
@@ -38,6 +41,18 @@ export function speciesName(id: SpeciesId, stage = 0): string {
   const key = `species.${id}_e${stage}` as TranslationKey;
   const name = t(key);
   return name === key ? t(`species.${id}`) : name;
+}
+
+/** Zahl für den Platzhalter {mult} in Typbeschreibungen */
+function abilityMult(type: MonsterType): string {
+  if (type === 'prim') return formatNumber(BALANCING.types.primeZoneMult);
+  if (type === 'fibonacci') return formatNumber(BALANCING.types.fibonacciMult);
+  return '';
+}
+
+function progressText(copies: number): string {
+  const progress = starProgress(copies);
+  return progress ? t('collection.nextStar', progress) : '';
 }
 
 function stageOf(state: GameState, id: SpeciesId): number {
@@ -104,6 +119,9 @@ function researchNodes(state: GameState): { branch: ResearchBranch; name: string
 export interface TeamMemberView {
   id: SpeciesId;
   stage: number;
+  stars: number;
+  shiny: boolean;
+  ability: string;
   name: string;
   typeName: string;
   typeColor: string;
@@ -116,6 +134,17 @@ export interface TeamMemberView {
   evolutionCost: string;
   evolutionLevel: number | null;
   canEvolve: boolean;
+}
+
+export interface SphereView {
+  type: SphereType;
+  name: string;
+  owned: number;
+  catchMult: string;
+  cost1: string;
+  cost10: string;
+  canBuy1: boolean;
+  canBuy10: boolean;
 }
 
 export interface ModuleView {
@@ -133,6 +162,12 @@ export interface ModuleView {
 export interface CollectionEntryView {
   id: SpeciesId;
   stage: number;
+  stars: number;
+  maxStars: number;
+  shiny: boolean;
+  rarityColor: string;
+  starProgress: string;
+  big: boolean;
   number: number;
   caught: boolean;
   name: string;
@@ -153,6 +188,13 @@ export interface GameView {
   enemyKind: EnemyKind;
   enemySpecies: SpeciesId;
   enemyName: string;
+  enemyShiny: boolean;
+  enemyRarity: string;
+  enemyRarityColor: string;
+  planetName: string;
+  planetEffect: string;
+  planetRecommended: string;
+  planetColor: string;
   enemyHp: string;
   enemyMaxHp: string;
   /** Anteil der verbleibenden Leben zwischen 0 und 1 */
@@ -193,11 +235,9 @@ export interface GameView {
   teamFull: boolean;
   collection: CollectionEntryView[];
   collectionCount: number;
-  spheres: number;
-  sphereCost1: string;
-  sphereCost10: string;
-  canBuy1: boolean;
-  canBuy10: boolean;
+  shinyCount: number;
+  spheres: SphereView[];
+  totalSpheres: number;
   catchOnlyNew: boolean;
   catchChanceCommon: string;
   catchChanceUncommon: string;
@@ -217,6 +257,9 @@ function teamMember(state: GameState, id: SpeciesId, amount: BuyAmount): TeamMem
   return {
     id,
     stage: entry.evolution,
+    stars: speciesStars(state, id),
+    shiny: entry.shiny,
+    ability: t(`types.${species.type}.ability`, { mult: abilityMult(species.type) }),
     name: speciesName(id, entry.evolution),
     typeName: t(`types.${species.type}.name`),
     typeColor: TYPE_COLORS[species.type],
@@ -265,9 +308,9 @@ export function createView(
   const limit = bossTimeLimit(state);
   const fraction = enemy.maxHp.gt(0) ? enemy.hp.div(enemy.maxHp).toNumber() : 0;
   const dps = teamDps(state);
-  const cost1 = currentSphereCost(state);
-  const cost10 = cost1.mul(10);
   const lastCatch = state.lastCatch;
+  const planet = planetForZone(state.zone);
+  const enemySpecies = getSpecies(enemy.speciesId);
   const showCatch = lastCatch && state.playTime - lastCatch.time < CATCH_NOTICE_SECONDS;
 
   return {
@@ -281,6 +324,16 @@ export function createView(
     enemySpecies: enemy.speciesId,
     // Wilde Gegner erscheinen immer in der Grundform
     enemyName: speciesName(enemy.speciesId),
+    enemyShiny: enemy.shiny,
+    enemyRarity: t(`rarity.${enemySpecies?.rarity ?? 'common'}`),
+    enemyRarityColor: RARITY_COLORS[enemySpecies?.rarity ?? 'common'],
+    planetName: t(`planet.name.${planet.boosted}`),
+    planetEffect: t('planet.effect', {
+      boosted: t(`types.${planet.boosted}.name`),
+      weakened: t(`types.${planet.weakened}.name`),
+    }),
+    planetRecommended: t('planet.recommended', { type: t(`types.${planet.boosted}.name`) }),
+    planetColor: TYPE_COLORS[planet.boosted],
     enemyHp: formatNumber(enemy.hp),
     enemyMaxHp: formatNumber(enemy.maxHp),
     enemyHpFraction: clamp01(fraction),
@@ -328,6 +381,12 @@ export function createView(
       return {
         id: s.id,
         stage: entry?.evolution ?? 0,
+        stars: entry ? starsFor(entry.caught - 1) : 0,
+        maxStars: BALANCING.stars.maxStars,
+        shiny: entry?.shiny ?? false,
+        rarityColor: RARITY_COLORS[s.rarity],
+        starProgress: entry ? progressText(entry.caught - 1) : '',
+        big: s.rarity === 'legendary',
         number: s.number,
         caught: !!entry,
         name: speciesName(s.id, entry?.evolution ?? 0),
@@ -338,11 +397,21 @@ export function createView(
       };
     }),
     collectionCount: Object.keys(state.collection).length,
-    spheres: state.spheres,
-    sphereCost1: formatNumber(cost1),
-    sphereCost10: formatNumber(cost10),
-    canBuy1: state.energy.gte(cost1),
-    canBuy10: state.energy.gte(cost10),
+    shinyCount: Object.values(state.collection).filter((e) => e?.shiny).length,
+    spheres: SPHERE_TYPES.map((type) => {
+      const cost = currentSphereCost(state, type);
+      return {
+        type,
+        name: t(`shop.sphere.${type}`),
+        owned: state.spheres[type],
+        catchMult: formatNumber(BALANCING.spheres[type].catchMult),
+        cost1: formatNumber(cost),
+        cost10: formatNumber(cost.mul(10)),
+        canBuy1: state.energy.gte(cost),
+        canBuy10: state.energy.gte(cost.mul(10)),
+      };
+    }),
+    totalSpheres: totalSpheres(state),
     catchOnlyNew: state.settings.catchOnlyNew,
     catchChanceCommon: formatPercent(
       catchChance(BALANCING.rarity.common.catchChance, BALANCING.catching.standardSphereMult, catchResearchBonus(state)),
@@ -351,7 +420,9 @@ export function createView(
       catchChance(BALANCING.rarity.uncommon.catchChance, BALANCING.catching.standardSphereMult, catchResearchBonus(state)),
     ),
     catchNotice: showCatch
-      ? t('catching.caught', { name: speciesName(lastCatch.speciesId, stageOf(state, lastCatch.speciesId)) })
+      ? t(lastCatch.shiny ? 'catching.caughtShiny' : 'catching.caught', {
+          name: speciesName(lastCatch.speciesId, stageOf(state, lastCatch.speciesId)),
+        })
       : '',
     hint: activeHint(state),
   };

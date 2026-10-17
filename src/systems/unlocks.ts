@@ -1,5 +1,6 @@
 import type { GameState } from '../core/state';
 import { BALANCING } from '../data/balancing';
+import { totalSpheres } from './catching';
 
 const stationUnlocked = (state: GameState) =>
   state.playTime >= BALANCING.station.unlockSeconds || Object.keys(state.modules).length > 0;
@@ -11,10 +12,14 @@ const stationUnlocked = (state: GameState) =>
 export const UNLOCKS = {
   team: (state: GameState) => Object.keys(state.collection).length > 0,
   station: stationUnlocked,
-  shop: (state: GameState) => stationUnlocked(state) || state.spheres <= 0,
+  shop: (state: GameState) => stationUnlocked(state) || totalSpheres(state) <= 0,
+  planet: (state: GameState) => state.highestZone > BALANCING.world.zonesPerSystem,
   supernova: (state: GameState) => state.highestZone >= BALANCING.supernova.minZone || state.supernovas > 0,
   research: (state: GameState) => state.supernovas > 0,
   evolution: (state: GameState) => state.supernovas > 0,
+  stars: (state: GameState) =>
+    state.supernovas > 0 || Object.values(state.collection).some((e) => e && e.caught >= 2),
+  shiny: (state: GameState) => Object.values(state.collection).some((e) => e?.shiny),
 } as const;
 
 export type UnlockId = keyof typeof UNLOCKS;

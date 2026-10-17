@@ -20,6 +20,8 @@ export const RESEARCH_IDS = [
   'sphaerenrabatt', // Sphärenpreis ×(1 − perLevel * stufe)
   'teamplatz', // +perLevel Teamplätze
   'startsphaeren', // +perLevel Fangsphären nach jeder Supernova
+  'seltenheit', // Spawngewicht seltener und epischer Arten ×(1 + perLevel * stufe)
+  'polarstern', // Polarsternchance ×(1 + perLevel * stufe)
   // Station
   'produktion', // Produktion ×(1 + perLevel * stufe)
   'modulrabatt', // Modulkosten ×(1 − perLevel * stufe)
@@ -33,7 +35,7 @@ export type ResearchId = (typeof RESEARCH_IDS)[number];
 
 export const RESEARCH_TREE: Record<ResearchBranch, readonly ResearchId[]> = {
   combat: ['klickkraft', 'teamstaerke', 'kritchance', 'kritschaden', 'bosszeit', 'bossschaden'],
-  collect: ['fangglueck', 'sphaerenrabatt', 'teamplatz', 'startsphaeren'],
+  collect: ['fangglueck', 'sphaerenrabatt', 'teamplatz', 'startsphaeren', 'seltenheit', 'polarstern'],
   station: ['produktion', 'modulrabatt', 'umwandlung'],
   time: ['offlinebonus', 'offlinelimit', 'startzone'],
 };

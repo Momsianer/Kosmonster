@@ -4,6 +4,7 @@ import { BALANCING } from '../data/balancing';
 import {
   createEnemy,
   createInitialState,
+  emptySpheres,
   pickSpecies,
   STATE_VERSION,
   type CollectionEntry,
@@ -11,6 +12,7 @@ import {
 } from '../core/state';
 import { isModuleId, type ModuleId } from '../data/modules';
 import { isResearchId, type ResearchId } from '../data/research';
+import { SPHERE_TYPES, type SphereType } from '../data/spheres';
 import { bossTimeLimitFor, teamSlotsFor } from '../systems/research';
 import { getSpecies, isSpeciesId, speciesInZone, type SpeciesId } from '../data/monsters';
 import { D, type Decimal } from '../util/decimal';
@@ -83,7 +85,7 @@ export function hydrate(raw: RawSave): GameState {
     isSpeciesId(rawSpecies) && speciesInZone(zone).some((s) => s.id === rawSpecies)
       ? rawSpecies
       : pickSpecies(rng, zone);
-  let enemy = createEnemy(zone, speciesId);
+  let enemy = createEnemy(zone, speciesId, rawEnemy?.shiny === true && rawEnemy.speciesId === speciesId);
   if (rawEnemy) {
     const hp = toDecimal(rawEnemy.hp, enemy.maxHp);
     if (hp.gt(0) && hp.lte(enemy.maxHp)) enemy = { ...enemy, hp };
@@ -118,7 +120,9 @@ export function hydrate(raw: RawSave): GameState {
     enemy,
     enemiesDefeated: toNumber(raw.enemiesDefeated, 0),
     clicks: toNumber(raw.clicks, 0),
-    spheres: Math.floor(toNumber(raw.spheres, base.spheres)),
+    spheres: hydrateSpheres(raw.spheres),
+    cycleStart: toNumber(raw.cycleStart, 0),
+    lastClick: toNumber(raw.lastClick, 0),
     collection,
     team,
     rngState: rng.rngState,
@@ -148,9 +152,17 @@ function hydrateCollection(value: unknown): Partial<Record<SpeciesId, Collection
       caught: Math.max(1, Math.floor(toNumber(entry.caught, 1))),
       level: Math.floor(toNumber(entry.level, 1)),
       evolution: Math.min(getSpecies(id)?.evolutions ?? 0, Math.floor(toNumber(entry.evolution, 0))),
+      shiny: entry.shiny === true,
     };
   }
   return collection;
+}
+
+function hydrateSpheres(value: unknown): Record<SphereType, number> {
+  const spheres = emptySpheres();
+  if (!isRecord(value)) return spheres;
+  for (const type of SPHERE_TYPES) spheres[type] = Math.floor(toNumber(value[type], 0));
+  return spheres;
 }
 
 function hydrateResearch(value: unknown): Partial<Record<ResearchId, number>> {
@@ -192,7 +204,7 @@ function hydrateModules(value: unknown): Partial<Record<ModuleId, number>> {
 
 function hydrateLastCatch(value: unknown): GameState['lastCatch'] {
   if (!isRecord(value) || !isSpeciesId(value.speciesId)) return null;
-  return { speciesId: value.speciesId, time: toNumber(value.time, 0) };
+  return { speciesId: value.speciesId, time: toNumber(value.time, 0), shiny: value.shiny === true };
 }
 
 export function saveToStorage(storage: SaveStorage, state: GameState): boolean {
