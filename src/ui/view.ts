@@ -1,5 +1,5 @@
 import type { OfflineReport } from '../core/game';
-import { enemyKind, sphereCost, starSystem, type EnemyKind } from '../core/formulas';
+import { enemyKind, isBossZone, sphereCost, starSystem, type EnemyKind } from '../core/formulas';
 import type { GameState } from '../core/state';
 import { BALANCING } from '../data/balancing';
 import { getSpecies, SPECIES, TYPE_COLORS, type SpeciesId } from '../data/monsters';
@@ -78,6 +78,10 @@ export interface GameView {
   bossTimeFraction: number;
   bossTimeLimit: number;
   farming: boolean;
+  canZoneDown: boolean;
+  canZoneUp: boolean;
+  /** Im Farmmodus vor einem Boss, der noch nicht besiegt wurde */
+  bossBlocked: boolean;
   enemiesDefeated: number;
   offline: { duration: string; energy: string; hasEnergy: boolean } | null;
 
@@ -183,6 +187,9 @@ export function createView(
     bossTimeFraction: kind === 'normal' ? 0 : clamp01(state.bossTimeLeft / limit),
     bossTimeLimit: limit,
     farming: state.farming,
+    canZoneDown: state.zone > 1,
+    canZoneUp: state.zone < state.highestZone,
+    bossBlocked: state.farming && isBossZone(state.zone + 1) && state.zone + 1 === state.highestZone,
     enemiesDefeated: state.enemiesDefeated,
     offline: offline
       ? {

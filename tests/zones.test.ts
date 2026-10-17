@@ -3,7 +3,14 @@ import { enemyMaxHp, enemyReward } from '../src/core/formulas';
 import { advance } from '../src/core/loop';
 import { createInitialState, type GameState } from '../src/core/state';
 import { BALANCING } from '../src/data/balancing';
-import { challengeBoss, dealDamage, enterZone, updateBossTimer } from '../src/systems/combat';
+import {
+  challengeBoss,
+  changeZone,
+  dealDamage,
+  enterZone,
+  setAutoProgress,
+  updateBossTimer,
+} from '../src/systems/combat';
 
 const PER_ZONE = BALANCING.world.enemiesPerZone;
 const TIME = BALANCING.boss.timeLimitSeconds;
@@ -103,5 +110,67 @@ describe('Bosszeit und Farmmodus', () => {
     const state = createInitialState(0);
     expect(challengeBoss(state)).toBe(false);
     expect(state.zone).toBe(1);
+  });
+});
+
+describe('Zonenwechsel', () => {
+  function stateAtZone(highest: number): GameState {
+    const state = createInitialState(0);
+    enterZone(state, highest);
+    return state;
+  }
+
+  it('in eine niedrigere Zone wechseln startet den Farmmodus', () => {
+    const state = stateAtZone(8);
+    expect(changeZone(state, 3)).toBe(true);
+    expect(state.zone).toBe(3);
+    expect(state.farming).toBe(true);
+    expect(state.killsInZone).toBe(PER_ZONE);
+    expect(state.highestZone).toBe(8);
+    for (let i = 0; i < PER_ZONE * 2; i++) killEnemy(state);
+    expect(state.zone).toBe(3);
+  });
+
+  it('zurück zur höchsten Zone beendet den Farmmodus', () => {
+    const state = stateAtZone(8);
+    changeZone(state, 3);
+    expect(changeZone(state, 8)).toBe(true);
+    expect(state.farming).toBe(false);
+    expect(state.killsInZone).toBe(0);
+  });
+
+  it('nur erreichte Zonen sind erlaubt', () => {
+    const state = stateAtZone(8);
+    expect(changeZone(state, 9)).toBe(false);
+    expect(changeZone(state, 0)).toBe(false);
+    expect(changeZone(state, 8)).toBe(false);
+    expect(changeZone(state, 2.5)).toBe(false);
+    expect(state.zone).toBe(8);
+  });
+
+  it('automatisch weiter zieht durch geschaffte Zonen nach vorn', () => {
+    const state = stateAtZone(8);
+    changeZone(state, 2);
+    setAutoProgress(state, true);
+    killEnemy(state);
+    expect(state.zone).toBe(3);
+    expect(state.farming).toBe(false);
+  });
+
+  it('im Farmmodus bleibt man auch nach einem Bosssieg beim Boss', () => {
+    const state = stateAtZone(8);
+    changeZone(state, 5);
+    killEnemy(state);
+    expect(state.zone).toBe(5);
+    expect(state.bossTimeLeft).toBe(TIME);
+  });
+
+  it('eine geschaffte Zone schaltet die nächste frei, auch im Farmmodus', () => {
+    const state = createInitialState(0);
+    setAutoProgress(state, false);
+    for (let i = 0; i < PER_ZONE; i++) killEnemy(state);
+    expect(state.zone).toBe(1);
+    expect(state.highestZone).toBe(2);
+    expect(changeZone(state, 2)).toBe(true);
   });
 });

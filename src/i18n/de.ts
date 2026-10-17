@@ -19,7 +19,11 @@ export const de = {
     systemBoss: 'Systemboss',
     bossTime: '{seconds} s',
     bossHint: 'Besiege den Boss innerhalb von {seconds} Sekunden.',
-    farming: 'Farmmodus: Der Boss war zu stark. Sammle hier Energie und versuche es erneut.',
+    farming: 'Farmmodus: Du bleibst in dieser Zone und sammelst Energie.',
+    bossFailed: 'Der Boss war zu stark. Sammle hier Energie und versuche es erneut.',
+    zoneDown: 'Zone zurück',
+    zoneUp: 'Zone vor',
+    autoProgress: 'Automatisch weiter',
     challengeBoss: 'Boss herausfordern',
     hp: '{hp} / {maxHp} Leben',
     clickHint: 'Klicke auf den Gegner, um ihn anzugreifen.',
@@ -40,11 +44,11 @@ export const de = {
   types: {
     prim: {
       name: 'Prim',
-      ability: '×2 Schaden in Zonen mit Primzahlnummer',
+      ability: '×{mult} Schaden in Zonen mit Primzahlnummer',
     },
     fibonacci: {
       name: 'Fibonacci',
-      ability: 'Zusätzlich ×1,5 bei jedem Fibonacci Level (1, 2, 3, 5, 8, 13, …)',
+      ability: 'Zusätzlich ×{mult} bei jedem Fibonacci Level (1, 2, 3, 5, 8, 13, …)',
     },
   },
   rarity: {

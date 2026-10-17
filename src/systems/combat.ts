@@ -34,9 +34,9 @@ export function dealDamage(state: GameState, amount: DecimalSource): boolean {
 }
 
 /**
- * Schreibt die Energie gut, versucht normale Gegner zu fangen und bestimmt den nächsten Gegner:
- * Boss besiegt → nächste Zone. Normale Zone mit genug Kills → nächste Zone,
- * außer im Farmmodus. Sonst ein neuer Gegner in derselben Zone.
+ * Schreibt die Energie gut, versucht normale Gegner zu fangen und bestimmt den nächsten Gegner.
+ * Eine geschaffte Zone (Boss besiegt oder genug Kills) schaltet die nächste frei.
+ * Ohne Farmmodus geht es dann weiter, im Farmmodus erscheint ein neuer Gegner in derselben Zone.
  */
 export function defeatEnemy(state: GameState): void {
   const zone = state.enemy.zone;
@@ -47,7 +47,8 @@ export function defeatEnemy(state: GameState): void {
 
   if (isBossZone(zone)) {
     // Bosse sind (noch) nicht fangbar
-    enterZone(state, zone + 1);
+    state.highestZone = Math.max(state.highestZone, zone + 1);
+    enterZone(state, state.farming ? zone : zone + 1);
     return;
   }
 
@@ -55,9 +56,12 @@ export function defeatEnemy(state: GameState): void {
 
   const needed = BALANCING.world.enemiesPerZone;
   state.killsInZone = Math.min(state.killsInZone + 1, needed);
-  if (state.killsInZone >= needed && !state.farming) {
-    enterZone(state, zone + 1);
-    return;
+  if (state.killsInZone >= needed) {
+    state.highestZone = Math.max(state.highestZone, zone + 1);
+    if (!state.farming) {
+      enterZone(state, zone + 1);
+      return;
+    }
   }
   state.enemy = spawnEnemy(state, zone);
 }
@@ -85,6 +89,23 @@ export function clickEnemy(state: GameState): boolean {
 export function applyTeamDamage(state: GameState, dtSeconds: number): void {
   if (state.team.length === 0 || dtSeconds <= 0) return;
   dealDamage(state, teamDps(state).mul(dtSeconds));
+}
+
+/**
+ * Aktion: in eine bereits erreichte Zone wechseln.
+ * Eine niedrigere Zone startet den Farmmodus, die höchste Zone beendet ihn.
+ */
+export function changeZone(state: GameState, zone: number): boolean {
+  if (!Number.isInteger(zone) || zone < 1 || zone > state.highestZone || zone === state.zone) return false;
+  const lower = zone < state.highestZone;
+  state.farming = lower;
+  enterZone(state, zone, lower ? BALANCING.world.enemiesPerZone : 0);
+  return true;
+}
+
+/** Aktion: automatisches Weiterziehen nach geschaffter Zone ein oder aus (aus = Farmmodus). */
+export function setAutoProgress(state: GameState, on: boolean): void {
+  state.farming = !on;
 }
 
 /** Aktion: Farmmodus verlassen und den Boss erneut herausfordern. */

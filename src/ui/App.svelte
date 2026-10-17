@@ -38,6 +38,9 @@
 
   const attack = act(actions.clickEnemy);
   const challengeBoss = act(actions.challengeBoss);
+  const zoneDown = act(() => actions.changeZone(view.zone - 1));
+  const zoneUp = act(() => actions.changeZone(view.zone + 1));
+  const setAutoProgress = act(actions.setAutoProgress);
   const dismissOffline = act(actions.dismissOfflineReport);
   const levelUp = act((id: SpeciesId) => actions.levelUp(id, buyAmount));
   const addToTeam = act(actions.addToTeam);
@@ -79,10 +82,20 @@
   <div class="layout">
     <section class="battle">
       <header>
-        <div class="zone">{t('combat.zone', { zone: view.zone })}</div>
+        <div class="zone-nav">
+          <button type="button" class="nav" aria-label={t('combat.zoneDown')} title={t('combat.zoneDown')}
+            disabled={!view.canZoneDown} onclick={zoneDown}>◀</button>
+          <div class="zone">{t('combat.zone', { zone: view.zone })}</div>
+          <button type="button" class="nav" aria-label={t('combat.zoneUp')} title={t('combat.zoneUp')}
+            disabled={!view.canZoneUp} onclick={zoneUp}>▶</button>
+        </div>
         <div class="sub">
           {t('combat.starSystem', { system: view.starSystem })} · {t('combat.highestZone', { zone: view.highestZone })}
         </div>
+        <label class="auto">
+          <input type="checkbox" checked={!view.farming} onchange={(e) => setAutoProgress(e.currentTarget.checked)} />
+          {t('combat.autoProgress')}
+        </label>
       </header>
 
       {#if view.enemyKind === 'normal'}
@@ -104,11 +117,13 @@
 
       <div class="notice" aria-live="polite">{view.catchNotice}</div>
 
-      {#if view.farming}
+      {#if view.bossBlocked}
         <div class="farming">
-          <p>{t('combat.farming')}</p>
+          <p>{t('combat.bossFailed')}</p>
           <button type="button" onclick={challengeBoss}>{t('combat.challengeBoss')}</button>
         </div>
+      {:else if view.farming}
+        <p class="hint">{t('combat.farming')}</p>
       {/if}
 
       {#if view.shopUnlocked && view.spheres === 0}
@@ -229,7 +244,36 @@
     background: var(--panel);
   }
   header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
     text-align: center;
+  }
+  .zone-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .nav {
+    padding: 0.2rem 0.6rem;
+    font: inherit;
+    background: #2a2f4d;
+    color: var(--text);
+    border: 0.125rem solid #000;
+    cursor: pointer;
+  }
+  .nav:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+  .auto {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+    cursor: pointer;
   }
   .zone {
     font-size: 1.25rem;
