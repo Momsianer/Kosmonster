@@ -490,7 +490,7 @@ export const de = {
     blackHoleTitle: 'Schwarzes Loch',
     gain: 'Ein Schwarzes Loch bringt jetzt {amount} Dunkle Materie.',
     locked: 'Sammle {amount} Sternenstaub seit dem letzten Schwarzen Loch (bisher {current}).',
-    explain: 'Zurückgesetzt werden alles, was eine Supernova zurücksetzt, dazu Sternenstaub und Forschung. Sammlung, Sterne, Entwicklungen, Zuchten und Upgrades für Dunkle Materie bleiben.',
+    explain: 'Zurückgesetzt wird alles, was eine Supernova zurücksetzt, dazu Sternenstaub und Forschung. Sammlung, Sterne, Entwicklungen, Zuchten und Upgrades für Dunkle Materie bleiben.',
     button: 'Schwarzes Loch öffnen',
     confirm: 'Wirklich ein Schwarzes Loch öffnen?',
     confirmButton: 'Ja, öffnen',
