@@ -808,6 +808,9 @@ export const de = {
       engineering: 'Technisch (15e6)',
       letters: 'Buchstaben (1,5aa)',
     },
+    sound: 'Soundeffekte',
+    volume: 'Lautstärke',
+    test: 'Probehören',
   },
   save: {
     title: 'Spielstand',

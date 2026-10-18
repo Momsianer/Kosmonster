@@ -17,6 +17,8 @@
   import HintBanner from './HintBanner.svelte';
   import HitPopups from './HitPopups.svelte';
   import Starfield from './Starfield.svelte';
+  import { playSound, type SoundId } from './sound';
+  import { detectSound, soundSnapshot } from './soundEvents';
   import OfflineReport from './OfflineReport.svelte';
   import Settings from './Settings.svelte';
   import BigBangPanel from './BigBangPanel.svelte';
@@ -41,8 +43,19 @@
   let showSettings = $state(false);
   let tab = $state<'game' | 'research' | 'collection' | 'darkMatter' | 'breeding' | 'bigBang' | 'endgame'>('game');
 
+  let soundPrev = soundSnapshot(game.state);
+
+  function sfx(id: SoundId) {
+    const { sound, volume } = game.state.settings;
+    if (sound) playSound(id, volume);
+  }
+
   function refresh() {
     view = createView(game.state, game.offlineReport, buyAmount);
+    const next = soundSnapshot(game.state);
+    const id = detectSound(soundPrev, next);
+    soundPrev = next;
+    if (id) sfx(id);
   }
 
   const timer = setInterval(refresh, 1000 / BALANCING.loop.uiUpdatesPerSecond);
@@ -62,8 +75,9 @@
 
   /** Angriff mit Schadenszahl und kurzem Wackeln */
   const attack = act(() => {
-    actions.clickEnemy();
+    const defeated = actions.clickEnemy();
     if (view.clickBlocked) return;
+    sfx(defeated ? 'defeat' : 'hit');
     popups?.add(view.clickDamage);
     hit = true;
     clearTimeout(hitTimer);

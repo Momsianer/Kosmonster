@@ -14,7 +14,10 @@ import { weightedPick } from '../util/random';
 import { enemyMaxHp } from './formulas';
 
 /** Version des Speicherstands, wird bei jeder Strukturänderung erhöht */
-export const STATE_VERSION = 11;
+export const STATE_VERSION = 12;
+
+/** Lautstärke der Soundeffekte zu Beginn (0 bis 1) */
+export const DEFAULT_VOLUME = 0.5;
 
 export interface EnemyState {
   zone: number;
@@ -108,6 +111,10 @@ export interface Settings {
   numberFormat: NumberFormat;
   /** Fangsphären nur für Arten verwenden, die noch nicht in der Sammlung sind */
   catchOnlyNew: boolean;
+  /** Soundeffekte an oder aus */
+  sound: boolean;
+  /** Lautstärke von 0 bis 1 */
+  volume: number;
 }
 
 /** Zentraler Spielzustand, komplett serialisierbar */
@@ -317,6 +324,6 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     hintsSeen: [],
     playTime: 0,
     lastTick: now,
-    settings: { numberFormat: 'standard', catchOnlyNew: true },
+    settings: { numberFormat: 'standard', catchOnlyNew: true, sound: true, volume: DEFAULT_VOLUME },
   };
 }
