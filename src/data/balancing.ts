@@ -73,12 +73,14 @@ export const BALANCING = {
    * episch ab epicFromArea, sonst selten. Die normalen Arten erscheinen gestaffelt ab der Zone
    * erste Zone + slotStart[Platz] und sind so stark wie diese Zone: basisDPS = hp(Startzone) * dpsPerHp.
    * Die seltene Art erscheint im ganzen Gebiet, basisDPS = hp(erste Zone + rareZoneOffset) * dpsPerHp.
-   * basisKosten = basisDPS * costPerDps.
+   * basisKosten = basisDPS * costPerDps (im ersten Gebiet firstAreaCostPerDps).
    */
   pools: {
     areas: 30,
     dpsPerHp: 0.125,
     costPerDps: 65,
+    /** Im ersten Gebiet sind Level günstiger, damit der Einstieg flott bleibt */
+    firstAreaCostPerDps: 26,
     slotStart: [0, 3, 6],
     rareZoneOffset: 0,
     rareBaseChance: 0.01,
@@ -241,7 +243,7 @@ export const BALANCING = {
      * „Unendlichkeit“: Bis zum ersten Urknall sind Energie und Zyklusenergie hier gedeckelt,
      * erreicht die Zyklusenergie diesen Wert, ist der Urknall möglich.
      */
-    infinityEnergy: 1e18,
+    infinityEnergy: 1e22,
     /** ursprungspunkte = basePoints + challengeBonus (abgeschlossene Challenges * pointsPerChallenge) */
     basePoints: 1,
     pointsPerChallenge: 1,
