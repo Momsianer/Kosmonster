@@ -405,7 +405,7 @@ export const BALANCING = {
   world: {
     startZone: 1,
     /** Energie nach jedem Reset (Supernova, Schwarzes Loch, Urknall, Challenge), genug für ein erstes Level */
-    resetEnergy: 50,
+    resetEnergy: 100,
     /** Gegner, die pro normaler Zone besiegt werden müssen */
     enemiesPerZone: 10,
     /** Zonen pro Sternsystem */
