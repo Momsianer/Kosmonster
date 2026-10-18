@@ -14,6 +14,7 @@
       <div class="name">{e.name}</div>
       <div class="muted"><span style:color={e.rarityColor}>{e.rarityName}</span>{#if e.chance}&nbsp;· {e.chance}{/if}</div>
       {#if e.zone !== null}<div class="muted">{t('area.bossZone', { zone: e.zone })}</div>{/if}
+      {#if e.from !== null}<div class="muted">{t('area.fromZone', { zone: e.from })}</div>{/if}
     </div>
   </div>
 {/snippet}

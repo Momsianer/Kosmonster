@@ -70,14 +70,17 @@ export const BALANCING = {
    * Gebietspools: Jedes Sternsystem hat drei normale Arten und eine seltene. Nach `areas`
    * Gebieten wiederholen sich die Pools. Die seltene Art erscheint mit
    * rareBaseChance + rareChancePerZone * (Zone im Gebiet − 1), legendär in jedem legendaryEvery. Gebiet,
-   * episch ab epicFromArea, sonst selten. basisDPS = hp(erste Zone + zoneOffset[Platz]) * dpsPerHp,
-   * so sind die Arten eines Gebiets gestaffelt wie früher Arten, die einige Zonen später erschienen.
+   * episch ab epicFromArea, sonst selten. Die normalen Arten erscheinen gestaffelt ab der Zone
+   * erste Zone + slotStart[Platz] und sind so stark wie diese Zone: basisDPS = hp(Startzone) * dpsPerHp.
+   * Die seltene Art erscheint im ganzen Gebiet, basisDPS = hp(erste Zone + rareZoneOffset) * dpsPerHp.
+   * basisKosten = basisDPS * costPerDps.
    */
   pools: {
     areas: 30,
     dpsPerHp: 0.125,
-    costPerDps: 26,
-    zoneOffset: [0, 2, 3, 2],
+    costPerDps: 65,
+    slotStart: [0, 3, 6],
+    rareZoneOffset: 0,
     rareBaseChance: 0.01,
     rareChancePerZone: 0.0025,
     legendaryEvery: 5,
@@ -93,7 +96,7 @@ export const BALANCING = {
     systems: 50,
     miniDpsFactor: 0.5,
     mainDpsFactor: 0.8,
-    costPerDps: 26,
+    costPerDps: 65,
   },
   types: {
     /** Prim: ×primeZoneMult in Zonen mit Primzahlnummer */
@@ -402,7 +405,7 @@ export const BALANCING = {
   world: {
     startZone: 1,
     /** Energie nach jedem Reset (Supernova, Schwarzes Loch, Urknall, Challenge), genug für ein erstes Level */
-    resetEnergy: 50,
+    resetEnergy: 100,
     /** Gegner, die pro normaler Zone besiegt werden müssen */
     enemiesPerZone: 10,
     /** Zonen pro Sternsystem */

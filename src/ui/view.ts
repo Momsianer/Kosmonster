@@ -5,6 +5,7 @@ import { BALANCING } from '../data/balancing';
 import {
   getSpecies,
   areaPool,
+  normalsInZone,
   BOSS_SPECIES,
   bossForZone,
   DARK_TYPES,
@@ -590,6 +591,8 @@ export interface AreaEntryView {
   chance: string;
   /** Bossmonster: in welcher Zone es kommt */
   zone: number | null;
+  /** Normale Art, die erst ab einer späteren Zone des Gebiets erscheint */
+  from: number | null;
   current: boolean;
 }
 
@@ -610,8 +613,10 @@ function areaView(state: GameState): AreaView {
   const { normals, rare } = areaPool(zone);
   const bossZone = isBossZone(zone);
   const rareChance = rareChanceInZone(zone, rareSpawnBoost(state));
-  const weights: number[] = normals.map((s) => BALANCING.rarity[s.rarity].spawnWeight);
-  const total = weights.reduce((a, b) => a + b, 0);
+  const available = normalsInZone(zone);
+  const total = available.reduce((sum, s) => sum + BALANCING.rarity[s.rarity].spawnWeight, 0);
+  const normalChance = (s: SpeciesData): number | null =>
+    bossZone || !available.includes(s) ? null : ((1 - rareChance) * BALANCING.rarity[s.rarity].spawnWeight) / total;
   const entry = (s: SpeciesData, chance: number | null, bossZoneOf: number | null): AreaEntryView => {
     const caught = !!state.collection[s.id];
     return {
@@ -624,10 +629,11 @@ function areaView(state: GameState): AreaView {
       rarityColor: RARITY_COLORS[s.rarity],
       chance: chance === null ? '' : formatPercent(chance, 2),
       zone: bossZoneOf,
+      from: !bossZone && s.boss === null && s.minZone > zone ? s.minZone : null,
       current: bossZoneOf === zone,
     };
   };
-  const species = normals.map((s, i) => entry(s, bossZone ? null : ((1 - rareChance) * (weights[i] ?? 0)) / total, null));
+  const species = normals.map((s) => entry(s, normalChance(s), null));
   if (rare) species.push(entry(rare, bossZone ? null : rareChance, null));
   const bosses = [fromZone + BALANCING.boss.bossEvery - 1, fromZone + zonesPerSystem - 1]
     .map((z) => ({ z, boss: bossForZone(z) }))

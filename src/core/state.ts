@@ -6,7 +6,7 @@ import type { ChallengeId } from '../data/challenges';
 import type { ConstellationId } from '../data/constellations';
 import type { OriginId } from '../data/origin';
 import { ENDGAME_MODES, type EndgameMode } from '../data/endgame';
-import { areaPool, bossForZone, rareSpawnChance, type SpeciesId } from '../data/monsters';
+import { areaPool, bossForZone, normalsInZone, rareSpawnChance, type SpeciesId } from '../data/monsters';
 import { SPHERE_TYPES, type SphereType } from '../data/spheres';
 import { D, type Decimal } from '../util/decimal';
 import type { NumberFormat } from '../util/format';
@@ -262,7 +262,8 @@ export function rareChanceInZone(zone: number, rareBoost = 1): number {
 export function pickSpecies(holder: { rngState: number }, zone: number, rareBoost = 1): SpeciesId {
   const boss = bossForZone(zone);
   if (boss) return boss.id;
-  const { normals, rare } = areaPool(zone);
+  const { rare } = areaPool(zone);
+  const normals = normalsInZone(zone);
   if (rare && nextRandom(holder) < rareChanceInZone(zone, rareBoost)) return rare.id;
   const picked = weightedPick(holder, normals, (s) => BALANCING.rarity[s.rarity].spawnWeight) ?? normals[0];
   if (!picked) throw new Error(`Keine Art für Zone ${zone}`);
