@@ -24,6 +24,9 @@ export const de = {
     bossFailed: 'Der Boss war zu stark. Sammle hier Energie und versuche es erneut.',
     zoneDown: 'Zone zurück',
     zoneUp: 'Zone vor',
+    jump: 'Springen',
+    jumpHighest: 'Höchste Zone',
+    jumpPlaceholder: 'Zone',
     autoProgress: 'Automatisch weiter',
     challengeBoss: 'Boss herausfordern',
     hp: '{hp} / {maxHp} Leben',
@@ -508,6 +511,12 @@ export const de = {
     tabSpecies: 'Arten',
     tabBosses: 'Bossmonster',
     tabConstellations: 'Konstellationen',
+  },
+  area: {
+    title: 'Gebiet: Sternsystem {system} (Zone {from} bis {to})',
+    bossZone: 'Zone {zone}',
+    unknownHint: 'Noch nicht gefangen',
+    hint: 'Diese Arten gibt es nur in diesem Gebiet. Die seltene Art wird mit jeder Zone etwas häufiger.',
   },
   shop: {
     title: 'Fangsphären',

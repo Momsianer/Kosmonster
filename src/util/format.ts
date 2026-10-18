@@ -170,6 +170,8 @@ export function formatDuration(totalSeconds: number): string {
 }
 
 /** Formatiert einen Anteil als Prozent, z. B. 0,25 → „25 %“ */
-export function formatPercent(fraction: number): string {
-  return new Intl.NumberFormat(getLocale(), { style: 'percent', maximumFractionDigits: 1 }).format(fraction);
+export function formatPercent(fraction: number, maxFractionDigits = 1): string {
+  return new Intl.NumberFormat(getLocale(), { style: 'percent', maximumFractionDigits: maxFractionDigits }).format(
+    fraction,
+  );
 }
