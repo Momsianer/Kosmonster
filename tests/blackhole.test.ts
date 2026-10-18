@@ -39,11 +39,12 @@ function stateWithDm(amount = 1000): GameState {
 }
 
 describe('Dunkle Materie Formeln', () => {
-  it('floor( (sternenstaubDiesesZyklus / 1e6)^0,4 )', () => {
+  it('floor( (sternenstaubDiesesZyklus / stardustDivisor)^0,4 )', () => {
+    const d = BH.stardustDivisor;
     expect(darkMatterFor(D(0)).toNumber()).toBe(0);
-    expect(darkMatterFor(D(1e6)).toNumber()).toBe(1);
-    expect(darkMatterFor(D(1e7)).toNumber()).toBe(2);
-    expect(darkMatterFor(D(1e9)).toNumber()).toBe(15);
+    expect(darkMatterFor(D(d)).toNumber()).toBe(1);
+    expect(darkMatterFor(D(d * 10)).toNumber()).toBe(2);
+    expect(darkMatterFor(D(d * 1000)).toNumber()).toBe(15);
   });
 
   it('Gravitation (1 + verdienteDunkleMaterie)^0,5 verstärkt den Sternenstaub', () => {
@@ -85,7 +86,7 @@ describe('Schwarzes Loch', () => {
     return state;
   }
 
-  it('erst ab 1e6 Sternenstaub im Zyklus', () => {
+  it('erst ab minStardust Sternenstaub im Zyklus', () => {
     const state = ready();
     expect(canBlackHole(state)).toBe(true);
     state.stardustCycle = D(BH.minStardust - 1);

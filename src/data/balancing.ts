@@ -148,9 +148,9 @@ export const BALANCING = {
   },
   blackHole: {
     /** Schwarzes Loch möglich ab so viel Sternenstaub seit dem letzten Schwarzen Loch */
-    minStardust: 1e6,
+    minStardust: 1.5e4,
     /** dunkleMaterie = floor( (sternenstaubDiesesZyklus / stardustDivisor)^exponent ) */
-    stardustDivisor: 1e6,
+    stardustDivisor: 1e4,
     exponent: 0.4,
     /** gravitationsMult auf Sternenstaubertrag = (1 + verdienteDunkleMaterie)^gravityExponent */
     gravityExponent: 0.5,
