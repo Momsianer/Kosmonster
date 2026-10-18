@@ -85,7 +85,7 @@ describe('Unendlichkeit und Urknall', () => {
     expect(state.darkMatter.eq(0)).toBe(true);
     expect(state.darkMatterTotal.eq(0)).toBe(true);
     expect(state.dmUpgrades).toEqual({});
-    expect(state.energy.eq(0)).toBe(true);
+    expect(state.energy.eq(BALANCING.world.resetEnergy)).toBe(true);
     expect(state.zone).toBe(1);
     expect(state.collection.art_001).toMatchObject({ evolution: 1, level: 0 });
     expect(state.originUpgrades).toEqual({ urkraft: 1 });
@@ -188,6 +188,16 @@ describe('Challenges', () => {
     state.highestZone = 99;
     updateChallenge(state, 1);
     expect(state.originPoints.toNumber()).toBe(BALANCING.challenges.stilleHaende.reward);
+  });
+
+  it('nach dem Reset reicht die Startenergie für ein erstes Level, auch ohne Klicks', () => {
+    const state = afterBigBang();
+    addCatch(state, 'art_001');
+    startChallenge(state, 'stilleHaende');
+    expect(state.collection.art_001!.level).toBe(0);
+    expect(levelUp(state, 'art_001', 1)).toBe(1);
+    advance(state, 60 * 1000);
+    expect(state.enemiesDefeated).toBeGreaterThan(0);
   });
 
   it('Stille Hände: kein Klick', () => {

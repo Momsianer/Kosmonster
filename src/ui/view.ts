@@ -248,11 +248,30 @@ function challengeBonusText(id: ChallengeId): string {
   return t(`challenge.bonus.${kind}`, { value: shown });
 }
 
+/** Zahlen aus dem Balancing für die Challengetexte */
+function challengeParams(id: ChallengeId): Record<string, string> {
+  const r = BALANCING.challengeRules;
+  switch (id) {
+    case 'primzahlwelt':
+      return { factor: formatPercent(r.nonPrimeDamage) };
+    case 'gezeitensperre':
+      return { seconds: formatNumber(r.tideSeconds) };
+    case 'teilbarkeit':
+      return { hpMult: formatNumber(r.divisibilityHpMult), divisor: formatNumber(r.divisor) };
+    case 'entropie':
+      return { seconds: formatNumber(r.entropySeconds) };
+    case 'lichtgeschwindigkeit':
+      return { time: formatDuration(r.lightSpeedSeconds) };
+    default:
+      return {};
+  }
+}
+
 function challengeViews(state: GameState): ChallengeView[] {
   return CHALLENGE_IDS.map((id) => ({
     id,
     name: t(`challenge.${id}.name`),
-    description: t(`challenge.${id}.description`),
+    description: t(`challenge.${id}.description`, challengeParams(id)),
     goal: BALANCING.challenges[id].goalZone,
     reward: BALANCING.challenges[id].reward,
     bonus: challengeBonusText(id),

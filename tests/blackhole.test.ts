@@ -113,7 +113,7 @@ describe('Schwarzes Loch', () => {
     expect(state.stardust.eq(0)).toBe(true);
     expect(state.stardustCycle.eq(0)).toBe(true);
     expect(state.research).toEqual({});
-    expect(state.energy.eq(0)).toBe(true);
+    expect(state.energy.eq(BALANCING.world.resetEnergy)).toBe(true);
     expect(state.zone).toBe(1);
     expect(state.modules).toEqual({});
     expect(state.enemy.maxHp.eq(enemyMaxHp(1))).toBe(true);

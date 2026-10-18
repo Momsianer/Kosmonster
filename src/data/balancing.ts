@@ -202,7 +202,7 @@ export const BALANCING = {
      * „Unendlichkeit“: Bis zum ersten Urknall sind Energie und Zyklusenergie hier gedeckelt,
      * erreicht die Zyklusenergie diesen Wert, ist der Urknall möglich.
      */
-    infinityEnergy: 1e30,
+    infinityEnergy: 1e18,
     /** ursprungspunkte = basePoints + challengeBonus (abgeschlossene Challenges * pointsPerChallenge) */
     basePoints: 1,
     pointsPerChallenge: 1,
@@ -253,8 +253,8 @@ export const BALANCING = {
     divisor: 3,
     /** Entropie: Monster im Team verlieren alle entropySeconds ein Level (mindestens Level 1) */
     entropySeconds: 30,
-    /** Lichtgeschwindigkeit: Zeitlimit für den ganzen Durchlauf */
-    lightSpeedSeconds: 2 * 3600,
+    /** Lichtgeschwindigkeit: Zeitlimit für den ganzen Durchlauf (Spielzeit, läuft auch offline) */
+    lightSpeedSeconds: 6 * 3600,
     /** Einzelgänger: Teamplätze */
     soloSlots: 1,
   },
@@ -319,6 +319,8 @@ export const BALANCING = {
   },
   world: {
     startZone: 1,
+    /** Energie nach jedem Reset (Supernova, Schwarzes Loch, Urknall, Challenge), genug für ein erstes Level */
+    resetEnergy: 50,
     /** Gegner, die pro normaler Zone besiegt werden müssen */
     enemiesPerZone: 10,
     /** Zonen pro Sternsystem */

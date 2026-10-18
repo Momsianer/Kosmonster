@@ -56,7 +56,7 @@ export function supernova(state: GameState): boolean {
  * Gemeinsam genutzt von Supernova und Schwarzem Loch.
  */
 export function resetRun(state: GameState): void {
-  state.energy = D(0);
+  state.energy = D(BALANCING.world.resetEnergy);
   state.cycleEnergy = D(0);
   state.modules = {};
   for (const entry of Object.values(state.collection)) {

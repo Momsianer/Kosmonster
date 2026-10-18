@@ -40,6 +40,10 @@ export const MILESTONES = [
   { id: 'fiveSupernovas', label: '5 Supernovas', target: null, reached: (s: GameState) => s.supernovas >= 5 },
   { id: 'tenSupernovas', label: '10 Supernovas', target: 12 * 3600, reached: (s: GameState) => s.supernovas >= 10 },
   { id: 'firstBlackHole', label: 'Erstes Schwarzes Loch', target: 20 * 3600, reached: (s: GameState) => s.blackHoles >= 1 },
+  { id: 'firstBigBang', label: 'Erster Urknall', target: 60 * 3600, reached: (s: GameState) => s.bigBangs >= 1 },
+  { id: 'sixChallenges', label: '6 Challenges', target: null, reached: (s: GameState) => s.challenge.completed.length >= 6 },
+  { id: 'allChallenges', label: 'Alle 12 Challenges', target: 120 * 3600, reached: (s: GameState) => s.challenge.completed.length >= 12 },
+  { id: 'theorem', label: 'Theorem besiegt', target: 150 * 3600, reached: (s: GameState) => s.theoremDefeated },
 ] as const;
 
 export interface SimResult {
@@ -65,7 +69,7 @@ export function simulate(profile: Profile, maxSeconds: number, seed = 1): SimRes
   let t = 0;
   let clickBudget = 0;
   let nextDecision = 0;
-  const done = () => t >= maxSeconds || times.firstBlackHole !== null;
+  const done = () => t >= maxSeconds || times.theorem !== null;
 
   while (!done()) {
     // Sitzung online
