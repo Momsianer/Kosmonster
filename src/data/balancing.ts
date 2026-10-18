@@ -243,7 +243,7 @@ export const BALANCING = {
      * „Unendlichkeit“: Bis zum ersten Urknall sind Energie und Zyklusenergie hier gedeckelt,
      * erreicht die Zyklusenergie diesen Wert, ist der Urknall möglich.
      */
-    infinityEnergy: 1e18,
+    infinityEnergy: 1e22,
     /** ursprungspunkte = basePoints + challengeBonus (abgeschlossene Challenges * pointsPerChallenge) */
     basePoints: 1,
     pointsPerChallenge: 1,
