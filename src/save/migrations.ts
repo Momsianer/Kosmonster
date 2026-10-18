@@ -100,6 +100,24 @@ export const MIGRATIONS: Record<number, (save: RawSave) => RawSave> = {
       ),
     ),
   }),
+  // 8 → 9: Urknall, Challenges, Konstellationen, Story und Theorem
+  8: (save) => ({
+    ...save,
+    version: 9,
+    originPoints: '0',
+    originTotal: '0',
+    bigBangs: 0,
+    originUpgrades: {},
+    challenge: { active: null, completed: [], startTime: 0, tideStart: 0, entropyTimer: 0 },
+    constellationsFound: [],
+    storySeen: [],
+    theorem: null,
+    theoremDefeated: false,
+    automation: {
+      ...(typeof save.automation === 'object' && save.automation ? save.automation : {}),
+      blackHoleTarget: BALANCING.automation.defaultBlackHoleTarget,
+    },
+  }),
 };
 
 /** Hebt einen Speicherstand schrittweise auf die aktuelle Version. */

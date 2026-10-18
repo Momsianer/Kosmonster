@@ -1,6 +1,9 @@
 import { BALANCING } from '../data/balancing';
 import { runAutomation } from '../systems/automation';
 import { updateBreeding } from '../systems/breeding';
+import { updateChallenge } from '../systems/challenges';
+import { discoverConstellations } from '../systems/constellations';
+import { updateTheorem } from '../systems/theorem';
 import { applyTeamDamage, updateBossTimer } from '../systems/combat';
 import { typeCountInTeam } from '../systems/monsters';
 import { offlineBonus, offlineLimitSeconds } from '../systems/research';
@@ -19,6 +22,9 @@ export function tick(state: GameState, dtSeconds: number): void {
   applyTeamDamage(state, dtSeconds);
   updateBossTimer(state, dtSeconds);
   updateBreeding(state, dtSeconds);
+  updateTheorem(state, dtSeconds);
+  updateChallenge(state, dtSeconds);
+  discoverConstellations(state);
   runAutomation(state, dtSeconds);
 }
 

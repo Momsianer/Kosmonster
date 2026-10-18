@@ -98,6 +98,19 @@ describe('Migrationen', () => {
     expect(migrated.collection).toEqual({ art_001: { caught: 2, level: 4, evolution: 0, shiny: false, bred: 0 } });
   });
 
+  it('hebt Version 8 auf Version 9', () => {
+    const migrated = MIGRATIONS[8]!({ version: 8, automation: { sphereTarget: 7 } });
+    expect(migrated.version).toBe(9);
+    expect(migrated.originPoints).toBe('0');
+    expect(migrated.bigBangs).toBe(0);
+    expect(migrated.challenge).toEqual({ active: null, completed: [], startTime: 0, tideStart: 0, entropyTimer: 0 });
+    expect(migrated.constellationsFound).toEqual([]);
+    expect(migrated.storySeen).toEqual([]);
+    expect(migrated.theorem).toBeNull();
+    expect(migrated.theoremDefeated).toBe(false);
+    expect(migrated.automation).toEqual({ sphereTarget: 7, blackHoleTarget: BALANCING.automation.defaultBlackHoleTarget });
+  });
+
   it('migrierter Stand hat dieselben Felder wie ein neuer Zustand', () => {
     const fresh = JSON.parse(JSON.stringify(createInitialState(0)));
     const migrated = migrate({ ...fresh, version: 1 });

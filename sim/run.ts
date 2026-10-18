@@ -4,8 +4,15 @@
  */
 import { formatTime, MILESTONES, PROFILES, simulate } from './simulate';
 
-const MAX_SECONDS = 30 * 3600;
-const SEEDS = [1, 2, 3];
+/**
+ * npm run sim          bis 30 Stunden, 3 Läufe je Profil
+ * npm run sim -- 160 1 bis 160 Stunden, 1 Lauf je Profil (dauert einige Minuten)
+ */
+const args = (globalThis as { process?: { argv: string[] } }).process?.argv ?? [];
+const HOURS = Number(args[2] ?? 30);
+const RUNS = Number(args[3] ?? 3);
+const MAX_SECONDS = HOURS * 3600;
+const SEEDS = Array.from({ length: RUNS }, (_, i) => i + 1);
 
 function median(values: (number | null)[]): number | null {
   const reached = values.filter((v): v is number => v !== null).sort((a, b) => a - b);

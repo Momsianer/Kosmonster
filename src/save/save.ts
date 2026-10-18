@@ -5,6 +5,9 @@ import {
   createEnemy,
   createInitialState,
   createAutomationState,
+  createChallengeState,
+  type ChallengeState,
+  type TheoremFight,
   emptySpheres,
   type AutomationState,
   type BreedingSlot,
@@ -16,6 +19,9 @@ import {
 import { isModuleId, type ModuleId } from '../data/modules';
 import { isResearchId, type ResearchId } from '../data/research';
 import { isAutomationId, isDmUpgradeId, type DmUpgradeId } from '../data/darkmatter';
+import { isChallengeId } from '../data/challenges';
+import { isConstellationId } from '../data/constellations';
+import { isOriginId, type OriginId } from '../data/origin';
 import { SPHERE_TYPES, type SphereType } from '../data/spheres';
 import { bossTimeLimitFor, teamSlotsFor } from '../systems/research';
 import { getSpecies, isSpeciesId, speciesInZone, type SpeciesId } from '../data/monsters';
@@ -119,6 +125,19 @@ export function hydrate(raw: RawSave): GameState {
     dmUpgrades,
     automation: hydrateAutomation(raw.automation),
     breeding: hydrateBreeding(raw.breeding, collection),
+    originPoints: toDecimal(raw.originPoints, base.originPoints),
+    originTotal: toDecimal(raw.originTotal, base.originTotal),
+    bigBangs: Math.floor(toNumber(raw.bigBangs, 0)),
+    originUpgrades: hydrateOrigin(raw.originUpgrades),
+    challenge: hydrateChallenge(raw.challenge),
+    constellationsFound: Array.isArray(raw.constellationsFound)
+      ? [...new Set(raw.constellationsFound.filter(isConstellationId))]
+      : [],
+    storySeen: Array.isArray(raw.storySeen)
+      ? [...new Set(raw.storySeen.filter((n): n is number => Number.isInteger(n) && n > 0))]
+      : [],
+    theorem: hydrateTheorem(raw.theorem),
+    theoremDefeated: raw.theoremDefeated === true,
     zone,
     highestZone: Math.max(zone, toZone(raw.highestZone, zone)),
     killsInZone: Math.min(toNumber(raw.killsInZone, 0), BALANCING.world.enemiesPerZone),
@@ -187,15 +206,46 @@ function hydrateAutomation(value: unknown): AutomationState {
   if (!isRecord(value)) return auto;
   if (isRecord(value.enabled)) {
     for (const [id, on] of Object.entries(value.enabled)) {
-      if (isAutomationId(id) && typeof on === 'boolean') auto.enabled[id] = on;
+      if ((isAutomationId(id) || id === 'autoschwarzloch') && typeof on === 'boolean') auto.enabled[id] = on;
     }
   }
   auto.sphereTarget = Math.floor(toNumber(value.sphereTarget, auto.sphereTarget));
   auto.supernovaTarget = toNumber(value.supernovaTarget, auto.supernovaTarget);
+  auto.blackHoleTarget = toNumber(value.blackHoleTarget, auto.blackHoleTarget);
   auto.clickBudget = Math.min(1, toNumber(value.clickBudget, 0));
   auto.timer = toNumber(value.timer, 0);
   auto.bossWait = toNumber(value.bossWait, 0);
   return auto;
+}
+
+function hydrateOrigin(value: unknown): Partial<Record<OriginId, number>> {
+  const upgrades: Partial<Record<OriginId, number>> = {};
+  if (!isRecord(value)) return upgrades;
+  for (const [id, level] of Object.entries(value)) {
+    if (!isOriginId(id)) continue;
+    const n = Math.min(Math.floor(toNumber(level, 0)), BALANCING.origin.upgrades[id].maxLevel);
+    if (n > 0) upgrades[id] = n;
+  }
+  return upgrades;
+}
+
+function hydrateChallenge(value: unknown): ChallengeState {
+  const challenge = createChallengeState();
+  if (!isRecord(value)) return challenge;
+  challenge.active = isChallengeId(value.active) ? value.active : null;
+  challenge.completed = Array.isArray(value.completed) ? [...new Set(value.completed.filter(isChallengeId))] : [];
+  challenge.startTime = toNumber(value.startTime, 0);
+  challenge.tideStart = toNumber(value.tideStart, 0);
+  challenge.entropyTimer = toNumber(value.entropyTimer, 0);
+  return challenge;
+}
+
+function hydrateTheorem(value: unknown): TheoremFight | null {
+  if (!isRecord(value)) return null;
+  const maxHp = toDecimal(value.maxHp, D(0));
+  const hp = toDecimal(value.hp, maxHp);
+  if (maxHp.lte(0) || hp.lte(0)) return null;
+  return { hp: hp.min(maxHp), maxHp, timeLeft: toNumber(value.timeLeft, 0) };
 }
 
 function hydrateBreeding(

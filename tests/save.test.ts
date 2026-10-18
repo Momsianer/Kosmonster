@@ -249,6 +249,35 @@ describe('M9 im Speicherstand', () => {
   });
 });
 
+describe('M10 im Speicherstand', () => {
+  it('Urknall, Challenges, Konstellationen, Story und Theorem überstehen Speichern und Laden', () => {
+    const state = createInitialState(0);
+    state.originPoints = D(5);
+    state.originTotal = D(8);
+    state.bigBangs = 2;
+    state.originUpgrades = { urkraft: 2, autoschwarzloch: 1 };
+    state.challenge = { active: 'entropie', completed: ['monokultur'], startTime: 10, tideStart: 20, entropyTimer: 5 };
+    state.constellationsFound = ['goldenerSchnitt'];
+    state.storySeen = [1, 2];
+    state.theorem = { hp: D(50), maxHp: D(100), timeLeft: 30 };
+    state.theoremDefeated = true;
+    state.automation.enabled.autoschwarzloch = false;
+    state.automation.blackHoleTarget = 12;
+    const loaded = decodeSave(encodeSave(state))!;
+    expect(loaded.originPoints.toNumber()).toBe(5);
+    expect(loaded.originTotal.toNumber()).toBe(8);
+    expect(loaded.bigBangs).toBe(2);
+    expect(loaded.originUpgrades).toEqual(state.originUpgrades);
+    expect(loaded.challenge).toEqual(state.challenge);
+    expect(loaded.constellationsFound).toEqual(['goldenerSchnitt']);
+    expect(loaded.storySeen).toEqual([1, 2]);
+    expect(loaded.theorem!.hp.toNumber()).toBe(50);
+    expect(loaded.theoremDefeated).toBe(true);
+    expect(loaded.automation.enabled.autoschwarzloch).toBe(false);
+    expect(loaded.automation.blackHoleTarget).toBe(12);
+  });
+});
+
 describe('Speicherplatz', () => {
   it('speichert und lädt über den Speicher', () => {
     const storage = memoryStorage();

@@ -16,6 +16,12 @@ import type { ResearchId } from '../src/data/research';
 import type { DmUpgradeId } from '../src/data/darkmatter';
 import { blackHole, canBlackHole, darkMatterGain } from '../src/systems/blackhole';
 import { canBreed, startBreeding } from '../src/systems/breeding';
+import { CHALLENGE_IDS, type ChallengeId } from '../src/data/challenges';
+import type { OriginId } from '../src/data/origin';
+import { bigBang, canBigBang } from '../src/systems/bigbang';
+import { abandonChallenge, canStartChallenge, startChallenge } from '../src/systems/challenges';
+import { buyOrigin, canBuyOrigin } from '../src/systems/origin';
+import { startTheorem, theoremAvailable, theoremHp } from '../src/systems/theorem';
 import { buyDm, canBuyDm } from '../src/systems/darkmatter';
 import { canEvolve, evolutionCost, evolve } from '../src/systems/evolution';
 import { canSupernova, stardustGain, supernova } from '../src/systems/prestige';
@@ -34,10 +40,14 @@ export interface PolicyMemory {
   lastProgress: number;
   /** Insgesamt verdienter Sternenstaub */
   stardustEarned: number;
+  /** Challenges, die in dieser Runde abgebrochen wurden */
+  skipped: ChallengeId[];
+  /** Urknalle beim letzten Neustart der Challengerunde */
+  lastBigBangs: number;
 }
 
 export function createMemory(): PolicyMemory {
-  return { lastHighest: 0, lastProgress: 0, stardustEarned: 0 };
+  return { lastHighest: 0, lastProgress: 0, stardustEarned: 0, skipped: [], lastBigBangs: 0 };
 }
 
 /** Reihenfolge, in der der Bot forscht (Voraussetzungen werden mitgenommen) */
@@ -245,6 +255,74 @@ function spendDarkMatter(state: GameState): void {
   }
 }
 
+/** Reihenfolge, in der der Bot Ursprungspunkte ausgibt */
+const ORIGIN_PRIORITY: OriginId[] = [
+  'automatikBehalten',
+  'urkraft',
+  'urproduktion',
+  'sternenquelle',
+  'urmaterie',
+  'autoschwarzloch',
+  'fruehesupernova',
+  'sternbilder',
+  'sternkarte',
+];
+
+/** Ohne Fortschritt so lange in einer Challenge (Spielzeit inklusive Offlinepausen), dann Abbruch */
+const CHALLENGE_STALL_SECONDS = 6 * 3600;
+
+function spendOrigin(state: GameState): void {
+  for (let i = 0; i < 50; i++) {
+    const next = ORIGIN_PRIORITY.find((id) => canBuyOrigin(state, id));
+    if (!next) return;
+    buyOrigin(state, next);
+  }
+}
+
+/**
+ * Urknall bei Unendlichkeit. Danach nimmt der Bot die nächste offene Challenge,
+ * bricht sie ab, wenn eine Stunde kein Fortschritt kommt, und versucht später die nächste.
+ */
+function handleBigBang(state: GameState, memory: PolicyMemory, now: number): void {
+  if (state.highestZone > memory.lastHighest) {
+    memory.lastHighest = state.highestZone;
+    memory.lastProgress = now;
+  }
+  if (canBigBang(state)) {
+    bigBang(state);
+    memory.lastHighest = state.highestZone;
+    memory.lastProgress = now;
+    memory.stardustEarned = 0;
+  }
+  if (state.challenge.active) {
+    if (now - memory.lastProgress >= CHALLENGE_STALL_SECONDS) {
+      memory.skipped.push(state.challenge.active);
+      abandonChallenge(state);
+    }
+    return;
+  }
+  if (!canStartChallenge(state)) return;
+  const open = CHALLENGE_IDS.filter((id) => !state.challenge.completed.includes(id));
+  const next = open.find((id) => !memory.skipped.includes(id));
+  if (!next) {
+    // Alle offenen einmal versucht: neue Runde nach dem nächsten Urknall
+    if (open.length > 0 && memory.lastBigBangs !== state.bigBangs) memory.skipped = [];
+    memory.lastBigBangs = state.bigBangs;
+    return;
+  }
+  startChallenge(state, next);
+  memory.lastHighest = state.highestZone;
+  memory.lastProgress = now;
+  memory.stardustEarned = 0;
+}
+
+/** Fordert das Theorem heraus, sobald der Schaden in der Zeit reichen könnte */
+function handleTheorem(state: GameState, options: PolicyOptions): void {
+  if (state.theoremDefeated || state.theorem || !theoremAvailable(state)) return;
+  const dps = teamDps(state).add(clickDamage(teamDps(state), clickBonus(state)).mul(options.clicksPerSecond));
+  if (dps.mul(BALANCING.theorem.timeLimitSeconds).mul(bossDamageMult(state)).gte(theoremHp())) startTheorem(state);
+}
+
 /** Startet Zuchten für die Arten im Team, sobald ein Platz frei ist */
 function breed(state: GameState): void {
   for (const id of state.team) if (canBreed(state, id)) startBreeding(state, id);
@@ -256,8 +334,11 @@ export function decide(state: GameState, options: PolicyOptions, memory: PolicyM
     memory.lastHighest = state.highestZone;
     memory.lastProgress = now;
   }
+  handleBigBang(state, memory, now);
+  handleTheorem(state, options);
   handleBlackHole(state, memory, now);
   handleSupernova(state, memory, now);
+  spendOrigin(state);
   spendDarkMatter(state);
   spendStardust(state);
   breed(state);

@@ -1,8 +1,10 @@
 import { BALANCING } from '../data/balancing';
-import { clickDamage, enemyReward, isBossZone } from '../core/formulas';
+import { clickDamage, enemyKind, enemyReward, isBossZone, isPrime, starSystem } from '../core/formulas';
 import { addEnergy, type GameState } from '../core/state';
 import { getSpecies } from '../data/monsters';
 import { spawnEnemy } from './spawning';
+import { ruleActive } from './rules';
+import { damageTheorem } from './theorem';
 import { tryCatch } from './catching';
 import { teamDps, typeCountInTeam } from './monsters';
 import { D, type Decimal, type DecimalSource } from '../util/decimal';
@@ -28,6 +30,10 @@ export function enterZone(state: GameState, zone: number, killsInZone = 0): void
 export function dealDamage(state: GameState, amount: DecimalSource): boolean {
   const damage = D(amount);
   if (damage.lte(0)) return false;
+  if (state.theorem) {
+    damageTheorem(state, damage);
+    return false;
+  }
 
   const enemy = state.enemy;
   enemy.hp = enemy.hp.sub(damage).max(0);
@@ -48,6 +54,8 @@ export function defeatEnemy(state: GameState): void {
   state.enemiesDefeated += 1;
 
   if (isBossZone(zone)) {
+    state.challenge.tideStart = state.playTime;
+    if (enemyKind(zone) === 'systemBoss') recordStory(state, zone);
     // Fangbar sind nur legendäre Systembosse
     if (getSpecies(state.enemy.speciesId)?.rarity === 'legendary') {
       tryCatch(state, state.enemy.speciesId, state.enemy.shiny);
@@ -84,9 +92,20 @@ export function updateBossTimer(state: GameState, dtSeconds: number): void {
   if (state.bossTimeLeft === 0) failBoss(state);
 }
 
-/** Schadensmultiplikator gegen den aktuellen Gegner (Forschung „Bossschaden“) */
+/** Schadensmultiplikator gegen den aktuellen Gegner (Bossschaden, Primzahlwelt) */
 function targetMult(state: GameState): Decimal {
-  return isBossZone(state.enemy.zone) ? bossDamageMult(state) : D(1);
+  const boss = state.theorem !== null || isBossZone(state.enemy.zone);
+  let mult = boss ? bossDamageMult(state) : D(1);
+  if (ruleActive(state, 'primeWorld') && !state.theorem && !isPrime(state.enemy.zone)) {
+    mult = mult.mul(BALANCING.challengeRules.nonPrimeDamage);
+  }
+  return mult;
+}
+
+/** Erster Sieg über einen Systemboss schaltet ein Stück Story frei */
+function recordStory(state: GameState, zone: number): void {
+  const system = starSystem(zone);
+  if (!state.storySeen.includes(system)) state.storySeen.push(system);
 }
 
 /**
@@ -94,6 +113,7 @@ function targetMult(state: GameState): Decimal {
  * Autoklicks (manual = false) zählen nicht als Aktivität für den Leerlaufbonus von Null.
  */
 export function clickEnemy(state: GameState, manual = true): boolean {
+  if (ruleActive(state, 'noClick')) return false;
   state.clicks += 1;
   if (manual) state.lastClick = state.playTime;
   const dps = teamDps(state);

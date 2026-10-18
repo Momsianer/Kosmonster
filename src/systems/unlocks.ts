@@ -1,6 +1,7 @@
 import type { GameState } from '../core/state';
 import { BALANCING } from '../data/balancing';
 import { totalSpheres } from './catching';
+import { theoremAvailable } from './theorem';
 
 const stationUnlocked = (state: GameState) =>
   state.playTime >= BALANCING.station.unlockSeconds || Object.keys(state.modules).length > 0;
@@ -24,6 +25,12 @@ export const UNLOCKS = {
     state.blackHoles > 0 || state.stardustCycle.gte(BALANCING.blackHole.minStardust),
   automation: (state: GameState) => state.blackHoles > 0,
   breeding: (state: GameState) => state.blackHoles > 0,
+  story: (state: GameState) => state.storySeen.length > 0,
+  bigBang: (state: GameState) =>
+    state.bigBangs > 0 || state.cycleEnergy.gte(BALANCING.bigBang.infinityEnergy),
+  challenges: (state: GameState) => state.bigBangs > 0,
+  constellations: (state: GameState) => state.bigBangs > 0,
+  theorem: (state: GameState) => theoremAvailable(state) && !state.theoremDefeated,
 } as const;
 
 export type UnlockId = keyof typeof UNLOCKS;

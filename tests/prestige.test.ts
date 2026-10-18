@@ -81,7 +81,7 @@ describe('Supernova', () => {
     expect(supernova(state)).toBe(true);
     expect(state.stardust.eq(gain)).toBe(true);
     expect(state.supernovas).toBe(1);
-    expect(state.energy.eq(0)).toBe(true);
+    expect(state.energy.eq(BALANCING.world.resetEnergy)).toBe(true);
     expect(state.cycleEnergy.eq(0)).toBe(true);
     expect(state.zone).toBe(1);
     expect(state.highestZone).toBe(1);
