@@ -3,6 +3,7 @@ import type { GameState } from '../core/state';
 import { spawnEnemy } from './spawning';
 import { D, type Decimal } from '../util/decimal';
 import { gravitationMult } from './darkmatter';
+import { challengeMult, originEffect } from './rules';
 import { startSpheresBonus, supernovaStartZone } from './research';
 
 /** sternenstaub = floor( (zyklusEnergie / energyDivisor)^exponent ) */
@@ -14,8 +15,10 @@ export function stardustFor(cycleEnergy: Decimal): Decimal {
 
 /** Sternenstaubgewinn einer Supernova, verstärkt durch die Gravitation der Dunklen Materie */
 export function stardustGain(state: GameState): Decimal {
-  const base = stardustFor(state.cycleEnergy);
-  return state.darkMatterTotal.lte(0) ? base : base.mul(gravitationMult(state)).floor();
+  const base = stardustFor(state.cycleEnergy)
+    .mul(1 + originEffect(state, 'sternenquelle'))
+    .mul(challengeMult(state, 'stardust'));
+  return (state.darkMatterTotal.lte(0) ? base : base.mul(gravitationMult(state))).floor();
 }
 
 /** passiver Bonus: ×(1 + bonusPerStardust * unausgegebenerSternenstaub) */
@@ -23,8 +26,13 @@ export function stardustBonus(state: GameState): Decimal {
   return state.stardust.mul(BALANCING.supernova.bonusPerStardust).add(1);
 }
 
+/** Zone, ab der eine Supernova möglich ist (Ursprung „Frühe Supernova“ senkt sie) */
+export function supernovaZone(state: GameState): number {
+  return Math.max(1, BALANCING.supernova.minZone - originEffect(state, 'fruehesupernova'));
+}
+
 export function canSupernova(state: GameState): boolean {
-  return state.highestZone >= BALANCING.supernova.minZone && stardustGain(state).gt(0);
+  return state.highestZone >= supernovaZone(state) && stardustGain(state).gt(0);
 }
 
 /**

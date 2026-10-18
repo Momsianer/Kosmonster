@@ -8,6 +8,8 @@ import { autoclickRate, automationActive } from './darkmatter';
 import { levelUp, levelUpCost } from './monsters';
 import { canSupernova, stardustGain, supernova } from './prestige';
 import { buyModule, moduleBuyCost } from './station';
+import { blackHole, canBlackHole, darkMatterGain } from './blackhole';
+import { originLevel } from './rules';
 
 /** Höchstzahl an Käufen je Automatikrunde, damit eine Runde nie hängt */
 const MAX_PURCHASES = 200;
@@ -60,6 +62,12 @@ function autoSupernova(state: GameState): void {
   if (canSupernova(state) && stardustGain(state).gte(state.automation.supernovaTarget)) supernova(state);
 }
 
+/** Autoschwarzloch (Ursprungsupgrade): öffnet ein Schwarzes Loch beim Zielwert */
+function autoBlackHole(state: GameState): void {
+  if (originLevel(state, 'autoschwarzloch') <= 0 || state.automation.enabled.autoschwarzloch === false) return;
+  if (canBlackHole(state) && darkMatterGain(state).gte(state.automation.blackHoleTarget)) blackHole(state);
+}
+
 /** Läuft in jedem Tick: Autoklicker laufend, die übrigen Automatiken alle intervalSeconds */
 export function runAutomation(state: GameState, dtSeconds: number): void {
   if (dtSeconds <= 0) return;
@@ -77,6 +85,7 @@ export function runAutomation(state: GameState, dtSeconds: number): void {
   if (auto.timer > 0) return;
   const interval = BALANCING.automation.intervalSeconds;
   auto.timer = interval;
+  autoBlackHole(state);
   if (automationActive(state, 'autoboss')) autoBoss(state, interval);
   if (automationActive(state, 'autosupernova')) autoSupernova(state);
   if (automationActive(state, 'autosphaeren')) autoSpheres(state);

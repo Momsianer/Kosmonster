@@ -183,6 +183,7 @@ export const BALANCING = {
     /** Startwerte der Einstellungen */
     defaultSphereTarget: 10,
     defaultSupernovaTarget: 100,
+    defaultBlackHoleTarget: 5,
   },
   breeding: {
     /** Brutplätze ohne Upgrade */
@@ -195,6 +196,79 @@ export const BALANCING = {
     /** potenzialMult = 1 + perBreed * zuchten^flattening */
     perBreed: 0.05,
     flattening: 0.75,
+  },
+  bigBang: {
+    /**
+     * „Unendlichkeit“: Bis zum ersten Urknall sind Energie und Zyklusenergie hier gedeckelt,
+     * erreicht die Zyklusenergie diesen Wert, ist der Urknall möglich.
+     */
+    infinityEnergy: 1e30,
+    /** ursprungspunkte = basePoints + challengeBonus (abgeschlossene Challenges * pointsPerChallenge) */
+    basePoints: 1,
+    pointsPerChallenge: 1,
+  },
+  /**
+   * Ursprungsupgrades (Universumsregeln und Konstellationsbaum):
+   * Kosten = baseCost * costGrowth^stufe, Bedeutung von perLevel siehe src/data/origin.ts.
+   */
+  origin: {
+    costGrowth: 2,
+    upgrades: {
+      automatikBehalten: { maxLevel: 1, baseCost: 1, perLevel: 1 },
+      autoschwarzloch: { maxLevel: 1, baseCost: 2, perLevel: 1 },
+      urmaterie: { maxLevel: 5, baseCost: 1, perLevel: 2 },
+      sternenquelle: { maxLevel: 10, baseCost: 1, perLevel: 0.5 },
+      urkraft: { maxLevel: 10, baseCost: 1, perLevel: 1 },
+      urproduktion: { maxLevel: 10, baseCost: 1, perLevel: 1 },
+      fruehesupernova: { maxLevel: 4, baseCost: 2, perLevel: 5 },
+      sternbilder: { maxLevel: 5, baseCost: 1, perLevel: 0.25 },
+      sternkarte: { maxLevel: 1, baseCost: 3, perLevel: 1 },
+    },
+  },
+  /**
+   * Challenges: Zielzone, Ursprungspunkte beim ersten Abschluss und dauerhafter Bonus.
+   * bonus.kind: dps, production, stardust, moduleCost, levelCost, bossTime, offlineLimit
+   */
+  challenges: {
+    stilleHaende: { goalZone: 40, reward: 2, bonus: { kind: 'dps', value: 1.5 } },
+    quadratisch: { goalZone: 40, reward: 2, bonus: { kind: 'moduleCost', value: 0.8 } },
+    einzelgaenger: { goalZone: 45, reward: 3, bonus: { kind: 'dps', value: 1.5 } },
+    leeresUniversum: { goalZone: 40, reward: 2, bonus: { kind: 'production', value: 2 } },
+    primzahlwelt: { goalZone: 35, reward: 3, bonus: { kind: 'dps', value: 1.5 } },
+    gezeitensperre: { goalZone: 40, reward: 2, bonus: { kind: 'production', value: 2 } },
+    monokultur: { goalZone: 45, reward: 3, bonus: { kind: 'dps', value: 1.5 } },
+    teilbarkeit: { goalZone: 35, reward: 3, bonus: { kind: 'bossTime', value: 10 } },
+    entropie: { goalZone: 40, reward: 2, bonus: { kind: 'levelCost', value: 0.9 } },
+    ohneGedaechtnis: { goalZone: 45, reward: 3, bonus: { kind: 'stardust', value: 1.5 } },
+    lichtgeschwindigkeit: { goalZone: 40, reward: 3, bonus: { kind: 'offlineLimit', value: 4 * 3600 } },
+    derBeweis: { goalZone: 30, reward: 5, bonus: { kind: 'dps', value: 3 } },
+  },
+  challengeRules: {
+    /** Primzahlwelt: Schaden außerhalb von Primzahlzonen */
+    nonPrimeDamage: 0.1,
+    /** Gezeitensperre: Produktion halbiert sich alle tideSeconds, Reset bei Bosssieg */
+    tideSeconds: 60,
+    /** Teilbarkeit: Gegnerleben ×hpMult, wenn die Zone nicht durch divisor teilbar ist */
+    divisibilityHpMult: 1000,
+    divisor: 3,
+    /** Entropie: Monster im Team verlieren alle entropySeconds ein Level (mindestens Level 1) */
+    entropySeconds: 30,
+    /** Lichtgeschwindigkeit: Zeitlimit für den ganzen Durchlauf */
+    lightSpeedSeconds: 2 * 3600,
+    /** Einzelgänger: Teamplätze */
+    soloSlots: 1,
+  },
+  constellations: {
+    /** Einfache Konstellationen: drei gleiche Typen */
+    simpleMult: 1.25,
+    /** Versteckte Konstellationen */
+    hiddenMult: 1.5,
+  },
+  theorem: {
+    /** Leben des Theorems: hp(hpZone) * hpMult */
+    hpZone: 100,
+    hpMult: 100,
+    timeLimitSeconds: 60,
   },
   evolution: {
     /** Evolution: basisDPS × dpsMult je Stufe */

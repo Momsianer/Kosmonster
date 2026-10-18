@@ -3,6 +3,7 @@ import { researchPrerequisite, type ResearchId } from '../data/research';
 import type { GameState } from '../core/state';
 import type { DmUpgradeId } from '../data/darkmatter';
 import { dmTeamSlots } from './darkmatter';
+import { challengeAdd, challengeMult, ruleActive } from './rules';
 import { D, powInt, type Decimal } from '../util/decimal';
 
 type ResearchMap = Partial<Record<ResearchId, number>>;
@@ -14,6 +15,11 @@ export function researchLevel(research: ResearchMap, id: ResearchId): number {
 /** Wirkung eines Knotens: perLevel * stufe */
 function effect(research: ResearchMap, id: ResearchId): number {
   return BALANCING.research.nodes[id].perLevel * researchLevel(research, id);
+}
+
+/** Wirksame Forschung: in „Ohne Gedächtnis“ keine */
+function researchOf(state: GameState): ResearchMap {
+  return ruleActive(state, 'noResearch') ? {} : state.research;
 }
 
 /** Kosten der nächsten Stufe: basis * costGrowth^stufe */
@@ -47,19 +53,19 @@ export function buyResearch(state: GameState, id: ResearchId): boolean {
 // ─── Wirkungen ──────────────────────────────────────────────
 
 export function clickBonus(state: GameState): number {
-  return BALANCING.click.baseClickBonus + effect(state.research, 'klickkraft');
+  return BALANCING.click.baseClickBonus + effect(researchOf(state), 'klickkraft');
 }
 
 export function teamDpsResearchMult(state: GameState): Decimal {
-  return D(1 + effect(state.research, 'teamstaerke'));
+  return D(1 + effect(researchOf(state), 'teamstaerke'));
 }
 
 export function critChance(state: GameState): number {
-  return Math.min(1, effect(state.research, 'kritchance'));
+  return Math.min(1, effect(researchOf(state), 'kritchance'));
 }
 
 export function critMult(state: GameState): number {
-  return BALANCING.click.critMult + effect(state.research, 'kritschaden');
+  return BALANCING.click.critMult + effect(researchOf(state), 'kritschaden');
 }
 
 export function bossTimeLimitFor(research: ResearchMap): number {
@@ -67,19 +73,19 @@ export function bossTimeLimitFor(research: ResearchMap): number {
 }
 
 export function bossTimeLimit(state: GameState): number {
-  return bossTimeLimitFor(state.research);
+  return bossTimeLimitFor(researchOf(state)) + challengeAdd(state, 'bossTime');
 }
 
 export function bossDamageMult(state: GameState): Decimal {
-  return D(1 + effect(state.research, 'bossschaden'));
+  return D(1 + effect(researchOf(state), 'bossschaden'));
 }
 
 export function catchResearchBonus(state: GameState): number {
-  return BALANCING.catching.baseResearchBonus + effect(state.research, 'fangglueck');
+  return BALANCING.catching.baseResearchBonus + effect(researchOf(state), 'fangglueck');
 }
 
 export function sphereCostMult(state: GameState): number {
-  return Math.max(0, 1 - effect(state.research, 'sphaerenrabatt'));
+  return Math.max(0, 1 - effect(researchOf(state), 'sphaerenrabatt'));
 }
 
 /** Teamplätze: Start, Forschung „Teamplatz“ und Dunkle Materie „Teamplätze“ */
@@ -88,37 +94,37 @@ export function teamSlotsFor(research: ResearchMap, dmUpgrades: Partial<Record<D
 }
 
 export function startSpheresBonus(state: GameState): number {
-  return effect(state.research, 'startsphaeren');
+  return effect(researchOf(state), 'startsphaeren');
 }
 
 export function rareSpawnBoost(state: GameState): number {
-  return 1 + effect(state.research, 'seltenheit');
+  return 1 + effect(researchOf(state), 'seltenheit');
 }
 
 export function shinyChanceMult(state: GameState): number {
-  return 1 + effect(state.research, 'polarstern');
+  return 1 + effect(researchOf(state), 'polarstern');
 }
 
 export function productionResearchMult(state: GameState): Decimal {
-  return D(1 + effect(state.research, 'produktion'));
+  return D(1 + effect(researchOf(state), 'produktion'));
 }
 
 export function moduleCostMult(state: GameState): number {
-  return Math.max(0, 1 - effect(state.research, 'modulrabatt'));
+  return Math.max(0, 1 - effect(researchOf(state), 'modulrabatt')) * challengeMult(state, 'moduleCost');
 }
 
 export function productionToDpsShare(state: GameState): number {
-  return effect(state.research, 'umwandlung');
+  return effect(researchOf(state), 'umwandlung');
 }
 
 export function offlineBonus(state: GameState): number {
-  return effect(state.research, 'offlinebonus');
+  return effect(researchOf(state), 'offlinebonus');
 }
 
 export function offlineLimitSeconds(state: GameState): number {
-  return BALANCING.offline.maxSeconds + effect(state.research, 'offlinelimit');
+  return BALANCING.offline.maxSeconds + effect(researchOf(state), 'offlinelimit') + challengeAdd(state, 'offlineLimit');
 }
 
 export function supernovaStartZone(state: GameState): number {
-  return BALANCING.world.startZone + effect(state.research, 'startzone');
+  return BALANCING.world.startZone + effect(researchOf(state), 'startzone');
 }

@@ -1,13 +1,11 @@
 import { BALANCING } from '../data/balancing';
 import { getSpecies, type SpeciesId } from '../data/monsters';
 import {
-  bulkCost,
   enemyKind,
   eulerMult,
   fibonacciMult,
   fractalMult,
   infinityMult,
-  maxAffordable,
   monsterDpsBase,
   planetMult,
   primeZoneMult,
@@ -19,6 +17,8 @@ import type { GameState } from '../core/state';
 import { D, type Decimal } from '../util/decimal';
 import { potentialMult } from './breeding';
 import { evolutionMult } from './evolution';
+import { constellationMult } from './constellations';
+import { challengeMult, originEffect, purchaseAffordable, purchaseCost, ruleActive } from './rules';
 import { stardustBonus } from './prestige';
 import { productionToDpsShare, teamDpsResearchMult, teamSlotsFor } from './research';
 import { totalProduction } from './station';
@@ -65,9 +65,13 @@ export function speciesStars(state: GameState, speciesId: SpeciesId): number {
   return entry ? starsFor(entry.caught - 1) : 0;
 }
 
-/** globalMult: passiver Sternenstaubbonus und Forschung „Teamstärke“ */
+/** globalMult: Sternenstaub, Forschung, Ursprung, Challenges und Konstellationen */
 export function globalDpsMult(state: GameState): Decimal {
-  return stardustBonus(state).mul(teamDpsResearchMult(state));
+  return stardustBonus(state)
+    .mul(teamDpsResearchMult(state))
+    .mul(1 + originEffect(state, 'urkraft'))
+    .mul(challengeMult(state, 'dps'))
+    .mul(constellationMult(state));
 }
 
 /** DPS einer gefangenen Art im aktuellen Zustand */
@@ -97,7 +101,13 @@ export function teamDps(state: GameState): Decimal {
 }
 
 export function teamSlots(state: GameState): number {
-  return teamSlotsFor(state.research, state.dmUpgrades);
+  if (ruleActive(state, 'solo')) return BALANCING.challengeRules.soloSlots;
+  return teamSlotsFor(ruleActive(state, 'noResearch') ? {} : state.research, state.dmUpgrades);
+}
+
+/** Basiskosten fürs Leveln mit Challengebonus */
+function levelBase(state: GameState, baseCost: number): Decimal {
+  return D(baseCost).mul(challengeMult(state, 'levelCost'));
 }
 
 /** Kauft bis zu `amount` Level, 'max' = so viele wie bezahlbar. Gibt die Zahl gekaufter Level zurück. */
@@ -106,10 +116,11 @@ export function levelUp(state: GameState, speciesId: SpeciesId, amount: number |
   const entry = state.collection[speciesId];
   if (!species || !entry) return 0;
   const r = BALANCING.monster.levelCostGrowth;
-  const affordable = maxAffordable(state.energy, species.baseCost, r, entry.level);
+  const base = levelBase(state, species.baseCost);
+  const affordable = purchaseAffordable(state, state.energy, base, r, entry.level);
   const n = amount === 'max' ? affordable : Math.min(amount, affordable);
   if (n <= 0) return 0;
-  state.energy = state.energy.sub(bulkCost(species.baseCost, r, entry.level, n)).max(0);
+  state.energy = state.energy.sub(purchaseCost(state, base, r, entry.level, n)).max(0);
   entry.level += n;
   return n;
 }
@@ -124,15 +135,19 @@ export function levelUpCost(
   const entry = state.collection[speciesId];
   if (!species || !entry) return { levels: 0, cost: D(0) };
   const r = BALANCING.monster.levelCostGrowth;
-  const levels =
-    amount === 'max' ? Math.max(1, maxAffordable(state.energy, species.baseCost, r, entry.level)) : amount;
-  return { levels, cost: bulkCost(species.baseCost, r, entry.level, levels) };
+  const base = levelBase(state, species.baseCost);
+  const levels = amount === 'max' ? Math.max(1, purchaseAffordable(state, state.energy, base, r, entry.level)) : amount;
+  return { levels, cost: purchaseCost(state, base, r, entry.level, levels) };
 }
 
 export function addToTeam(state: GameState, speciesId: SpeciesId): boolean {
   if (!state.collection[speciesId]) return false;
   if (state.team.includes(speciesId)) return false;
   if (state.team.length >= teamSlots(state)) return false;
+  if (ruleActive(state, 'monoculture')) {
+    const type = getSpecies(speciesId)?.type;
+    if (state.team.some((id) => getSpecies(id)?.type !== type)) return false;
+  }
   state.team.push(speciesId);
   return true;
 }

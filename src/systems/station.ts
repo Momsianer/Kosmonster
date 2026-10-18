@@ -1,19 +1,26 @@
 import { BALANCING } from '../data/balancing';
 import { getModule, MODULES, type ModuleId } from '../data/modules';
-import { bulkCost, maxAffordable, moduleProduction } from '../core/formulas';
+import { moduleProduction } from '../core/formulas';
 import type { GameState } from '../core/state';
 import { addEnergy } from '../core/state';
 import { D, type Decimal } from '../util/decimal';
 import { stardustBonus } from './prestige';
+import { tideMult } from './challenges';
 import { moduleCostMult, productionResearchMult } from './research';
+import { challengeMult, originEffect, purchaseAffordable, purchaseCost, ruleActive } from './rules';
 
 export function moduleCount(state: GameState, id: ModuleId): number {
   return state.modules[id] ?? 0;
 }
 
-/** Bonus auf alle Produktion: Sternenstaub und Forschung „Produktion“ */
+/** Bonus auf alle Produktion: Sternenstaub, Forschung, Ursprung, Challenges und Gezeiten */
 export function productionMult(state: GameState): Decimal {
-  return stardustBonus(state).mul(productionResearchMult(state));
+  if (ruleActive(state, 'noStation')) return D(0);
+  return stardustBonus(state)
+    .mul(productionResearchMult(state))
+    .mul(1 + originEffect(state, 'urproduktion'))
+    .mul(challengeMult(state, 'production'))
+    .mul(tideMult(state));
 }
 
 /** Basiskosten eines Moduls nach Forschungsrabatt */
@@ -44,21 +51,21 @@ export function moduleBuyCost(
   const r = BALANCING.station.costGrowth;
   const owned = moduleCount(state, id);
   const base = discountedBase(state, module.baseCost);
-  const count = amount === 'max' ? Math.max(1, maxAffordable(state.energy, base, r, owned)) : amount;
-  return { count, cost: bulkCost(base, r, owned, count) };
+  const count = amount === 'max' ? Math.max(1, purchaseAffordable(state, state.energy, base, r, owned)) : amount;
+  return { count, cost: purchaseCost(state, base, r, owned, count) };
 }
 
 /** Baut bis zu `amount` Module, 'max' = so viele wie bezahlbar. Gibt die Zahl gebauter Module zurück. */
 export function buyModule(state: GameState, id: ModuleId, amount: number | 'max'): number {
   const module = getModule(id);
-  if (!module) return 0;
+  if (!module || ruleActive(state, 'noStation')) return 0;
   const r = BALANCING.station.costGrowth;
   const owned = moduleCount(state, id);
   const base = discountedBase(state, module.baseCost);
-  const affordable = maxAffordable(state.energy, base, r, owned);
+  const affordable = purchaseAffordable(state, state.energy, base, r, owned);
   const n = amount === 'max' ? affordable : Math.min(amount, affordable);
   if (n <= 0) return 0;
-  state.energy = state.energy.sub(bulkCost(base, r, owned, n)).max(0);
+  state.energy = state.energy.sub(purchaseCost(state, base, r, owned, n)).max(0);
   state.modules[id] = owned + n;
   return n;
 }

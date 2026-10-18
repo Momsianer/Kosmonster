@@ -2,6 +2,9 @@ import { BALANCING } from '../data/balancing';
 import type { ModuleId } from '../data/modules';
 import type { ResearchId } from '../data/research';
 import type { AutomationId, DmUpgradeId } from '../data/darkmatter';
+import type { ChallengeId } from '../data/challenges';
+import type { ConstellationId } from '../data/constellations';
+import type { OriginId } from '../data/origin';
 import { legendariesInZone, speciesInZone, type SpeciesId } from '../data/monsters';
 import { SPHERE_TYPES, type SphereType } from '../data/spheres';
 import { D, type Decimal } from '../util/decimal';
@@ -10,7 +13,7 @@ import { weightedPick } from '../util/random';
 import { enemyMaxHp } from './formulas';
 
 /** Version des Speicherstands, wird bei jeder Strukturänderung erhöht */
-export const STATE_VERSION = 8;
+export const STATE_VERSION = 9;
 
 export interface EnemyState {
   zone: number;
@@ -34,18 +37,39 @@ export interface CollectionEntry {
 }
 
 export interface AutomationState {
-  /** Ein und Aus je gekaufter Automatik */
-  enabled: Partial<Record<AutomationId, boolean>>;
+  /** Ein und Aus je gekaufter Automatik (dazu Autoschwarzloch aus den Ursprungsupgrades) */
+  enabled: Partial<Record<AutomationId | 'autoschwarzloch', boolean>>;
   /** Autosphären: Ziel für den Vorrat an Standardsphären */
   sphereTarget: number;
   /** Autosupernova: Sternenstaubgewinn, ab dem ausgelöst wird */
   supernovaTarget: number;
+  /** Autoschwarzloch: Gewinn an Dunkler Materie, ab dem ausgelöst wird */
+  blackHoleTarget: number;
   /** Angesammelte Bruchteile von Autoklicks */
   clickBudget: number;
   /** Zeit bis zur nächsten Runde der übrigen Automatiken */
   timer: number;
   /** Sekunden im Farmmodus vor einem Boss (für Autoboss) */
   bossWait: number;
+}
+
+export interface ChallengeState {
+  /** Laufende Challenge oder null */
+  active: ChallengeId | null;
+  /** Abgeschlossene Challenges (dauerhaft) */
+  completed: ChallengeId[];
+  /** playTime beim Start der laufenden Challenge */
+  startTime: number;
+  /** playTime beim letzten Bosssieg (Gezeitensperre) */
+  tideStart: number;
+  /** Sekunden bis zum nächsten Levelverlust (Entropie) */
+  entropyTimer: number;
+}
+
+export interface TheoremFight {
+  hp: Decimal;
+  maxHp: Decimal;
+  timeLeft: number;
 }
 
 export interface BreedingSlot {
@@ -88,6 +112,22 @@ export interface GameState {
   automation: AutomationState;
   /** Brutplätze, null = frei */
   breeding: (BreedingSlot | null)[];
+  /** Unausgegebene Ursprungspunkte */
+  originPoints: Decimal;
+  /** Insgesamt verdiente Ursprungspunkte */
+  originTotal: Decimal;
+  /** Anzahl Urknalle */
+  bigBangs: number;
+  /** Gekaufte Ursprungsupgrades */
+  originUpgrades: Partial<Record<OriginId, number>>;
+  challenge: ChallengeState;
+  /** Entdeckte Konstellationen */
+  constellationsFound: ConstellationId[];
+  /** Sternsysteme, deren Systemboss schon besiegt wurde (Story) */
+  storySeen: number[];
+  /** Laufender Kampf gegen das Theorem */
+  theorem: TheoremFight | null;
+  theoremDefeated: boolean;
   zone: number;
   /** Höchste bisher erreichte Zone */
   highestZone: number;
@@ -125,16 +165,24 @@ export interface GameState {
   settings: Settings;
 }
 
-/** Schreibt verdiente Energie gut (Vorrat, Gesamtsumme und Zyklus) */
+/**
+ * Schreibt verdiente Energie gut (Vorrat, Gesamtsumme und Zyklus).
+ * Vor dem ersten Urknall sind Vorrat und Zyklus bei „Unendlichkeit“ gedeckelt.
+ */
 export function addEnergy(state: GameState, amount: Decimal): void {
   if (amount.lte(0)) return;
   state.energy = state.energy.add(amount);
   state.totalEnergy = state.totalEnergy.add(amount);
   state.cycleEnergy = state.cycleEnergy.add(amount);
+  if (state.bigBangs === 0) {
+    const cap = BALANCING.bigBang.infinityEnergy;
+    state.energy = state.energy.min(cap);
+    state.cycleEnergy = state.cycleEnergy.min(cap);
+  }
 }
 
-export function createEnemy(zone: number, speciesId: SpeciesId, shiny = false): EnemyState {
-  const maxHp = enemyMaxHp(zone);
+export function createEnemy(zone: number, speciesId: SpeciesId, shiny = false, hpMult = 1): EnemyState {
+  const maxHp = enemyMaxHp(zone).mul(hpMult);
   return { zone, speciesId, shiny, hp: maxHp, maxHp };
 }
 
@@ -143,10 +191,15 @@ export function createAutomationState(): AutomationState {
     enabled: {},
     sphereTarget: BALANCING.automation.defaultSphereTarget,
     supernovaTarget: BALANCING.automation.defaultSupernovaTarget,
+    blackHoleTarget: BALANCING.automation.defaultBlackHoleTarget,
     clickBudget: 0,
     timer: 0,
     bossWait: 0,
   };
+}
+
+export function createChallengeState(): ChallengeState {
+  return { active: null, completed: [], startTime: 0, tideStart: 0, entropyTimer: 0 };
 }
 
 export function emptySpheres(): Record<SphereType, number> {
@@ -198,6 +251,15 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     dmUpgrades: {},
     automation: createAutomationState(),
     breeding: [],
+    originPoints: D(0),
+    originTotal: D(0),
+    bigBangs: 0,
+    originUpgrades: {},
+    challenge: createChallengeState(),
+    constellationsFound: [],
+    storySeen: [],
+    theorem: null,
+    theoremDefeated: false,
     zone,
     highestZone: zone,
     killsInZone: 0,
