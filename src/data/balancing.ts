@@ -73,12 +73,14 @@ export const BALANCING = {
    * episch ab epicFromArea, sonst selten. Die normalen Arten erscheinen gestaffelt ab der Zone
    * erste Zone + slotStart[Platz] und sind so stark wie diese Zone: basisDPS = hp(Startzone) * dpsPerHp.
    * Die seltene Art erscheint im ganzen Gebiet, basisDPS = hp(erste Zone + rareZoneOffset) * dpsPerHp.
-   * basisKosten = basisDPS * costPerDps.
+   * basisKosten = basisDPS * costPerDps (im ersten Gebiet firstAreaCostPerDps).
    */
   pools: {
     areas: 30,
     dpsPerHp: 0.125,
     costPerDps: 65,
+    /** Im ersten Gebiet sind Level günstiger, damit der Einstieg flott bleibt */
+    firstAreaCostPerDps: 26,
     slotStart: [0, 3, 6],
     rareZoneOffset: 0,
     rareBaseChance: 0.01,
