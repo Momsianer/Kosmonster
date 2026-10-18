@@ -6,7 +6,8 @@
     perSecond = '',
     stardust = '',
     bonus = '',
-  }: { value: string; perSecond?: string; stardust?: string; bonus?: string } = $props();
+    darkMatter = '',
+  }: { value: string; perSecond?: string; stardust?: string; bonus?: string; darkMatter?: string } = $props();
 </script>
 
 <div class="energy">
@@ -17,6 +18,9 @@
   {/if}
   {#if stardust}
     <span class="stardust">{t('prestige.stardustAmount', { amount: stardust })} · {t('prestige.bonus', { bonus })}</span>
+  {/if}
+  {#if darkMatter}
+    <span class="darkmatter">{t('darkMatter.amount', { amount: darkMatter })}</span>
   {/if}
 </div>
 
@@ -30,6 +34,10 @@
   .label {
     color: var(--muted);
     font-size: 0.9rem;
+  }
+  .darkmatter {
+    color: #8f7bff;
+    font-variant-numeric: tabular-nums;
   }
   .stardust {
     color: #b48cff;

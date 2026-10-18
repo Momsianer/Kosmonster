@@ -12,6 +12,10 @@ import type { SpeciesId } from '../data/monsters';
 import type { ResearchId } from '../data/research';
 import type { SphereType } from '../data/spheres';
 import { evolve } from '../systems/evolution';
+import type { AutomationId, DmUpgradeId } from '../data/darkmatter';
+import { blackHole } from '../systems/blackhole';
+import { startBreeding } from '../systems/breeding';
+import { buyDm } from '../systems/darkmatter';
 import { supernova } from '../systems/prestige';
 import { buyResearch } from '../systems/research';
 import { buySpheres } from '../systems/catching';
@@ -109,6 +113,22 @@ export const actions = {
   },
   buyResearch: (id: ResearchId) => buyResearch(game.state, id),
   evolve: (id: SpeciesId) => evolve(game.state, id),
+  blackHole: () => {
+    const ok = blackHole(game.state);
+    if (ok) saveGame();
+    return ok;
+  },
+  buyDm: (id: DmUpgradeId) => buyDm(game.state, id),
+  setAutomation: (id: AutomationId, on: boolean) => {
+    game.state.automation.enabled[id] = on;
+  },
+  setSphereTarget: (value: number) => {
+    game.state.automation.sphereTarget = Math.max(0, Math.floor(value));
+  },
+  setSupernovaTarget: (value: number) => {
+    game.state.automation.supernovaTarget = Math.max(1, value);
+  },
+  startBreeding: (id: SpeciesId) => startBreeding(game.state, id),
   dismissHint: (id: UnlockId) => dismissHint(game.state, id),
 
   setCatchOnlyNew(value: boolean): void {

@@ -4,6 +4,7 @@
   import type { ModuleId } from '../data/modules';
   import type { SpeciesId } from '../data/monsters';
   import type { ResearchId } from '../data/research';
+  import type { AutomationId, DmUpgradeId } from '../data/darkmatter';
   import type { SphereType } from '../data/spheres';
   import { actions, game } from '../core/game';
   import { t } from '../i18n';
@@ -14,6 +15,8 @@
   import HintBanner from './HintBanner.svelte';
   import OfflineReport from './OfflineReport.svelte';
   import Settings from './Settings.svelte';
+  import BreedingPanel from './BreedingPanel.svelte';
+  import DarkMatterPanel from './DarkMatterPanel.svelte';
   import ResearchPanel from './ResearchPanel.svelte';
   import ShopPanel from './ShopPanel.svelte';
   import SupernovaPanel from './SupernovaPanel.svelte';
@@ -24,7 +27,7 @@
   let buyAmount = $state<BuyAmount>(1);
   let view = $state(createView(game.state, game.offlineReport));
   let showSettings = $state(false);
-  let tab = $state<'game' | 'research' | 'collection'>('game');
+  let tab = $state<'game' | 'research' | 'collection' | 'darkMatter' | 'breeding'>('game');
 
   function refresh() {
     view = createView(game.state, game.offlineReport, buyAmount);
@@ -56,6 +59,12 @@
   const triggerSupernova = act(actions.supernova);
   const buyResearch = act((id: ResearchId) => actions.buyResearch(id));
   const evolve = act((id: SpeciesId) => actions.evolve(id));
+  const triggerBlackHole = act(actions.blackHole);
+  const buyDm = act((id: DmUpgradeId) => actions.buyDm(id));
+  const toggleAutomation = act((id: AutomationId, on: boolean) => actions.setAutomation(id, on));
+  const setSphereTarget = act((value: number) => actions.setSphereTarget(value));
+  const setSupernovaTarget = act((value: number) => actions.setSupernovaTarget(value));
+  const startBreeding = act((id: SpeciesId) => actions.startBreeding(id));
   const setBuyAmount = act((amount: BuyAmount) => (buyAmount = amount));
   const dismissHint = act(() => view.hint && actions.dismissHint(view.hint));
 </script>
@@ -90,6 +99,7 @@
     perSecond={view.stationUnlocked ? view.production : ''}
     stardust={view.showStardust ? view.stardust : ''}
     bonus={view.stardustBonus}
+    darkMatter={view.showDarkMatter ? view.darkMatter : ''}
   />
 
   {#if view.teamUnlocked}
@@ -99,10 +109,40 @@
         <button type="button" class:active={tab === 'research'} onclick={() => (tab = 'research')}>{t('tabs.research')}</button>
       {/if}
       <button type="button" class:active={tab === 'collection'} onclick={() => (tab = 'collection')}>{t('tabs.collection')}</button>
+      {#if view.blackHoleUnlocked}
+        <button type="button" class:active={tab === 'darkMatter'} onclick={() => (tab = 'darkMatter')}>{t('tabs.darkMatter')}</button>
+      {/if}
+      {#if view.breedingUnlocked}
+        <button type="button" class:active={tab === 'breeding'} onclick={() => (tab = 'breeding')}>{t('tabs.breeding')}</button>
+      {/if}
     </nav>
   {/if}
 
-  {#if tab === 'research' && view.researchUnlocked}
+  {#if tab === 'darkMatter' && view.blackHoleUnlocked}
+    <DarkMatterPanel
+      darkMatter={view.darkMatter}
+      gravity={view.gravity}
+      gain={view.darkMatterGain}
+      available={view.canBlackHole}
+      minStardust={view.blackHoleMin}
+      stardustCycle={view.stardustCycle}
+      count={view.blackHoles}
+      upgrades={view.dmUpgrades}
+      automations={view.automations}
+      autoclickRate={view.autoclickRate}
+      ownsAutospheres={view.ownsAutospheres}
+      ownsAutosupernova={view.ownsAutosupernova}
+      sphereTarget={view.sphereTarget}
+      supernovaTarget={view.supernovaTarget}
+      onblackhole={triggerBlackHole}
+      onbuy={buyDm}
+      ontoggle={toggleAutomation}
+      onspheretarget={setSphereTarget}
+      onsupernovatarget={setSupernovaTarget}
+    />
+  {:else if tab === 'breeding' && view.breedingUnlocked}
+    <BreedingPanel slots={view.breedingSlots} candidates={view.breedingCandidates} onbreed={startBreeding} />
+  {:else if tab === 'research' && view.researchUnlocked}
     <ResearchPanel branches={view.research} stardust={view.stardust} bonus={view.stardustBonus} onbuy={buyResearch} />
   {:else if tab === 'collection' && view.teamUnlocked}
     <CollectionPanel
