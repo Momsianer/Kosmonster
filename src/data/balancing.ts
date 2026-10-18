@@ -78,7 +78,7 @@ export const BALANCING = {
   pools: {
     areas: 30,
     dpsPerHp: 0.125,
-    costPerDps: 50,
+    costPerDps: 65,
     slotStart: [0, 3, 6],
     rareZoneOffset: 0,
     rareBaseChance: 0.01,
@@ -96,7 +96,7 @@ export const BALANCING = {
     systems: 50,
     miniDpsFactor: 0.5,
     mainDpsFactor: 0.8,
-    costPerDps: 50,
+    costPerDps: 65,
   },
   types: {
     /** Prim: ×primeZoneMult in Zonen mit Primzahlnummer */
