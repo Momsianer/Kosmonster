@@ -185,14 +185,15 @@ describe('Fangen', () => {
     expect(state.lastCatch?.speciesId).toBe('art_001');
   });
 
-  it('besiegte normale Gegner werden gefangen, Bosse nicht', () => {
+  it('besiegte Gegner und Bossmonster verbrauchen eine Sphäre beim Fangversuch', () => {
     const state = createInitialState(0, 1);
     state.spheres.standard = 3;
     dealDamage(state, state.enemy.hp);
     expect(state.spheres.standard).toBe(2);
     enterZone(state, 5);
+    expect(state.enemy.speciesId).toBe('boss_001');
     dealDamage(state, state.enemy.hp);
-    expect(state.spheres.standard).toBe(2);
+    expect(state.spheres.standard).toBe(1);
   });
 
   it('Sphären kosten den Grundpreis und werden mit jedem Kauf teurer', () => {

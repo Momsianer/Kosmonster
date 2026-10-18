@@ -6,7 +6,7 @@ import type { ChallengeId } from '../data/challenges';
 import type { ConstellationId } from '../data/constellations';
 import type { OriginId } from '../data/origin';
 import { ENDGAME_MODES, type EndgameMode } from '../data/endgame';
-import { legendariesInZone, speciesInZone, type SpeciesId } from '../data/monsters';
+import { bossForZone, speciesInZone, type SpeciesId } from '../data/monsters';
 import { SPHERE_TYPES, type SphereType } from '../data/spheres';
 import { D, type Decimal } from '../util/decimal';
 import type { NumberFormat } from '../util/format';
@@ -249,25 +249,21 @@ export function emptySpheres(): Record<SphereType, number> {
   return Object.fromEntries(SPHERE_TYPES.map((t) => [t, 0])) as Record<SphereType, number>;
 }
 
+/** Seltenheiten, deren Erscheinen die Forschung „Seltenheit“ verstärkt */
+const BOOSTED_RARITIES: readonly string[] = ['rare', 'epic', 'legendary'];
+
 /**
- * Wählt eine Art aus dem Pool der Zone, gewichtet nach Seltenheit.
- * Systembosse sind legendär, wenn es in der Zone eine legendäre Art gibt.
- * rareBoost verstärkt das Gewicht seltener und epischer Arten.
+ * Wählt die Art eines Gegners: In Bosszonen immer das feste Bossmonster,
+ * sonst aus dem Pool der Zone, gewichtet nach Seltenheit.
+ * rareBoost verstärkt das Gewicht seltener, epischer und legendärer Arten.
  */
-export function pickSpecies(
-  holder: { rngState: number },
-  zone: number,
-  systemBoss = false,
-  rareBoost = 1,
-): SpeciesId {
-  if (systemBoss) {
-    const legendary = weightedPick(holder, legendariesInZone(zone), () => 1);
-    if (legendary) return legendary.id;
-  }
+export function pickSpecies(holder: { rngState: number }, zone: number, rareBoost = 1): SpeciesId {
+  const boss = bossForZone(zone);
+  if (boss) return boss.id;
   const pool = speciesInZone(zone);
   const picked = weightedPick(holder, pool, (s) => {
     const weight = BALANCING.rarity[s.rarity].spawnWeight;
-    return s.rarity === 'rare' || s.rarity === 'epic' ? weight * rareBoost : weight;
+    return BOOSTED_RARITIES.includes(s.rarity) ? weight * rareBoost : weight;
   });
   const fallback = pool[0] ?? speciesInZone(BALANCING.world.startZone)[0];
   const species = picked ?? fallback;

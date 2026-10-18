@@ -62,10 +62,8 @@ export function defeatEnemy(state: GameState): void {
   if (isBossZone(zone)) {
     state.challenge.tideStart = state.playTime;
     if (enemyKind(zone) === 'systemBoss') recordStory(state, zone);
-    // Fangbar sind nur legendäre Systembosse
-    if (getSpecies(state.enemy.speciesId)?.rarity === 'legendary') {
-      tryCatch(state, state.enemy.speciesId, state.enemy.shiny);
-    }
+    // Bossmonster sind fangbar, aber sehr schwer
+    if (getSpecies(state.enemy.speciesId)?.boss) tryCatch(state, state.enemy.speciesId, state.enemy.shiny);
     state.highestZone = Math.max(state.highestZone, zone + 1);
     enterZone(state, state.farming ? zone : zone + 1);
     return;

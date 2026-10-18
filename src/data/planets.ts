@@ -1,5 +1,5 @@
 import { BALANCING } from './balancing';
-import { MONSTER_TYPES, type MonsterType } from './monsters';
+import { MONSTER_TYPES, type MonsterType } from './types';
 
 /**
  * Planetentypen: Jedes Sternsystem (zonesPerSystem Zonen) stärkt einen Monstertyp
