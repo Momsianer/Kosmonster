@@ -31,6 +31,7 @@ export const UNLOCKS = {
   challenges: (state: GameState) => state.bigBangs > 0,
   constellations: (state: GameState) => state.bigBangs > 0,
   theorem: (state: GameState) => theoremAvailable(state) && !state.theoremDefeated,
+  endgame: (state: GameState) => state.theoremDefeated,
 } as const;
 
 export type UnlockId = keyof typeof UNLOCKS;

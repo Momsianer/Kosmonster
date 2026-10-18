@@ -5,6 +5,7 @@ import { D, type Decimal } from '../util/decimal';
 import { gravitationMult } from './darkmatter';
 import { challengeMult, originEffect } from './rules';
 import { startSpheresBonus, supernovaStartZone } from './research';
+import { riemannMult } from './endgame';
 
 /** sternenstaub = floor( (zyklusEnergie / energyDivisor)^exponent ) */
 export function stardustFor(cycleEnergy: Decimal): Decimal {
@@ -13,11 +14,12 @@ export function stardustFor(cycleEnergy: Decimal): Decimal {
   return cycleEnergy.div(energyDivisor).pow(exponent).floor();
 }
 
-/** Sternenstaubgewinn einer Supernova, verstärkt durch die Gravitation der Dunklen Materie */
+/** Sternenstaubgewinn einer Supernova, verstärkt durch die Gravitation der Dunklen Materie und die Riemann Spirale */
 export function stardustGain(state: GameState): Decimal {
   const base = stardustFor(state.cycleEnergy)
     .mul(1 + originEffect(state, 'sternenquelle'))
-    .mul(challengeMult(state, 'stardust'));
+    .mul(challengeMult(state, 'stardust'))
+    .mul(riemannMult(state));
   return (state.darkMatterTotal.lte(0) ? base : base.mul(gravitationMult(state))).floor();
 }
 
@@ -72,4 +74,5 @@ export function resetRun(state: GameState): void {
   state.spheres.standard += startSpheresBonus(state);
   state.cycleStart = state.playTime;
   state.automation.bossWait = 0;
+  state.endgame.run = null;
 }

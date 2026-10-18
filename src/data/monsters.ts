@@ -153,6 +153,14 @@ export const SPECIES_IDS = [
   'art_118',
   'art_119',
   'art_120',
+  'art_121',
+  'art_122',
+  'art_123',
+  'art_124',
+  'art_125',
+  'art_126',
+  'art_127',
+  'art_128',
 ] as const;
 export type SpeciesId = (typeof SPECIES_IDS)[number];
 
@@ -170,7 +178,7 @@ export interface SpeciesData {
   minZone: number;
   /** Letzte Zone, in der die Art erscheint, null = ohne Ende */
   maxZone: number | null;
-  /** Mögliche Evolutionsstufen (1 oder 2) */
+  /** Mögliche Evolutionsstufen (0 bei Mythischen, sonst 1 oder 2) */
   evolutions: number;
   sprite: string;
 }
@@ -315,7 +323,21 @@ export const SPECIES: readonly SpeciesData[] = [
   species(118, 'unendlich', 'legendary', 7.98e38, 2.07e40, 350, 450),
   species(119, 'fraktal', 'legendary', 6.96e41, 1.81e43, 400, 500),
   species(120, 'vektor', 'legendary', 6.06e44, 1.58e46, 450, 550, 2),
+  // Mythische: erscheinen nie als Gegner, sondern über Sonderbedingungen im Endgame
+  species(121, 'prim', 'mythic', 1e19, 2.6e20, 1, null, 0),
+  species(122, 'fibonacci', 'mythic', 4e19, 1.04e21, 1, null, 0),
+  species(123, 'pi', 'mythic', 1.6e20, 4.16e21, 1, null, 0),
+  species(124, 'euler', 'mythic', 6.4e20, 1.66e22, 1, null, 0),
+  species(125, 'null', 'mythic', 2.56e21, 6.66e22, 1, null, 0),
+  species(126, 'unendlich', 'mythic', 1.02e22, 2.66e23, 1, null, 0),
+  species(127, 'fraktal', 'mythic', 4.1e22, 1.07e24, 1, null, 0),
+  species(128, 'vektor', 'mythic', 1.64e23, 4.26e24, 1, null, 0),
 ];
+
+/** Die 120 Arten des Hauptspiels ohne Mythische */
+export const MAIN_SPECIES: readonly SpeciesData[] = SPECIES.filter((s) => s.rarity !== 'mythic');
+
+export const MYTHIC_IDS: readonly SpeciesId[] = SPECIES.filter((s) => s.rarity === 'mythic').map((s) => s.id);
 
 const BY_ID = new Map<string, SpeciesData>(SPECIES.map((s) => [s.id, s]));
 
@@ -327,10 +349,11 @@ export function isSpeciesId(id: unknown): id is SpeciesId {
   return typeof id === 'string' && BY_ID.has(id);
 }
 
-/** Alle Arten, die in Zone z erscheinen können (legendäre nur als Systemboss) */
+/** Alle Arten, die in Zone z erscheinen können (legendäre nur als Systemboss, mythische nie) */
 export function speciesInZone(zone: number, includeLegendary = false): SpeciesData[] {
   return SPECIES.filter(
     (s) =>
+      s.rarity !== 'mythic' &&
       zone >= s.minZone &&
       (s.maxZone === null || zone <= s.maxZone) &&
       (includeLegendary ? true : s.rarity !== 'legendary'),

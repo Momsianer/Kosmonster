@@ -15,6 +15,8 @@
     tree,
     challenges,
     challengesUnlocked,
+    endgameUnlocked,
+    tierInfo,
     theoremAvailable,
     theoremDefeated,
     onbigbang,
@@ -33,6 +35,8 @@
     tree: OriginUpgradeView[];
     challenges: ChallengeView[];
     challengesUnlocked: boolean;
+    endgameUnlocked: boolean;
+    tierInfo: string;
     theoremAvailable: boolean;
     theoremDefeated: boolean;
     onbigbang: () => void;
@@ -122,10 +126,13 @@
   <section class="panel">
     <h2>{t('challenge.title')}</h2>
     <p class="muted">{t('challenge.intro')}</p>
+    {#if endgameUnlocked}<p class="muted">{tierInfo}</p>{/if}
     <div class="grid">
       {#each challenges as c (c.id)}
         <div class="node" class:maxed={c.completed} class:running={c.active}>
-          <div class="name">{c.name}{#if c.completed} <span class="done">· {t('challenge.completed')}</span>{/if}</div>
+          <div class="name">
+            {c.name}{#if c.tier > 1} <span class="done">· {t('challenge.tierDone', { tier: c.tier })}</span>{:else if c.completed} <span class="done">· {t('challenge.completed')}</span>{/if}
+          </div>
           <div class="muted">{c.description}</div>
           <div class="muted">{t('challenge.goal', { zone: c.goal })} · {t('challenge.reward', { points: c.reward })}</div>
           <div class="muted">{c.bonus}</div>
@@ -138,7 +145,9 @@
               <button type="button" onclick={() => (confirmChallenge = null)}>{t('prestige.cancel')}</button>
             </div>
           {:else}
-            <button type="button" class="primary" disabled={inChallenge} onclick={() => (confirmChallenge = c.id)}>{t('challenge.start')}</button>
+            <button type="button" class="primary" disabled={inChallenge} onclick={() => (confirmChallenge = c.id)}>
+              {c.nextTier > 1 ? t('challenge.startTier', { tier: c.nextTier }) : t('challenge.start')}
+            </button>
           {/if}
         </div>
       {/each}

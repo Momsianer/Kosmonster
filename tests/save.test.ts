@@ -7,6 +7,7 @@ import {
   clearStorage,
   decodeSave,
   encodeSave,
+  hydrate,
   loadFromStorage,
   SAVE_KEY,
   saveToStorage,
@@ -202,6 +203,33 @@ describe('Prestige im Speicherstand', () => {
   });
 });
 
+describe('M11 im Speicherstand', () => {
+  it('Endgame Bestwerte und laufender Kampf überstehen Speichern und Laden', () => {
+    const state = createInitialState(0);
+    state.theoremDefeated = true;
+    state.endgame.records = { multiversum: 12, collatz: 4, goldbach: 3, riemann: 30 };
+    state.endgame.run = { mode: 'collatz', level: 5, step: 2, value: 10, hp: D(40), maxHp: D(100), timeLeft: 7 };
+    const loaded = decodeSave(encodeSave(state))!;
+    expect(loaded.endgame.records).toEqual(state.endgame.records);
+    expect(loaded.endgame.run?.mode).toBe('collatz');
+    expect(loaded.endgame.run?.value).toBe(10);
+    expect(loaded.endgame.run?.hp.toNumber()).toBe(40);
+    expect(loaded.endgame.run?.timeLeft).toBe(7);
+  });
+
+  it('ungültige Endgamewerte werden verworfen', () => {
+    const state = createInitialState(0);
+    const raw = JSON.parse(JSON.stringify(state));
+    raw.endgame = { records: { multiversum: -3, collatz: 'x' }, run: { mode: 'unbekannt', level: 1, hp: '5', maxHp: '5' } };
+    raw.challenge.completed = ['entropie'];
+    raw.challenge.tiers = { entropie: 0, gibtsNicht: 4 };
+    const loaded = hydrate(raw);
+    expect(loaded.endgame.records).toEqual({ multiversum: 0, collatz: 0, goldbach: 0, riemann: 0 });
+    expect(loaded.endgame.run).toBeNull();
+    expect(loaded.challenge.tiers).toEqual({ entropie: 1 });
+  });
+});
+
 describe('M8 im Speicherstand', () => {
   it('Sphärentypen, Polarsterne, Euler und Leerlauf überstehen Speichern und Laden', () => {
     const state = createInitialState(0);
@@ -258,7 +286,15 @@ describe('M10 im Speicherstand', () => {
     state.originTotal = D(8);
     state.bigBangs = 2;
     state.originUpgrades = { urkraft: 2, autoschwarzloch: 1 };
-    state.challenge = { active: 'entropie', completed: ['monokultur'], startTime: 10, tideStart: 20, entropyTimer: 5 };
+    state.challenge = {
+      active: 'entropie',
+      completed: ['monokultur'],
+      tiers: { monokultur: 3 },
+      tier: 2,
+      startTime: 10,
+      tideStart: 20,
+      entropyTimer: 5,
+    };
     state.constellationsFound = ['goldenerSchnitt'];
     state.storySeen = [1, 2];
     state.theorem = { hp: D(50), maxHp: D(100), timeLeft: 30 };
