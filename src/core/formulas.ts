@@ -196,9 +196,15 @@ export function catchChance(
   return Math.min(1, baseChance * sphereMult * (1 + researchBonus));
 }
 
-/** Preis einer Fangsphäre in Zone z */
-export function sphereCost(zone: number): Decimal {
-  return enemyEnergy(zone).mul(BALANCING.catching.sphereCostKills);
+/** Preis der nächsten Sphäre: grundpreis * priceGrowth^aufschlag */
+export function spherePrice(basePrice: DecimalSource, pressure: number): Decimal {
+  return D(BALANCING.catching.priceGrowth).pow(pressure).mul(basePrice);
+}
+
+/** Abbau des Aufschlags je besiegtem Gegner in Zone z */
+export function spherePriceDecay(zone: number): number {
+  const { priceDecayBase, priceDecayPerZone } = BALANCING.catching;
+  return priceDecayBase + priceDecayPerZone * zone;
 }
 
 // ─── Raumstation ────────────────────────────────────────────

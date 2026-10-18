@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { bulkCost, clickDamage, enemyMaxHp, planetMult } from '../src/core/formulas';
+import { bulkCost, clickDamage, enemyMaxHp, planetMult, spherePriceDecay } from '../src/core/formulas';
 import { planetForZone } from '../src/data/planets';
 import { advance } from '../src/core/loop';
 import { createInitialState, type GameState } from '../src/core/state';
 import { BALANCING } from '../src/data/balancing';
 import { getSpecies, type SpeciesId } from '../src/data/monsters';
-import { addCatch, buySpheres, tryCatch } from '../src/systems/catching';
+import { addCatch, buySpheres, currentSphereCost, relaxSpherePrices, tryCatch } from '../src/systems/catching';
 import { clickEnemy, dealDamage, enterZone } from '../src/systems/combat';
 import {
   addToTeam,
@@ -195,14 +195,49 @@ describe('Fangen', () => {
     expect(state.spheres.standard).toBe(2);
   });
 
-  it('Sphären kaufen kostet den Zonenpreis', () => {
+  it('Sphären kosten den Grundpreis und werden mit jedem Kauf teurer', () => {
     const state = createInitialState(0);
+    const base = BALANCING.spheres.standard.basePrice;
+    const g = BALANCING.catching.priceGrowth;
     const before = state.spheres.standard;
-    expect(buySpheres(state, 2)).toBe(false);
-    state.energy = D(100);
+    expect(buySpheres(state, 1)).toBe(false);
+    state.energy = D(1000);
+    expect(buySpheres(state, 1)).toBe(true);
+    expect(state.energy.toNumber()).toBeCloseTo(1000 - base, 6);
+    expect(currentSphereCost(state).toNumber()).toBeCloseTo(base * g, 6);
     expect(buySpheres(state, 2)).toBe(true);
-    expect(state.spheres.standard).toBe(before + 2);
-    expect(state.energy.toNumber()).toBeCloseTo(100 - 2 * (10 / 15) * BALANCING.catching.sphereCostKills, 6);
+    expect(state.energy.toNumber()).toBeCloseTo(1000 - base - base * g - base * g * g, 6);
+    expect(state.spheres.standard).toBe(before + 3);
+    expect(state.spherePressure.standard).toBe(3);
+    expect(state.spherePressure.orbit).toBe(0);
+  });
+
+  it('der Preis hängt nicht von der Zone ab', () => {
+    const low = createInitialState(0);
+    const high = createInitialState(0);
+    enterZone(high, 40);
+    expect(currentSphereCost(high).eq(currentSphereCost(low))).toBe(true);
+  });
+
+  it('besiegte Gegner senken den Aufschlag bis zum Grundpreis, in hohen Zonen schneller', () => {
+    const low = createInitialState(0);
+    const high = createInitialState(0);
+    low.spherePressure.standard = 2;
+    high.spherePressure.standard = 2;
+    relaxSpherePrices(low, 1);
+    relaxSpherePrices(high, 50);
+    expect(low.spherePressure.standard).toBeCloseTo(2 - spherePriceDecay(1), 10);
+    expect(high.spherePressure.standard).toBeLessThan(low.spherePressure.standard);
+    for (let i = 0; i < 200; i++) relaxSpherePrices(low, 1);
+    expect(low.spherePressure.standard).toBe(0);
+    expect(currentSphereCost(low).toNumber()).toBe(BALANCING.spheres.standard.basePrice);
+  });
+
+  it('ein besiegter Gegner senkt den Aufschlag', () => {
+    const state = createInitialState(0);
+    state.spherePressure.standard = 1;
+    dealDamage(state, state.enemy.maxHp);
+    expect(state.spherePressure.standard).toBeCloseTo(1 - spherePriceDecay(1), 10);
   });
 });
 

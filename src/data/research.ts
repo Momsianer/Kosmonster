@@ -22,6 +22,7 @@ export const RESEARCH_IDS = [
   'startsphaeren', // +perLevel Fangsphären nach jeder Supernova
   'seltenheit', // Spawngewicht seltener und epischer Arten ×(1 + perLevel * stufe)
   'polarstern', // Polarsternchance ×(1 + perLevel * stufe)
+  'singularitaet', // schaltet Singularitätssphären im Laden frei
   // Station
   'produktion', // Produktion ×(1 + perLevel * stufe)
   'modulrabatt', // Modulkosten ×(1 − perLevel * stufe)
@@ -35,7 +36,7 @@ export type ResearchId = (typeof RESEARCH_IDS)[number];
 
 export const RESEARCH_TREE: Record<ResearchBranch, readonly ResearchId[]> = {
   combat: ['klickkraft', 'teamstaerke', 'kritchance', 'kritschaden', 'bosszeit', 'bossschaden'],
-  collect: ['fangglueck', 'sphaerenrabatt', 'teamplatz', 'startsphaeren', 'seltenheit', 'polarstern'],
+  collect: ['fangglueck', 'sphaerenrabatt', 'teamplatz', 'startsphaeren', 'seltenheit', 'polarstern', 'singularitaet'],
   station: ['produktion', 'modulrabatt', 'umwandlung'],
   time: ['offlinebonus', 'offlinelimit', 'startzone'],
 };
@@ -44,8 +45,15 @@ export function isResearchId(id: unknown): id is ResearchId {
   return typeof id === 'string' && (RESEARCH_IDS as readonly string[]).includes(id);
 }
 
+/** Abweichende Voraussetzungen, wenn ein Knoten nicht vom direkten Vorgänger abhängt */
+const PREREQUISITE_OVERRIDE: Partial<Record<ResearchId, ResearchId>> = {
+  singularitaet: 'sphaerenrabatt',
+};
+
 /** Der Knoten, der vorher mindestens Stufe 1 haben muss, oder null für den ersten im Ast */
 export function researchPrerequisite(id: ResearchId): ResearchId | null {
+  const override = PREREQUISITE_OVERRIDE[id];
+  if (override) return override;
   for (const nodes of Object.values(RESEARCH_TREE)) {
     const index = nodes.indexOf(id);
     if (index > 0) return nodes[index - 1] ?? null;

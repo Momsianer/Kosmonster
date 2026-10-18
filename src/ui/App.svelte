@@ -328,8 +328,8 @@
           <ShopPanel
             spheres={view.spheres}
             total={view.totalSpheres}
-            chanceCommon={view.catchChanceCommon}
-            chanceUncommon={view.catchChanceUncommon}
+            catchTable={view.catchTable}
+            locked={view.sphereLocked}
             onlyNew={view.catchOnlyNew}
             onbuy={buySpheres}
             ononlynew={setCatchOnlyNew}

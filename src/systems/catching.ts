@@ -1,12 +1,12 @@
 import { BALANCING } from '../data/balancing';
 import { getSpecies, type Rarity, type SpeciesId } from '../data/monsters';
 import { SPHERE_TYPES, type SphereType } from '../data/spheres';
-import { catchChance, sphereCost } from '../core/formulas';
+import { bulkCost, catchChance, maxAffordable, spherePrice, spherePriceDecay } from '../core/formulas';
 import type { GameState } from '../core/state';
-import type { Decimal } from '../util/decimal';
+import { D, type Decimal } from '../util/decimal';
 import { nextRandom } from '../util/random';
 import { addToTeam } from './monsters';
-import { catchResearchBonus, sphereCostMult } from './research';
+import { catchResearchBonus, researchLevel, sphereCostMult } from './research';
 
 export function totalSpheres(state: GameState): number {
   return SPHERE_TYPES.reduce((sum, t) => sum + state.spheres[t], 0);
@@ -59,17 +59,44 @@ export function addCatch(state: GameState, speciesId: SpeciesId, shiny = false):
   state.lastCatch = { speciesId, time: state.playTime, shiny };
 }
 
-/** Preis einer Sphäre in der aktuellen Zone nach Forschungsrabatt */
-export function currentSphereCost(state: GameState, type: SphereType = 'standard'): Decimal {
-  return sphereCost(state.zone).mul(sphereCostMult(state)).mul(BALANCING.spheres[type].costMult);
+/** Standard, Orbit und Nebel gibt es von Anfang an, Singularität erst mit der Forschung */
+export function isSphereUnlocked(state: GameState, type: SphereType): boolean {
+  return type !== 'singularitaet' || researchLevel(state.research, 'singularitaet') > 0;
 }
 
-/** Kauft `amount` Sphären eines Typs zum Preis der aktuellen Zone. */
+/** Grundpreis eines Typs nach Forschungsrabatt */
+function discountedBase(state: GameState, type: SphereType): Decimal {
+  return D(BALANCING.spheres[type].basePrice).mul(sphereCostMult(state));
+}
+
+/** Preis der nächsten Sphäre eines Typs (Grundpreis mit Aufschlag aus den letzten Käufen) */
+export function currentSphereCost(state: GameState, type: SphereType = 'standard'): Decimal {
+  return spherePrice(discountedBase(state, type), state.spherePressure[type]);
+}
+
+/** Kosten für `amount` Sphären eines Typs, jede weitere teurer als die vorige */
+export function sphereBuyCost(state: GameState, amount: number, type: SphereType = 'standard'): Decimal {
+  return bulkCost(discountedBase(state, type), BALANCING.catching.priceGrowth, state.spherePressure[type], amount);
+}
+
+/** Wie viele Sphären eines Typs gerade bezahlbar sind */
+export function affordableSpheres(state: GameState, type: SphereType = 'standard'): number {
+  return maxAffordable(state.energy, discountedBase(state, type), BALANCING.catching.priceGrowth, state.spherePressure[type]);
+}
+
+/** Kauft `amount` Sphären eines Typs. Jeder Kauf erhöht den Aufschlag um 1. */
 export function buySpheres(state: GameState, amount: number, type: SphereType = 'standard'): boolean {
-  if (amount <= 0) return false;
-  const cost = currentSphereCost(state, type).mul(amount);
+  if (amount <= 0 || !isSphereUnlocked(state, type)) return false;
+  const cost = sphereBuyCost(state, amount, type);
   if (state.energy.lt(cost)) return false;
   state.energy = state.energy.sub(cost);
   state.spheres[type] += amount;
+  state.spherePressure[type] += amount;
   return true;
+}
+
+/** Ein besiegter Gegner baut den Aufschlag aller Sphärentypen ab, in hohen Zonen schneller */
+export function relaxSpherePrices(state: GameState, zone: number): void {
+  const decay = spherePriceDecay(zone);
+  for (const type of SPHERE_TYPES) state.spherePressure[type] = Math.max(0, state.spherePressure[type] - decay);
 }

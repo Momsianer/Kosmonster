@@ -5,7 +5,7 @@ import { getSpecies } from '../data/monsters';
 import { spawnEnemy } from './spawning';
 import { ruleActive } from './rules';
 import { damageTheorem } from './theorem';
-import { tryCatch } from './catching';
+import { relaxSpherePrices, tryCatch } from './catching';
 import { teamDps, typeCountInTeam } from './monsters';
 import { D, type Decimal, type DecimalSource } from '../util/decimal';
 import { nextRandom } from '../util/random';
@@ -51,6 +51,7 @@ export function dealDamage(state: GameState, amount: DecimalSource): boolean {
 export function defeatEnemy(state: GameState): void {
   const zone = state.enemy.zone;
   addEnergy(state, enemyReward(zone));
+  relaxSpherePrices(state, zone);
   state.enemiesDefeated += 1;
 
   if (isBossZone(zone)) {

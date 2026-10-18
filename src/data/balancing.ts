@@ -104,11 +104,12 @@ export const BALANCING = {
     /** Bonus, sobald die Polarstern Variante einer Art gefangen ist */
     mult: 2,
   },
+  /** Sphärentypen: Fangmultiplikator und Grundpreis in Energie */
   spheres: {
-    standard: { catchMult: 1, costMult: 1 },
-    orbit: { catchMult: 1.5, costMult: 3 },
-    nebel: { catchMult: 2.5, costMult: 10 },
-    singularitaet: { catchMult: 5, costMult: 40 },
+    standard: { catchMult: 1, basePrice: 5 },
+    orbit: { catchMult: 1.5, basePrice: 25 },
+    nebel: { catchMult: 2.5, basePrice: 150 },
+    singularitaet: { catchMult: 5, basePrice: 1000 },
   },
   catching: {
     /** Fangsphären zu Spielbeginn */
@@ -117,8 +118,11 @@ export const BALANCING = {
     standardSphereMult: 1,
     /** Fangbonus ohne Forschung */
     baseResearchBonus: 0,
-    /** Preis einer Sphäre = sphereCostKills * Energie eines normalen Gegners der aktuellen Zone */
-    sphereCostKills: 5,
+    /** Jeder Kauf macht den Sphärentyp teurer: preis = grundpreis * priceGrowth^aufschlag */
+    priceGrowth: 1.2,
+    /** Jeder besiegte Gegner baut den Aufschlag ab: priceDecayBase + priceDecayPerZone * zone */
+    priceDecayBase: 0.05,
+    priceDecayPerZone: 0.01,
   },
   loop: {
     /** Logikticks pro Sekunde */
@@ -299,6 +303,7 @@ export const BALANCING = {
       startsphaeren: { maxLevel: 5, baseCost: 3, perLevel: 5 },
       seltenheit: { maxLevel: 10, baseCost: 4, perLevel: 0.25 },
       polarstern: { maxLevel: 10, baseCost: 6, perLevel: 0.5 },
+      singularitaet: { maxLevel: 1, baseCost: 20, perLevel: 1 },
       produktion: { maxLevel: 20, baseCost: 1, perLevel: 0.25 },
       modulrabatt: { maxLevel: 10, baseCost: 3, perLevel: 0.03 },
       umwandlung: { maxLevel: 10, baseCost: 8, perLevel: 0.01 },

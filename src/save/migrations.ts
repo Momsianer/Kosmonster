@@ -118,6 +118,12 @@ export const MIGRATIONS: Record<number, (save: RawSave) => RawSave> = {
       blackHoleTarget: BALANCING.automation.defaultBlackHoleTarget,
     },
   }),
+  // 9 → 10: Sphärenpreise mit Aufschlag je Kauf
+  9: (save) => ({
+    ...save,
+    version: 10,
+    spherePressure: { standard: 0, orbit: 0, nebel: 0, singularitaet: 0 },
+  }),
 };
 
 /** Hebt einen Speicherstand schrittweise auf die aktuelle Version. */

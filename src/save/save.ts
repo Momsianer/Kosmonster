@@ -152,6 +152,7 @@ export function hydrate(raw: RawSave): GameState {
     enemiesDefeated: toNumber(raw.enemiesDefeated, 0),
     clicks: toNumber(raw.clicks, 0),
     spheres: hydrateSpheres(raw.spheres),
+    spherePressure: hydratePressure(raw.spherePressure),
     cycleStart: toNumber(raw.cycleStart, 0),
     lastClick: toNumber(raw.lastClick, 0),
     collection,
@@ -258,6 +259,13 @@ function hydrateBreeding(
     const total = toNumber(slot.total, 1, 1);
     return { speciesId: slot.speciesId, total, remaining: Math.min(total, toNumber(slot.remaining, total)) };
   });
+}
+
+function hydratePressure(value: unknown): Record<SphereType, number> {
+  const pressure = emptySpheres();
+  if (!isRecord(value)) return pressure;
+  for (const type of SPHERE_TYPES) pressure[type] = toNumber(value[type], 0);
+  return pressure;
 }
 
 function hydrateSpheres(value: unknown): Record<SphereType, number> {

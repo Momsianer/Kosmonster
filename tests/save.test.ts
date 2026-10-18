@@ -207,11 +207,13 @@ describe('M8 im Speicherstand', () => {
     const state = createInitialState(0);
     addCatch(state, 'art_001', true);
     state.spheres = { standard: 1, orbit: 2, nebel: 3, singularitaet: 4 };
+    state.spherePressure = { standard: 1.5, orbit: 0, nebel: 2, singularitaet: 0.25 };
     state.cycleStart = 123;
     state.lastClick = 456;
     state.enemy.shiny = true;
     const loaded = decodeSave(encodeSave(state))!;
     expect(loaded.spheres).toEqual(state.spheres);
+    expect(loaded.spherePressure).toEqual(state.spherePressure);
     expect(loaded.collection.art_001!.shiny).toBe(true);
     expect(loaded.lastCatch?.shiny).toBe(true);
     expect(loaded.cycleStart).toBe(123);
