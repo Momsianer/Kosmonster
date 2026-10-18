@@ -13,7 +13,7 @@ import { weightedPick } from '../util/random';
 import { enemyMaxHp } from './formulas';
 
 /** Version des Speicherstands, wird bei jeder Strukturänderung erhöht */
-export const STATE_VERSION = 9;
+export const STATE_VERSION = 10;
 
 export interface EnemyState {
   zone: number;
@@ -142,6 +142,8 @@ export interface GameState {
   clicks: number;
   /** Fangsphären je Typ */
   spheres: Record<SphereType, number>;
+  /** Preisaufschlag je Sphärentyp: steigt mit jedem Kauf, sinkt mit jedem besiegten Gegner */
+  spherePressure: Record<SphereType, number>;
   /** Gefangene Arten, bleiben über alle Resets erhalten */
   collection: Partial<Record<SpeciesId, CollectionEntry>>;
   /** Arten im Team, Reihenfolge wie angezeigt */
@@ -269,6 +271,7 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     enemiesDefeated: 0,
     clicks: 0,
     spheres: { ...emptySpheres(), standard: BALANCING.catching.startSpheres },
+    spherePressure: emptySpheres(),
     collection: {},
     team: [],
     rngState: rng.rngState,

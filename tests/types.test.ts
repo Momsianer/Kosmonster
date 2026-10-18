@@ -16,7 +16,15 @@ import { BALANCING } from '../src/data/balancing';
 import { getSpecies, MONSTER_TYPES, SPECIES, type SpeciesId } from '../src/data/monsters';
 import { planetForSystem, planetForZone } from '../src/data/planets';
 import { t } from '../src/i18n';
-import { addCatch, buySpheres, chooseSphere, currentSphereCost, totalSpheres, tryCatch } from '../src/systems/catching';
+import {
+  addCatch,
+  buySpheres,
+  chooseSphere,
+  currentSphereCost,
+  isSphereUnlocked,
+  totalSpheres,
+  tryCatch,
+} from '../src/systems/catching';
 import { clickEnemy, dealDamage, enterZone } from '../src/systems/combat';
 import { monsterDps, speciesStars, teamDps, typeMult } from '../src/systems/monsters';
 import { supernova } from '../src/systems/prestige';
@@ -222,12 +230,27 @@ describe('Polarsterne', () => {
 describe('Sphärentypen', () => {
   it('Preise steigen mit dem Typ', () => {
     const state = createInitialState(0);
-    const standard = currentSphereCost(state, 'standard').toNumber();
-    expect(currentSphereCost(state, 'orbit').toNumber()).toBeCloseTo(standard * BALANCING.spheres.orbit.costMult, 8);
+    expect(currentSphereCost(state, 'standard').toNumber()).toBe(BALANCING.spheres.standard.basePrice);
+    expect(currentSphereCost(state, 'orbit').toNumber()).toBe(BALANCING.spheres.orbit.basePrice);
+    expect(currentSphereCost(state, 'nebel').toNumber()).toBeGreaterThan(BALANCING.spheres.orbit.basePrice);
     state.energy = D(1e6);
     expect(buySpheres(state, 2, 'nebel')).toBe(true);
     expect(state.spheres.nebel).toBe(2);
     expect(totalSpheres(state)).toBe(BALANCING.catching.startSpheres + 2);
+    expect(state.spherePressure.nebel).toBe(2);
+    expect(state.spherePressure.standard).toBe(0);
+  });
+
+  it('Singularitätssphären erst nach der Forschung kaufbar', () => {
+    const state = createInitialState(0);
+    state.energy = D(1e9);
+    expect(isSphereUnlocked(state, 'nebel')).toBe(true);
+    expect(isSphereUnlocked(state, 'singularitaet')).toBe(false);
+    expect(buySpheres(state, 1, 'singularitaet')).toBe(false);
+    state.research.singularitaet = 1;
+    expect(isSphereUnlocked(state, 'singularitaet')).toBe(true);
+    expect(buySpheres(state, 1, 'singularitaet')).toBe(true);
+    expect(state.spheres.singularitaet).toBe(1);
   });
 
   it('seltene Arten bekommen die beste Sphäre, häufige nur Standardsphären', () => {

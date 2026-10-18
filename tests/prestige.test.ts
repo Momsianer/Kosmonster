@@ -114,7 +114,7 @@ describe('Supernova', () => {
 
 describe('Forschungsbaum', () => {
   it('jeder Knoten hat Balancingwerte, Namen und Beschreibung', () => {
-    expect(RESEARCH_IDS).toHaveLength(18);
+    expect(RESEARCH_IDS).toHaveLength(19);
     for (const id of RESEARCH_IDS) {
       expect(BALANCING.research.nodes[id].maxLevel).toBeGreaterThan(0);
       expect(t(`research.${id}.name`)).not.toBe(`research.${id}.name`);
@@ -134,6 +134,7 @@ describe('Forschungsbaum', () => {
     state.stardust = D(1000);
     expect(researchPrerequisite('klickkraft')).toBeNull();
     expect(researchPrerequisite('teamstaerke')).toBe('klickkraft');
+    expect(researchPrerequisite('singularitaet')).toBe('sphaerenrabatt');
     expect(isResearchAvailable(state, 'teamstaerke')).toBe(false);
     expect(buyResearch(state, 'teamstaerke')).toBe(false);
     expect(buyResearch(state, 'klickkraft')).toBe(true);

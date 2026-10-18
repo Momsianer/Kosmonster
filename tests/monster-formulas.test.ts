@@ -12,7 +12,8 @@ import {
   milestoneMult,
   monsterDpsBase,
   primeZoneMult,
-  sphereCost,
+  spherePrice,
+  spherePriceDecay,
 } from '../src/core/formulas';
 import { BALANCING } from '../src/data/balancing';
 
@@ -119,10 +120,29 @@ describe('catchChance', () => {
   });
 });
 
-describe('sphereCost', () => {
-  it('sphereCostKills * Energie eines normalen Gegners', () => {
-    const expected = enemyEnergy(12).mul(BALANCING.catching.sphereCostKills);
-    expect(sphereCost(12).eq(expected)).toBe(true);
+describe('spherePrice', () => {
+  it('ohne Aufschlag der Grundpreis', () => {
+    expect(spherePrice(50, 0).toNumber()).toBe(50);
+  });
+
+  it('jeder Kauf multipliziert mit priceGrowth', () => {
+    const g = BALANCING.catching.priceGrowth;
+    expect(spherePrice(50, 3).toNumber()).toBeCloseTo(50 * g ** 3, 8);
+  });
+
+  it('Bruchteile des Aufschlags ergeben Zwischenpreise', () => {
+    const p = spherePrice(50, 0.5).toNumber();
+    expect(p).toBeGreaterThan(50);
+    expect(p).toBeLessThan(50 * BALANCING.catching.priceGrowth);
+  });
+});
+
+describe('spherePriceDecay', () => {
+  it('wächst linear mit der Zone', () => {
+    const { priceDecayBase, priceDecayPerZone } = BALANCING.catching;
+    expect(spherePriceDecay(1)).toBeCloseTo(priceDecayBase + priceDecayPerZone, 10);
+    expect(spherePriceDecay(50)).toBeCloseTo(priceDecayBase + 50 * priceDecayPerZone, 10);
+    expect(spherePriceDecay(50)).toBeGreaterThan(spherePriceDecay(1));
   });
 });
 

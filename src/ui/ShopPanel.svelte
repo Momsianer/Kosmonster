@@ -1,21 +1,21 @@
 <script lang="ts">
   import type { SphereType } from '../data/spheres';
   import { t } from '../i18n';
-  import type { SphereView } from './view';
+  import type { CatchChanceRow, SphereView } from './view';
 
   let {
     spheres,
     total,
-    chanceCommon,
-    chanceUncommon,
+    catchTable,
+    locked,
     onlyNew,
     onbuy,
     ononlynew,
   }: {
     spheres: SphereView[];
     total: number;
-    chanceCommon: string;
-    chanceUncommon: string;
+    catchTable: CatchChanceRow[];
+    locked: boolean;
     onlyNew: boolean;
     onbuy: (amount: number, type: SphereType) => void;
     ononlynew: (value: boolean) => void;
@@ -25,7 +25,7 @@
 <section class="panel">
   <h2>{t('shop.title')}</h2>
   <p>{t('shop.total', { count: total })}</p>
-  <p class="muted">{t('shop.chance', { common: chanceCommon, uncommon: chanceUncommon })}</p>
+  <p class="muted">{t('shop.pricing')}</p>
   <p class="muted">{t('shop.rule')}</p>
   <label class="toggle">
     <input type="checkbox" checked={onlyNew} onchange={(e) => ononlynew(e.currentTarget.checked)} />
@@ -47,6 +47,30 @@
       </div>
     </div>
   {/each}
+  {#if locked}
+    <p class="muted">{t('shop.locked')}</p>
+  {/if}
+  <h3>{t('shop.chanceTitle')}</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>{t('shop.rarity')}</th>
+        {#each spheres as sphere (sphere.type)}
+          <th>{sphere.name}</th>
+        {/each}
+      </tr>
+    </thead>
+    <tbody>
+      {#each catchTable as row (row.rarity)}
+        <tr>
+          <td style:color={row.color}>{row.rarity}</td>
+          {#each row.chances as chance, i (i)}
+            <td class="num">{chance}</td>
+          {/each}
+        </tr>
+      {/each}
+    </tbody>
+  </table>
 </section>
 
 <style>
@@ -69,6 +93,28 @@
   }
   .name {
     font-weight: 600;
+  }
+  h3 {
+    margin: 0.3rem 0 0;
+    font-size: 0.95rem;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+  }
+  th,
+  td {
+    padding: 0.2rem 0.3rem;
+    text-align: left;
+  }
+  th {
+    font-weight: 600;
+    color: #9aa3c7;
+  }
+  .num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
   }
   .actions {
     display: flex;

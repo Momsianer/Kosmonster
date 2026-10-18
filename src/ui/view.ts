@@ -8,7 +8,7 @@ import { SPHERE_TYPES, type SphereType } from '../data/spheres';
 import { starProgress, starsFor } from '../core/formulas';
 import { t, type TranslationKey } from '../i18n';
 import { RESEARCH_BRANCHES, RESEARCH_TREE, researchPrerequisite, type ResearchBranch, type ResearchId } from '../data/research';
-import { currentSphereCost, totalSpheres } from '../systems/catching';
+import { currentSphereCost, isSphereUnlocked, sphereBuyCost, totalSpheres } from '../systems/catching';
 import { AUTOMATION_ORDER, DM_UPGRADE_IDS, dmPrerequisite, type AutomationId, type DmUpgradeId } from '../data/darkmatter';
 import { canBlackHole, darkMatterGain } from '../systems/blackhole';
 import { CHALLENGE_IDS, type ChallengeId } from '../data/challenges';
@@ -53,6 +53,9 @@ import { formatDuration, formatNumber, formatPercent, formatSeconds } from '../u
 /** Wie lange die Fangmeldung sichtbar bleibt (Spielzeit in Sekunden) */
 const CATCH_NOTICE_SECONDS = 3;
 
+
+/** Seltenheiten mit normaler Fangchance (Mythische haben Sonderbedingungen) */
+const CATCH_TABLE_RARITIES = ['common', 'uncommon', 'rare', 'epic', 'legendary'] as const;
 export type BuyAmount = 1 | 10 | 100 | 'max';
 export const BUY_AMOUNTS: readonly BuyAmount[] = [1, 10, 100, 'max'];
 
@@ -373,6 +376,13 @@ export interface SphereView {
   canBuy10: boolean;
 }
 
+/** Fangchance einer Seltenheit, je freigeschalteter Sphäre */
+export interface CatchChanceRow {
+  rarity: string;
+  color: string;
+  chances: string[];
+}
+
 export interface ModuleView {
   id: ModuleId;
   name: string;
@@ -509,8 +519,8 @@ export interface GameView {
   spheres: SphereView[];
   totalSpheres: number;
   catchOnlyNew: boolean;
-  catchChanceCommon: string;
-  catchChanceUncommon: string;
+  catchTable: CatchChanceRow[];
+  sphereLocked: boolean;
   catchNotice: string;
   hint: UnlockId | null;
 }
@@ -748,27 +758,32 @@ export function createView(
     }),
     collectionCount: Object.keys(state.collection).length,
     shinyCount: Object.values(state.collection).filter((e) => e?.shiny).length,
-    spheres: SPHERE_TYPES.map((type) => {
-      const cost = currentSphereCost(state, type);
+    spheres: SPHERE_TYPES.filter((type) => isSphereUnlocked(state, type)).map((type) => {
+      const cost1 = currentSphereCost(state, type);
+      const cost10 = sphereBuyCost(state, 10, type);
       return {
         type,
         name: t(`shop.sphere.${type}`),
         owned: state.spheres[type],
         catchMult: formatNumber(BALANCING.spheres[type].catchMult),
-        cost1: formatNumber(cost),
-        cost10: formatNumber(cost.mul(10)),
-        canBuy1: state.energy.gte(cost),
-        canBuy10: state.energy.gte(cost.mul(10)),
+        cost1: formatNumber(cost1),
+        cost10: formatNumber(cost10),
+        canBuy1: state.energy.gte(cost1),
+        canBuy10: state.energy.gte(cost10),
       };
     }),
     totalSpheres: totalSpheres(state),
     catchOnlyNew: state.settings.catchOnlyNew,
-    catchChanceCommon: formatPercent(
-      catchChance(BALANCING.rarity.common.catchChance, BALANCING.catching.standardSphereMult, catchResearchBonus(state)),
-    ),
-    catchChanceUncommon: formatPercent(
-      catchChance(BALANCING.rarity.uncommon.catchChance, BALANCING.catching.standardSphereMult, catchResearchBonus(state)),
-    ),
+    catchTable: CATCH_TABLE_RARITIES.map((rarity) => ({
+      rarity: t(`rarity.${rarity}`),
+      color: RARITY_COLORS[rarity],
+      chances: SPHERE_TYPES.filter((type) => isSphereUnlocked(state, type)).map((type) =>
+        formatPercent(
+          catchChance(BALANCING.rarity[rarity].catchChance, BALANCING.spheres[type].catchMult, catchResearchBonus(state)),
+        ),
+      ),
+    })),
+    sphereLocked: SPHERE_TYPES.some((type) => !isSphereUnlocked(state, type)),
     catchNotice: showCatch
       ? t(lastCatch.shiny ? 'catching.caughtShiny' : 'catching.caught', {
           name: speciesName(lastCatch.speciesId, stageOf(state, lastCatch.speciesId)),

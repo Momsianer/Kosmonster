@@ -111,6 +111,12 @@ describe('Migrationen', () => {
     expect(migrated.automation).toEqual({ sphereTarget: 7, blackHoleTarget: BALANCING.automation.defaultBlackHoleTarget });
   });
 
+  it('hebt Version 9 auf Version 10', () => {
+    const migrated = MIGRATIONS[9]!({ version: 9 });
+    expect(migrated.version).toBe(10);
+    expect(migrated.spherePressure).toEqual({ standard: 0, orbit: 0, nebel: 0, singularitaet: 0 });
+  });
+
   it('migrierter Stand hat dieselben Felder wie ein neuer Zustand', () => {
     const fresh = JSON.parse(JSON.stringify(createInitialState(0)));
     const migrated = migrate({ ...fresh, version: 1 });

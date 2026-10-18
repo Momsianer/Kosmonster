@@ -2,7 +2,7 @@ import { BALANCING } from '../data/balancing';
 import { MODULES } from '../data/modules';
 import { isBossZone } from '../core/formulas';
 import type { GameState } from '../core/state';
-import { buySpheres, currentSphereCost } from './catching';
+import { affordableSpheres, buySpheres } from './catching';
 import { challengeBoss, clickEnemy } from './combat';
 import { autoclickRate, automationActive } from './darkmatter';
 import { levelUp, levelUpCost } from './monsters';
@@ -38,8 +38,7 @@ function autoModule(state: GameState): void {
 function autoSpheres(state: GameState): void {
   const missing = state.automation.sphereTarget - state.spheres.standard;
   if (missing <= 0) return;
-  const affordable = Math.floor(state.energy.div(currentSphereCost(state)).toNumber());
-  const amount = Math.min(missing, affordable);
+  const amount = Math.min(missing, affordableSpheres(state));
   if (amount > 0) buySpheres(state, amount);
 }
 
