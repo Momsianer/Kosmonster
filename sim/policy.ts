@@ -13,6 +13,10 @@ import { bossDamageMult, bossTimeLimit, clickBonus, moduleCostMult } from '../sr
 import { buyModule, moduleCount, productionMult } from '../src/systems/station';
 import { isUnlocked } from '../src/systems/unlocks';
 import type { ResearchId } from '../src/data/research';
+import type { DmUpgradeId } from '../src/data/darkmatter';
+import { blackHole, canBlackHole, darkMatterGain } from '../src/systems/blackhole';
+import { canBreed, startBreeding } from '../src/systems/breeding';
+import { buyDm, canBuyDm } from '../src/systems/darkmatter';
 import { canEvolve, evolutionCost, evolve } from '../src/systems/evolution';
 import { canSupernova, stardustGain, supernova } from '../src/systems/prestige';
 import { buyResearch, isResearchAvailable, isResearchMaxed, researchCost, researchLevel } from '../src/systems/research';
@@ -209,14 +213,54 @@ function handleBoss(state: GameState, options: PolicyOptions): void {
   if (damage.gte(enemyMaxHp(state.zone + 1).mul(1.1))) challengeBoss(state);
 }
 
+/** Reihenfolge, in der der Bot Dunkle Materie ausgibt */
+const DM_PRIORITY: DmUpgradeId[] = [
+  'autoklicker',
+  'teamplaetze',
+  'autolevel',
+  'erinnerung',
+  'automodul',
+  'brutplatz',
+  'autosphaeren',
+  'autoboss',
+  'autosupernova',
+];
+
+/** Schwarzes Loch beim ersten Mal sofort, später wenn die Dunkle Materie sich mindestens verdoppelt */
+function handleBlackHole(state: GameState, memory: PolicyMemory, now: number): void {
+  if (!canBlackHole(state)) return;
+  if (state.blackHoles === 0 || darkMatterGain(state).gte(state.darkMatterTotal)) {
+    blackHole(state);
+    memory.lastHighest = state.highestZone;
+    memory.lastProgress = now;
+    memory.stardustEarned = 0;
+  }
+}
+
+function spendDarkMatter(state: GameState): void {
+  for (let i = 0; i < 50; i++) {
+    const next = DM_PRIORITY.find((id) => canBuyDm(state, id));
+    if (!next) return;
+    buyDm(state, next);
+  }
+}
+
+/** Startet Zuchten für die Arten im Team, sobald ein Platz frei ist */
+function breed(state: GameState): void {
+  for (const id of state.team) if (canBreed(state, id)) startBreeding(state, id);
+}
+
 /** Eine Entscheidungsrunde, während die Person online ist */
 export function decide(state: GameState, options: PolicyOptions, memory: PolicyMemory, now: number): void {
   if (state.highestZone > memory.lastHighest) {
     memory.lastHighest = state.highestZone;
     memory.lastProgress = now;
   }
+  handleBlackHole(state, memory, now);
   handleSupernova(state, memory, now);
+  spendDarkMatter(state);
   spendStardust(state);
+  breed(state);
   arrangeTeam(state);
   buySpheresIfUseful(state);
   spend(state, bossBlocked(state));

@@ -76,6 +76,30 @@ export const MIGRATIONS: Record<number, (save: RawSave) => RawSave> = {
     cycleStart: 0,
     lastClick: typeof save.playTime === 'number' ? save.playTime : 0,
   }),
+  // 7 → 8: Schwarzes Loch, Dunkle Materie, Automatisierung und Brutstation
+  7: (save) => ({
+    ...save,
+    version: 8,
+    stardustCycle: typeof save.stardust === 'string' ? save.stardust : '0',
+    darkMatter: '0',
+    darkMatterTotal: '0',
+    blackHoles: 0,
+    dmUpgrades: {},
+    automation: {
+      enabled: {},
+      sphereTarget: BALANCING.automation.defaultSphereTarget,
+      supernovaTarget: BALANCING.automation.defaultSupernovaTarget,
+      clickBudget: 0,
+      timer: 0,
+      bossWait: 0,
+    },
+    breeding: [],
+    collection: Object.fromEntries(
+      Object.entries(typeof save.collection === 'object' && save.collection ? save.collection : {}).map(
+        ([id, entry]) => [id, { ...(entry as object), bred: 0 }],
+      ),
+    ),
+  }),
 };
 
 /** Hebt einen Speicherstand schrittweise auf die aktuelle Version. */

@@ -220,6 +220,35 @@ describe('M8 im Speicherstand', () => {
   });
 });
 
+describe('M9 im Speicherstand', () => {
+  it('Dunkle Materie, Upgrades, Automatisierung und Brutstation überstehen Speichern und Laden', () => {
+    const state = createInitialState(0);
+    addCatch(state, 'art_001');
+    addCatch(state, 'art_001');
+    state.collection.art_001!.bred = 3;
+    state.darkMatter = D(42);
+    state.darkMatterTotal = D(99);
+    state.stardustCycle = D('2e7');
+    state.blackHoles = 2;
+    state.dmUpgrades = { autoklicker: 3, autolevel: 1, brutplatz: 1 };
+    state.automation.enabled = { autoklicker: false, autolevel: true };
+    state.automation.sphereTarget = 25;
+    state.automation.supernovaTarget = 5000;
+    state.breeding = [{ speciesId: 'art_001', remaining: 100, total: 1800 }, null];
+    const loaded = decodeSave(encodeSave(state))!;
+    expect(loaded.darkMatter.toNumber()).toBe(42);
+    expect(loaded.darkMatterTotal.toNumber()).toBe(99);
+    expect(loaded.stardustCycle.toNumber()).toBe(2e7);
+    expect(loaded.blackHoles).toBe(2);
+    expect(loaded.dmUpgrades).toEqual(state.dmUpgrades);
+    expect(loaded.automation.enabled).toEqual(state.automation.enabled);
+    expect(loaded.automation.sphereTarget).toBe(25);
+    expect(loaded.automation.supernovaTarget).toBe(5000);
+    expect(loaded.breeding).toEqual(state.breeding);
+    expect(loaded.collection.art_001!.bred).toBe(3);
+  });
+});
+
 describe('Speicherplatz', () => {
   it('speichert und lädt über den Speicher', () => {
     const storage = memoryStorage();

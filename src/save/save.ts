@@ -4,7 +4,10 @@ import { BALANCING } from '../data/balancing';
 import {
   createEnemy,
   createInitialState,
+  createAutomationState,
   emptySpheres,
+  type AutomationState,
+  type BreedingSlot,
   pickSpecies,
   STATE_VERSION,
   type CollectionEntry,
@@ -12,6 +15,7 @@ import {
 } from '../core/state';
 import { isModuleId, type ModuleId } from '../data/modules';
 import { isResearchId, type ResearchId } from '../data/research';
+import { isAutomationId, isDmUpgradeId, type DmUpgradeId } from '../data/darkmatter';
 import { SPHERE_TYPES, type SphereType } from '../data/spheres';
 import { bossTimeLimitFor, teamSlotsFor } from '../systems/research';
 import { getSpecies, isSpeciesId, speciesInZone, type SpeciesId } from '../data/monsters';
@@ -92,8 +96,9 @@ export function hydrate(raw: RawSave): GameState {
   }
 
   const research = hydrateResearch(raw.research);
+  const dmUpgrades = hydrateDmUpgrades(raw.dmUpgrades);
   const collection = hydrateCollection(raw.collection);
-  const team = hydrateTeam(raw.team, collection, teamSlotsFor(research));
+  const team = hydrateTeam(raw.team, collection, teamSlotsFor(research, dmUpgrades));
 
   const settings = isRecord(raw.settings) ? raw.settings : {};
   const timeLimitSeconds = bossTimeLimitFor(research);
@@ -107,6 +112,13 @@ export function hydrate(raw: RawSave): GameState {
     stardust: toDecimal(raw.stardust, base.stardust),
     supernovas: Math.floor(toNumber(raw.supernovas, 0)),
     research,
+    stardustCycle: toDecimal(raw.stardustCycle, base.stardustCycle),
+    darkMatter: toDecimal(raw.darkMatter, base.darkMatter),
+    darkMatterTotal: toDecimal(raw.darkMatterTotal, base.darkMatterTotal),
+    blackHoles: Math.floor(toNumber(raw.blackHoles, 0)),
+    dmUpgrades,
+    automation: hydrateAutomation(raw.automation),
+    breeding: hydrateBreeding(raw.breeding, collection),
     zone,
     highestZone: Math.max(zone, toZone(raw.highestZone, zone)),
     killsInZone: Math.min(toNumber(raw.killsInZone, 0), BALANCING.world.enemiesPerZone),
@@ -153,9 +165,49 @@ function hydrateCollection(value: unknown): Partial<Record<SpeciesId, Collection
       level: Math.floor(toNumber(entry.level, 1)),
       evolution: Math.min(getSpecies(id)?.evolutions ?? 0, Math.floor(toNumber(entry.evolution, 0))),
       shiny: entry.shiny === true,
+      bred: Math.floor(toNumber(entry.bred, 0)),
     };
   }
   return collection;
+}
+
+function hydrateDmUpgrades(value: unknown): Partial<Record<DmUpgradeId, number>> {
+  const upgrades: Partial<Record<DmUpgradeId, number>> = {};
+  if (!isRecord(value)) return upgrades;
+  for (const [id, level] of Object.entries(value)) {
+    if (!isDmUpgradeId(id)) continue;
+    const n = Math.min(Math.floor(toNumber(level, 0)), BALANCING.darkMatter.upgrades[id].maxLevel);
+    if (n > 0) upgrades[id] = n;
+  }
+  return upgrades;
+}
+
+function hydrateAutomation(value: unknown): AutomationState {
+  const auto = createAutomationState();
+  if (!isRecord(value)) return auto;
+  if (isRecord(value.enabled)) {
+    for (const [id, on] of Object.entries(value.enabled)) {
+      if (isAutomationId(id) && typeof on === 'boolean') auto.enabled[id] = on;
+    }
+  }
+  auto.sphereTarget = Math.floor(toNumber(value.sphereTarget, auto.sphereTarget));
+  auto.supernovaTarget = toNumber(value.supernovaTarget, auto.supernovaTarget);
+  auto.clickBudget = Math.min(1, toNumber(value.clickBudget, 0));
+  auto.timer = toNumber(value.timer, 0);
+  auto.bossWait = toNumber(value.bossWait, 0);
+  return auto;
+}
+
+function hydrateBreeding(
+  value: unknown,
+  collection: Partial<Record<SpeciesId, CollectionEntry>>,
+): (BreedingSlot | null)[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((slot) => {
+    if (!isRecord(slot) || !isSpeciesId(slot.speciesId) || !collection[slot.speciesId]) return null;
+    const total = toNumber(slot.total, 1, 1);
+    return { speciesId: slot.speciesId, total, remaining: Math.min(total, toNumber(slot.remaining, total)) };
+  });
 }
 
 function hydrateSpheres(value: unknown): Record<SphereType, number> {

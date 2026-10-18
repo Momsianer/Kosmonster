@@ -2,6 +2,7 @@ import { BALANCING } from '../data/balancing';
 import type { GameState } from '../core/state';
 import { spawnEnemy } from './spawning';
 import { D, type Decimal } from '../util/decimal';
+import { gravitationMult } from './darkmatter';
 import { startSpheresBonus, supernovaStartZone } from './research';
 
 /** sternenstaub = floor( (zyklusEnergie / energyDivisor)^exponent ) */
@@ -11,8 +12,10 @@ export function stardustFor(cycleEnergy: Decimal): Decimal {
   return cycleEnergy.div(energyDivisor).pow(exponent).floor();
 }
 
+/** Sternenstaubgewinn einer Supernova, verstärkt durch die Gravitation der Dunklen Materie */
 export function stardustGain(state: GameState): Decimal {
-  return stardustFor(state.cycleEnergy);
+  const base = stardustFor(state.cycleEnergy);
+  return state.darkMatterTotal.lte(0) ? base : base.mul(gravitationMult(state)).floor();
 }
 
 /** passiver Bonus: ×(1 + bonusPerStardust * unausgegebenerSternenstaub) */
@@ -32,8 +35,19 @@ export function canSupernova(state: GameState): boolean {
  */
 export function supernova(state: GameState): boolean {
   if (!canSupernova(state)) return false;
-  state.stardust = state.stardust.add(stardustGain(state));
+  const gain = stardustGain(state);
+  state.stardust = state.stardust.add(gain);
+  state.stardustCycle = state.stardustCycle.add(gain);
   state.supernovas += 1;
+  resetRun(state);
+  return true;
+}
+
+/**
+ * Setzt einen Durchlauf zurück: Energie, Zone, Monsterlevel (auf 0) und Module.
+ * Gemeinsam genutzt von Supernova und Schwarzem Loch.
+ */
+export function resetRun(state: GameState): void {
   state.energy = D(0);
   state.cycleEnergy = D(0);
   state.modules = {};
@@ -49,5 +63,5 @@ export function supernova(state: GameState): boolean {
   state.enemy = spawnEnemy(state, zone);
   state.spheres.standard += startSpheresBonus(state);
   state.cycleStart = state.playTime;
-  return true;
+  state.automation.bossWait = 0;
 }

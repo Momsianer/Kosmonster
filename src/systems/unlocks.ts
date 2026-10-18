@@ -20,6 +20,10 @@ export const UNLOCKS = {
   stars: (state: GameState) =>
     state.supernovas > 0 || Object.values(state.collection).some((e) => e && e.caught >= 2),
   shiny: (state: GameState) => Object.values(state.collection).some((e) => e?.shiny),
+  blackHole: (state: GameState) =>
+    state.blackHoles > 0 || state.stardustCycle.gte(BALANCING.blackHole.minStardust),
+  automation: (state: GameState) => state.blackHoles > 0,
+  breeding: (state: GameState) => state.blackHoles > 0,
 } as const;
 
 export type UnlockId = keyof typeof UNLOCKS;

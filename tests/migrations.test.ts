@@ -83,6 +83,21 @@ describe('Migrationen', () => {
     expect(migrated.lastClick).toBe(300);
   });
 
+  it('hebt Version 7 auf Version 8', () => {
+    const migrated = MIGRATIONS[7]!({
+      version: 7,
+      stardust: '250',
+      collection: { art_001: { caught: 2, level: 4, evolution: 0, shiny: false } },
+    });
+    expect(migrated.version).toBe(8);
+    expect(migrated.stardustCycle).toBe('250');
+    expect(migrated.darkMatter).toBe('0');
+    expect(migrated.blackHoles).toBe(0);
+    expect(migrated.dmUpgrades).toEqual({});
+    expect(migrated.breeding).toEqual([]);
+    expect(migrated.collection).toEqual({ art_001: { caught: 2, level: 4, evolution: 0, shiny: false, bred: 0 } });
+  });
+
   it('migrierter Stand hat dieselben Felder wie ein neuer Zustand', () => {
     const fresh = JSON.parse(JSON.stringify(createInitialState(0)));
     const migrated = migrate({ ...fresh, version: 1 });

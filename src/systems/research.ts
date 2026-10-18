@@ -1,6 +1,8 @@
 import { BALANCING } from '../data/balancing';
 import { researchPrerequisite, type ResearchId } from '../data/research';
 import type { GameState } from '../core/state';
+import type { DmUpgradeId } from '../data/darkmatter';
+import { dmTeamSlots } from './darkmatter';
 import { D, powInt, type Decimal } from '../util/decimal';
 
 type ResearchMap = Partial<Record<ResearchId, number>>;
@@ -80,8 +82,9 @@ export function sphereCostMult(state: GameState): number {
   return Math.max(0, 1 - effect(state.research, 'sphaerenrabatt'));
 }
 
-export function teamSlotsFor(research: ResearchMap): number {
-  return BALANCING.monster.teamSlots + effect(research, 'teamplatz');
+/** Teamplätze: Start, Forschung „Teamplatz“ und Dunkle Materie „Teamplätze“ */
+export function teamSlotsFor(research: ResearchMap, dmUpgrades: Partial<Record<DmUpgradeId, number>> = {}): number {
+  return BALANCING.monster.teamSlots + effect(research, 'teamplatz') + dmTeamSlots(dmUpgrades);
 }
 
 export function startSpheresBonus(state: GameState): number {

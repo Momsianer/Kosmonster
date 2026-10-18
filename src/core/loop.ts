@@ -1,4 +1,6 @@
 import { BALANCING } from '../data/balancing';
+import { runAutomation } from '../systems/automation';
+import { updateBreeding } from '../systems/breeding';
 import { applyTeamDamage, updateBossTimer } from '../systems/combat';
 import { typeCountInTeam } from '../systems/monsters';
 import { offlineBonus, offlineLimitSeconds } from '../systems/research';
@@ -8,7 +10,7 @@ import { addEnergy, type GameState } from './state';
 
 /**
  * Ein Logikschritt mit Zeitdifferenz in Sekunden:
- * Produktion der Raumstation, Schaden des Teams, Bosszeit.
+ * Produktion der Raumstation, Schaden des Teams, Bosszeit, Brutstation, Automatisierung.
  */
 export function tick(state: GameState, dtSeconds: number): void {
   if (dtSeconds <= 0) return;
@@ -16,6 +18,8 @@ export function tick(state: GameState, dtSeconds: number): void {
   applyProduction(state, dtSeconds);
   applyTeamDamage(state, dtSeconds);
   updateBossTimer(state, dtSeconds);
+  updateBreeding(state, dtSeconds);
+  runAutomation(state, dtSeconds);
 }
 
 /**

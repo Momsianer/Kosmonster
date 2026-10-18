@@ -89,10 +89,13 @@ function targetMult(state: GameState): Decimal {
   return isBossZone(state.enemy.zone) ? bossDamageMult(state) : D(1);
 }
 
-/** Aktion: Klick auf den Gegner. Mit Forschung können Klicks kritisch treffen. */
-export function clickEnemy(state: GameState): boolean {
+/**
+ * Klick auf den Gegner. Mit Forschung können Klicks kritisch treffen.
+ * Autoklicks (manual = false) zählen nicht als Aktivität für den Leerlaufbonus von Null.
+ */
+export function clickEnemy(state: GameState, manual = true): boolean {
   state.clicks += 1;
-  state.lastClick = state.playTime;
+  if (manual) state.lastClick = state.playTime;
   const dps = teamDps(state);
   // Pi: +π % der Team DPS je Pi Monster
   const piBonus = dps.mul(BALANCING.types.piClickShare * typeCountInTeam(state, 'pi'));

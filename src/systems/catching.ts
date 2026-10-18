@@ -53,7 +53,7 @@ export function addCatch(state: GameState, speciesId: SpeciesId, shiny = false):
     entry.caught += 1;
     if (shiny) entry.shiny = true;
   } else {
-    state.collection[speciesId] = { caught: 1, level: 1, evolution: 0, shiny };
+    state.collection[speciesId] = { caught: 1, level: 1, evolution: 0, shiny, bred: 0 };
     addToTeam(state, speciesId);
   }
   state.lastCatch = { speciesId, time: state.playTime, shiny };

@@ -9,6 +9,19 @@ import { starProgress, starsFor } from '../core/formulas';
 import { t, type TranslationKey } from '../i18n';
 import { RESEARCH_BRANCHES, RESEARCH_TREE, researchPrerequisite, type ResearchBranch, type ResearchId } from '../data/research';
 import { currentSphereCost, totalSpheres } from '../systems/catching';
+import { AUTOMATION_ORDER, DM_UPGRADE_IDS, dmPrerequisite, type AutomationId, type DmUpgradeId } from '../data/darkmatter';
+import { canBlackHole, darkMatterGain } from '../systems/blackhole';
+import { breedingSeconds, breedingSlots, canBreed, isBreeding, potentialMult } from '../systems/breeding';
+import {
+  autoclickRate,
+  canBuyDm,
+  dmCost,
+  dmLevel,
+  gravitationMult,
+  isDmAvailable,
+  isDmMaxed,
+  ownsAutomation,
+} from '../systems/darkmatter';
 import { canEvolve, evolutionCost, evolutionLevel, hasNextEvolution } from '../systems/evolution';
 import { canSupernova, stardustBonus, stardustGain } from '../systems/prestige';
 import {
@@ -78,6 +91,93 @@ function researchPer(id: ResearchId): string {
     default:
       return formatNumber(per);
   }
+}
+
+export interface DmUpgradeView {
+  id: DmUpgradeId;
+  name: string;
+  description: string;
+  level: number;
+  maxLevel: number;
+  maxed: boolean;
+  available: boolean;
+  requires: string;
+  cost: string;
+  affordable: boolean;
+}
+
+export interface AutomationView {
+  id: AutomationId;
+  name: string;
+  enabled: boolean;
+}
+
+export interface BreedingSlotView {
+  index: number;
+  speciesId: SpeciesId | null;
+  name: string;
+  remaining: string;
+  progress: number;
+}
+
+export interface BreedingCandidateView {
+  id: SpeciesId;
+  stage: number;
+  name: string;
+  potential: string;
+  bred: number;
+  canBreed: boolean;
+  busy: boolean;
+  enoughCaught: boolean;
+  time: string;
+}
+
+function dmPer(id: DmUpgradeId): string {
+  const per = BALANCING.darkMatter.upgrades[id].perLevel;
+  return id === 'erinnerung' ? formatPercent(per) : formatNumber(per);
+}
+
+function dmUpgradeViews(state: GameState): DmUpgradeView[] {
+  return DM_UPGRADE_IDS.map((id) => {
+    const level = dmLevel(state.dmUpgrades, id);
+    const prerequisite = dmPrerequisite(id);
+    return {
+      id,
+      name: t(`darkMatter.${id}.name`),
+      description: t(`darkMatter.${id}.description`, { per: dmPer(id) }),
+      level,
+      maxLevel: BALANCING.darkMatter.upgrades[id].maxLevel,
+      maxed: isDmMaxed(state, id),
+      available: isDmAvailable(state, id),
+      requires: prerequisite ? t('darkMatter.requires', { name: t(`darkMatter.${prerequisite}.name`) }) : '',
+      cost: formatNumber(dmCost(id, level)),
+      affordable: canBuyDm(state, id),
+    };
+  });
+}
+
+function breedingViews(state: GameState): { slots: BreedingSlotView[]; candidates: BreedingCandidateView[] } {
+  const slots = breedingSlots(state).map((slot, index) => ({
+    index,
+    speciesId: slot?.speciesId ?? null,
+    name: slot ? speciesName(slot.speciesId, stageOf(state, slot.speciesId)) : '',
+    remaining: slot ? formatDuration(Math.max(0, slot.remaining)) : '',
+    progress: slot ? clamp01(1 - slot.remaining / slot.total) : 0,
+  }));
+  const candidates = (Object.entries(state.collection) as [SpeciesId, NonNullable<GameState['collection'][SpeciesId]>][])
+    .sort((a, b) => b[1].caught - a[1].caught)
+    .map(([id, entry]) => ({
+      id,
+      stage: entry.evolution,
+      name: speciesName(id, entry.evolution),
+      potential: formatNumber(potentialMult(entry.bred)),
+      bred: entry.bred,
+      canBreed: canBreed(state, id),
+      busy: isBreeding(state, id),
+      enoughCaught: entry.caught >= BALANCING.breeding.requiredCaught,
+      time: formatDuration(breedingSeconds(entry.bred)),
+    }));
+  return { slots, candidates };
 }
 
 export interface ResearchNodeView {
@@ -225,6 +325,26 @@ export interface GameView {
   supernovaZone: number;
   supernovas: number;
   research: { branch: ResearchBranch; name: string; nodes: ResearchNodeView[] }[];
+  blackHoleUnlocked: boolean;
+  automationUnlocked: boolean;
+  breedingUnlocked: boolean;
+  darkMatter: string;
+  showDarkMatter: boolean;
+  gravity: string;
+  darkMatterGain: string;
+  canBlackHole: boolean;
+  blackHoleMin: string;
+  stardustCycle: string;
+  blackHoles: number;
+  dmUpgrades: DmUpgradeView[];
+  automations: AutomationView[];
+  autoclickRate: string;
+  ownsAutospheres: boolean;
+  ownsAutosupernova: boolean;
+  sphereTarget: number;
+  supernovaTarget: number;
+  breedingSlots: BreedingSlotView[];
+  breedingCandidates: BreedingCandidateView[];
   shopUnlocked: boolean;
   production: string;
   modules: ModuleView[];
@@ -366,6 +486,32 @@ export function createView(
     supernovaZone: BALANCING.supernova.minZone,
     supernovas: state.supernovas,
     research: researchNodes(state),
+    blackHoleUnlocked: isUnlocked(state, 'blackHole'),
+    automationUnlocked: isUnlocked(state, 'automation'),
+    breedingUnlocked: isUnlocked(state, 'breeding'),
+    darkMatter: formatNumber(state.darkMatter),
+    showDarkMatter: state.darkMatterTotal.gt(0),
+    gravity: formatNumber(gravitationMult(state)),
+    darkMatterGain: formatNumber(darkMatterGain(state)),
+    canBlackHole: canBlackHole(state),
+    blackHoleMin: formatNumber(BALANCING.blackHole.minStardust),
+    stardustCycle: formatNumber(state.stardustCycle),
+    blackHoles: state.blackHoles,
+    dmUpgrades: dmUpgradeViews(state),
+    automations: AUTOMATION_ORDER.filter((id) => ownsAutomation(state, id)).map((id) => ({
+      id,
+      name: t(`darkMatter.${id}.name`),
+      enabled: state.automation.enabled[id] !== false,
+    })),
+    autoclickRate: formatNumber(autoclickRate(state)),
+    ownsAutospheres: ownsAutomation(state, 'autosphaeren'),
+    ownsAutosupernova: ownsAutomation(state, 'autosupernova'),
+    sphereTarget: state.automation.sphereTarget,
+    supernovaTarget: state.automation.supernovaTarget,
+    ...(() => {
+      const b = breedingViews(state);
+      return { breedingSlots: b.slots, breedingCandidates: b.candidates };
+    })(),
     shopUnlocked: isUnlocked(state, 'shop'),
     production: formatNumber(totalProduction(state)),
     modules: stationModules(state, buyAmount),
