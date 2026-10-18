@@ -2,6 +2,7 @@
   import type { SpeciesId } from '../data/monsters';
   import { t } from '../i18n';
   import MonsterSprite from './MonsterSprite.svelte';
+  import PixelIcon from './PixelIcon.svelte';
   import type { CollectionEntryView } from './view';
 
   let {
@@ -35,7 +36,7 @@
         <MonsterSprite speciesId={entry.id} scale={entry.big ? 1 : 2} big={entry.big} unknown={!entry.caught} stage={entry.stage} shiny={entry.shiny} />
         {#if entry.caught}
           <div class="name">{entry.name}{#if entry.shiny} <span class="shinymark">✦</span>{/if}</div>
-          <div class="muted">{entry.typeName} · <span style:color={entry.rarityColor}>{entry.rarityName}</span></div>
+          <div class="muted"><PixelIcon id={entry.type} /> {entry.typeName} · <span style:color={entry.rarityColor}>{entry.rarityName}</span></div>
           <div class="stars">{#if entry.stars > entry.maxStars}★×{entry.stars}{:else}{'★'.repeat(entry.stars)}{'☆'.repeat(entry.maxStars - entry.stars)}{/if}</div>
           <div class="muted">{t('collection.caught', { count: entry.caughtCount })}</div>
           {#if entry.starProgress}<div class="muted small">{entry.starProgress}</div>{/if}

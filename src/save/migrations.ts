@@ -1,4 +1,4 @@
-import { STATE_VERSION } from '../core/state';
+import { DEFAULT_VOLUME, STATE_VERSION } from '../core/state';
 import { BALANCING } from '../data/balancing';
 
 /** Roher Speicherstand nach JSON.parse, vor der Umwandlung in Decimal */
@@ -139,6 +139,16 @@ export const MIGRATIONS: Record<number, (save: RawSave) => RawSave> = {
       endgame: { records: { multiversum: 0, collatz: 0, goldbach: 0, riemann: 0 }, run: null },
     };
   },
+  // 11 → 12: Soundeinstellungen
+  11: (save) => ({
+    ...save,
+    version: 12,
+    settings: {
+      ...(typeof save.settings === 'object' && save.settings ? save.settings : {}),
+      sound: true,
+      volume: DEFAULT_VOLUME,
+    },
+  }),
 };
 
 /** Hebt einen Speicherstand schrittweise auf die aktuelle Version. */

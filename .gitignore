@@ -27,5 +27,7 @@ npm-debug.log*
 Thumbs.db
 *.swp
 
-# Tauri (später)
+# Tauri
 src-tauri/target/
+src-tauri/gen/
+dist-itch/

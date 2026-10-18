@@ -1,0 +1,77 @@
+name: Desktop und itch.io Builds
+
+# Baut Kosmonster mit Tauri für Windows, macOS und Linux sowie die Webversion für itch.io.
+# Manuell startbar, bei Tags wie v1.0.0 entsteht zusätzlich ein Release Entwurf.
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+  pull_request:
+    paths:
+      - 'src-tauri/**'
+      - '.github/workflows/desktop.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  itch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build:itch
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kosmonster-itch
+          path: dist-itch
+
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: ubuntu-22.04
+            args: ''
+          - platform: windows-latest
+            args: ''
+          - platform: macos-latest
+            args: '--target universal-apple-darwin'
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Systembibliotheken (Linux)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+      - run: npm ci
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: ${{ matrix.args }}
+          tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+          releaseName: 'Kosmonster ${{ github.ref_name }}'
+          releaseDraft: true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kosmonster-${{ matrix.platform }}
+          path: |
+            src-tauri/target/release/bundle/
+            src-tauri/target/universal-apple-darwin/release/bundle/
+          if-no-files-found: warn

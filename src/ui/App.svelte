@@ -15,6 +15,10 @@
   import Enemy from './Enemy.svelte';
   import EnergyDisplay from './EnergyDisplay.svelte';
   import HintBanner from './HintBanner.svelte';
+  import HitPopups from './HitPopups.svelte';
+  import Starfield from './Starfield.svelte';
+  import { playSound, type SoundId } from './sound';
+  import { detectSound, soundSnapshot } from './soundEvents';
   import OfflineReport from './OfflineReport.svelte';
   import Settings from './Settings.svelte';
   import BigBangPanel from './BigBangPanel.svelte';
@@ -39,8 +43,19 @@
   let showSettings = $state(false);
   let tab = $state<'game' | 'research' | 'collection' | 'darkMatter' | 'breeding' | 'bigBang' | 'endgame'>('game');
 
+  let soundPrev = soundSnapshot(game.state);
+
+  function sfx(id: SoundId) {
+    const { sound, volume } = game.state.settings;
+    if (sound) playSound(id, volume);
+  }
+
   function refresh() {
     view = createView(game.state, game.offlineReport, buyAmount);
+    const next = soundSnapshot(game.state);
+    const id = detectSound(soundPrev, next);
+    soundPrev = next;
+    if (id) sfx(id);
   }
 
   const timer = setInterval(refresh, 1000 / BALANCING.loop.uiUpdatesPerSecond);
@@ -54,7 +69,33 @@
     };
   }
 
-  const attack = act(actions.clickEnemy);
+  let popups = $state<HitPopups>();
+  let hit = $state(false);
+  let hitTimer: ReturnType<typeof setTimeout> | undefined;
+
+  /** Angriff mit Schadenszahl und kurzem Wackeln */
+  const attack = act(() => {
+    const defeated = actions.clickEnemy();
+    if (view.clickBlocked) return;
+    sfx(defeated ? 'defeat' : 'hit');
+    popups?.add(view.clickDamage);
+    hit = true;
+    clearTimeout(hitTimer);
+    hitTimer = setTimeout(() => (hit = false), 120);
+  });
+
+  /** Leertaste greift an, außer in Eingabefeldern und auf Buttons */
+  function onkeydown(event: KeyboardEvent) {
+    if (event.key !== ' ' || event.repeat) return;
+    const target = event.target as HTMLElement | null;
+    if (target && ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(target.tagName)) return;
+    event.preventDefault();
+    attack();
+  }
+
+  $effect(() => {
+    document.title = t('game.windowTitle', { energy: view.energy });
+  });
   const challengeBoss = act(actions.challengeBoss);
   const zoneDown = act(() => actions.changeZone(view.zone - 1));
   const zoneUp = act(() => actions.changeZone(view.zone + 1));
@@ -92,6 +133,9 @@
   const setBuyAmount = act((amount: BuyAmount) => (buyAmount = amount));
   const dismissHint = act(() => view.hint && actions.dismissHint(view.hint));
 </script>
+
+<svelte:window {onkeydown} />
+<Starfield />
 
 <main class:wide={view.teamUnlocked || view.stationUnlocked}>
   <div class="top">
@@ -277,6 +321,7 @@
         <p class="hint">{t('combat.bossHint', { seconds: view.bossTimeLimit })}</p>
       {/if}
 
+      <div class="arena" class:hit>
       {#if view.endgameRun}
         <EndgameFight run={view.endgameRun} onattack={attack} onretreat={retreat} />
       {:else if view.theorem}
@@ -302,6 +347,8 @@
         onattack={attack}
       />
       {/if}
+        <HitPopups bind:this={popups} />
+      </div>
 
       <div class="notice" aria-live="polite">{view.catchNotice}</div>
 
@@ -515,6 +562,29 @@
   .progress {
     color: var(--muted);
     font-size: 0.9rem;
+  }
+  .arena {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+  .arena.hit {
+    animation: shake 120ms steps(3);
+  }
+  @keyframes shake {
+    33% {
+      transform: translateX(-0.25rem);
+    }
+    66% {
+      transform: translateX(0.25rem);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .arena.hit {
+      animation: none;
+    }
   }
   .notice {
     min-height: 1.5rem;

@@ -160,6 +160,14 @@ export const actions = {
   },
   dismissHint: (id: UnlockId) => dismissHint(game.state, id),
 
+  setSound(on: boolean): void {
+    game.state.settings.sound = on;
+  },
+
+  setVolume(value: number): void {
+    game.state.settings.volume = Math.min(1, Math.max(0, value));
+  },
+
   setCatchOnlyNew(value: boolean): void {
     game.state.settings.catchOnlyNew = value;
   },

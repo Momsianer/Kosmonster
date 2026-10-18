@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createInitialState, STATE_VERSION } from '../src/core/state';
+import { createInitialState, DEFAULT_VOLUME, STATE_VERSION } from '../src/core/state';
 import { BALANCING } from '../src/data/balancing';
 import { migrate, MIGRATIONS } from '../src/save/migrations';
 
@@ -23,7 +23,7 @@ describe('Migrationen', () => {
     expect(migrated.farming).toBe(false);
     expect(migrated.bossTimeLeft).toBe(0);
     expect(migrated.clicks).toBe(31);
-    expect(migrated.settings).toEqual({ numberFormat: 'standard', catchOnlyNew: true });
+    expect(migrated.settings).toEqual({ numberFormat: 'standard', catchOnlyNew: true, sound: true, volume: DEFAULT_VOLUME });
   });
 
   it('hebt Version 2 auf Version 3', () => {
@@ -131,6 +131,12 @@ describe('Migrationen', () => {
       tier: 1,
     });
     expect(migrated.endgame).toEqual({ records: { multiversum: 0, collatz: 0, goldbach: 0, riemann: 0 }, run: null });
+  });
+
+  it('hebt Version 11 auf Version 12', () => {
+    const migrated = MIGRATIONS[11]!({ version: 11, settings: { numberFormat: 'letters', catchOnlyNew: false } });
+    expect(migrated.version).toBe(12);
+    expect(migrated.settings).toEqual({ numberFormat: 'letters', catchOnlyNew: false, sound: true, volume: DEFAULT_VOLUME });
   });
 
   it('migrierter Stand hat dieselben Felder wie ein neuer Zustand', () => {

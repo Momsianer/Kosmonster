@@ -1,5 +1,6 @@
 <script lang="ts">
   import { t } from '../i18n';
+  import PixelIcon from './PixelIcon.svelte';
 
   let {
     value,
@@ -22,19 +23,19 @@
 
 <div class="energy">
   <span class="label">{t('currency.energy')}</span>
-  <span class="value">{infinity ? '∞' : value}</span>
+  <span class="value"><PixelIcon id="energy" scale={2} /> {infinity ? '∞' : value}</span>
   {#if infinity}<span class="rate">{t('bigBang.infinity')}</span>{/if}
   {#if perSecond}
     <span class="rate">{t('station.perSecond', { amount: perSecond })}</span>
   {/if}
   {#if stardust}
-    <span class="stardust">{t('prestige.stardustAmount', { amount: stardust })} · {t('prestige.bonus', { bonus })}</span>
+    <span class="stardust"><PixelIcon id="stardust" /> {t('prestige.stardustAmount', { amount: stardust })} · {t('prestige.bonus', { bonus })}</span>
   {/if}
   {#if darkMatter}
-    <span class="darkmatter">{t('darkMatter.amount', { amount: darkMatter })}</span>
+    <span class="darkmatter"><PixelIcon id="darkMatter" /> {t('darkMatter.amount', { amount: darkMatter })}</span>
   {/if}
   {#if origin}
-    <span class="origin">{t('bigBang.points', { amount: origin })}</span>
+    <span class="origin"><PixelIcon id="origin" /> {t('bigBang.points', { amount: origin })}</span>
   {/if}
 </div>
 

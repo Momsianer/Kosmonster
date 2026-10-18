@@ -197,10 +197,6 @@ function species(
   return { id, number, type, rarity, baseDps, baseCost, minZone, maxZone, evolutions, sprite: `assets/monster/${id}.png` };
 }
 
-/** Spritepfad je Evolutionsstufe: art_001.png, art_001_e1.png, art_001_e2.png */
-export function spritePath(species: SpeciesData, stage: number): string {
-  return stage > 0 ? `assets/monster/${species.id}_e${stage}.png` : species.sprite;
-}
 
 export const SPECIES: readonly SpeciesData[] = [
   species(1, 'prim', 'common', 1, 40, 1, 15),

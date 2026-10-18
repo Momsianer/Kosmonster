@@ -175,6 +175,8 @@ export function hydrate(raw: RawSave): GameState {
         : base.settings.numberFormat,
       catchOnlyNew:
         typeof settings.catchOnlyNew === 'boolean' ? settings.catchOnlyNew : base.settings.catchOnlyNew,
+      sound: typeof settings.sound === 'boolean' ? settings.sound : base.settings.sound,
+      volume: Math.min(1, toNumber(settings.volume, base.settings.volume)),
     },
   };
 }

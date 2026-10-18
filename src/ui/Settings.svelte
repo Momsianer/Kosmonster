@@ -3,10 +3,26 @@
   import { BALANCING } from '../data/balancing';
   import { t } from '../i18n';
   import { NUMBER_FORMATS, type NumberFormat } from '../util/format';
+  import { playSound } from './sound';
 
   let { onchange }: { onchange: () => void } = $props();
 
   let numberFormat = $state<NumberFormat>(game.state.settings.numberFormat);
+  let sound = $state(game.state.settings.sound);
+  let volume = $state(Math.round(game.state.settings.volume * 100));
+
+  function changeSound() {
+    actions.setSound(sound);
+    if (sound) playSound('unlock', volume / 100);
+  }
+
+  function changeVolume() {
+    actions.setVolume(volume / 100);
+  }
+
+  function testSound() {
+    playSound('catch', volume / 100);
+  }
   let saveMessage = $state('');
   let exportCode = $state('');
   let copyMessage = $state('');
@@ -44,6 +60,8 @@
     if (importOk) {
       importCode = '';
       numberFormat = game.state.settings.numberFormat;
+      sound = game.state.settings.sound;
+      volume = Math.round(game.state.settings.volume * 100);
       onchange();
     }
   }
@@ -67,6 +85,19 @@
       {/each}
     </select>
   </label>
+
+  <label class="row">
+    <input type="checkbox" bind:checked={sound} onchange={changeSound} />
+    <span>{t('settings.sound')}</span>
+  </label>
+  <div class="row">
+    <label class="row">
+      <span>{t('settings.volume')}</span>
+      <input type="range" min="0" max="100" step="5" bind:value={volume} oninput={changeVolume} disabled={!sound} />
+      <span class="muted">{volume} %</span>
+    </label>
+    <button type="button" onclick={testSound} disabled={!sound}>{t('settings.test')}</button>
+  </div>
 
   <h3>{t('save.title')}</h3>
   <p class="muted">{t('save.autosave', { seconds: BALANCING.save.autosaveSeconds })}</p>
