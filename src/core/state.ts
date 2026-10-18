@@ -1,6 +1,7 @@
 import { BALANCING } from '../data/balancing';
 import type { ModuleId } from '../data/modules';
 import type { ResearchId } from '../data/research';
+import type { AutomationId, DmUpgradeId } from '../data/darkmatter';
 import { legendariesInZone, speciesInZone, type SpeciesId } from '../data/monsters';
 import { SPHERE_TYPES, type SphereType } from '../data/spheres';
 import { D, type Decimal } from '../util/decimal';
@@ -9,7 +10,7 @@ import { weightedPick } from '../util/random';
 import { enemyMaxHp } from './formulas';
 
 /** Version des Speicherstands, wird bei jeder Strukturänderung erhöht */
-export const STATE_VERSION = 7;
+export const STATE_VERSION = 8;
 
 export interface EnemyState {
   zone: number;
@@ -28,6 +29,30 @@ export interface CollectionEntry {
   evolution: number;
   /** Polarstern Variante gefangen */
   shiny: boolean;
+  /** Abgeschlossene Zuchten (Potenzial), bleibt über alle Resets erhalten */
+  bred: number;
+}
+
+export interface AutomationState {
+  /** Ein und Aus je gekaufter Automatik */
+  enabled: Partial<Record<AutomationId, boolean>>;
+  /** Autosphären: Ziel für den Vorrat an Standardsphären */
+  sphereTarget: number;
+  /** Autosupernova: Sternenstaubgewinn, ab dem ausgelöst wird */
+  supernovaTarget: number;
+  /** Angesammelte Bruchteile von Autoklicks */
+  clickBudget: number;
+  /** Zeit bis zur nächsten Runde der übrigen Automatiken */
+  timer: number;
+  /** Sekunden im Farmmodus vor einem Boss (für Autoboss) */
+  bossWait: number;
+}
+
+export interface BreedingSlot {
+  speciesId: SpeciesId;
+  /** Verbleibende Brutzeit in Sekunden */
+  remaining: number;
+  total: number;
 }
 
 export interface Settings {
@@ -50,6 +75,19 @@ export interface GameState {
   supernovas: number;
   /** Gekaufte Forschungsstufen */
   research: Partial<Record<ResearchId, number>>;
+  /** Sternenstaub seit dem letzten Schwarzen Loch */
+  stardustCycle: Decimal;
+  /** Unausgegebene Dunkle Materie */
+  darkMatter: Decimal;
+  /** Insgesamt verdiente Dunkle Materie (Grundlage der Gravitation) */
+  darkMatterTotal: Decimal;
+  /** Anzahl Schwarzer Löcher */
+  blackHoles: number;
+  /** Gekaufte Upgrades für Dunkle Materie */
+  dmUpgrades: Partial<Record<DmUpgradeId, number>>;
+  automation: AutomationState;
+  /** Brutplätze, null = frei */
+  breeding: (BreedingSlot | null)[];
   zone: number;
   /** Höchste bisher erreichte Zone */
   highestZone: number;
@@ -100,6 +138,17 @@ export function createEnemy(zone: number, speciesId: SpeciesId, shiny = false): 
   return { zone, speciesId, shiny, hp: maxHp, maxHp };
 }
 
+export function createAutomationState(): AutomationState {
+  return {
+    enabled: {},
+    sphereTarget: BALANCING.automation.defaultSphereTarget,
+    supernovaTarget: BALANCING.automation.defaultSupernovaTarget,
+    clickBudget: 0,
+    timer: 0,
+    bossWait: 0,
+  };
+}
+
 export function emptySpheres(): Record<SphereType, number> {
   return Object.fromEntries(SPHERE_TYPES.map((t) => [t, 0])) as Record<SphereType, number>;
 }
@@ -142,6 +191,13 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     stardust: D(0),
     supernovas: 0,
     research: {},
+    stardustCycle: D(0),
+    darkMatter: D(0),
+    darkMatterTotal: D(0),
+    blackHoles: 0,
+    dmUpgrades: {},
+    automation: createAutomationState(),
+    breeding: [],
     zone,
     highestZone: zone,
     killsInZone: 0,

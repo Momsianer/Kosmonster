@@ -17,6 +17,7 @@ import {
 import { planetForZone } from '../data/planets';
 import type { GameState } from '../core/state';
 import { D, type Decimal } from '../util/decimal';
+import { potentialMult } from './breeding';
 import { evolutionMult } from './evolution';
 import { stardustBonus } from './prestige';
 import { productionToDpsShare, teamDpsResearchMult, teamSlotsFor } from './research';
@@ -83,6 +84,7 @@ export function monsterDps(state: GameState, speciesId: SpeciesId): Decimal {
   )
     .mul(starsMult(starsFor(entry.caught - 1)))
     .mul(entry.shiny ? BALANCING.shiny.mult : 1)
+    .mul(potentialMult(entry.bred))
     .mul(planetMult(species.type, planet.boosted, planet.weakened))
     .mul(globalDpsMult(state));
 }
@@ -95,7 +97,7 @@ export function teamDps(state: GameState): Decimal {
 }
 
 export function teamSlots(state: GameState): number {
-  return teamSlotsFor(state.research);
+  return teamSlotsFor(state.research, state.dmUpgrades);
 }
 
 /** Kauft bis zu `amount` Level, 'max' = so viele wie bezahlbar. Gibt die Zahl gekaufter Level zurück. */

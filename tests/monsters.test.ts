@@ -180,7 +180,7 @@ describe('Fangen', () => {
 
   it('Duplikate zählen mit', () => {
     const state = stateWith('art_001', 'art_001', 'art_001');
-    expect(state.collection.art_001).toEqual({ caught: 3, level: 1, evolution: 0, shiny: false });
+    expect(state.collection.art_001).toEqual({ caught: 3, level: 1, evolution: 0, shiny: false, bred: 0 });
     expect(state.team).toEqual(['art_001']);
     expect(state.lastCatch?.speciesId).toBe('art_001');
   });

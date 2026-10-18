@@ -146,6 +146,56 @@ export const BALANCING = {
     /** passiver Bonus: ×(1 + bonusPerStardust * unausgegebenerSternenstaub) */
     bonusPerStardust: 0.02,
   },
+  blackHole: {
+    /** Schwarzes Loch möglich ab so viel Sternenstaub seit dem letzten Schwarzen Loch */
+    minStardust: 1e6,
+    /** dunkleMaterie = floor( (sternenstaubDiesesZyklus / stardustDivisor)^exponent ) */
+    stardustDivisor: 1e6,
+    exponent: 0.4,
+    /** gravitationsMult auf Sternenstaubertrag = (1 + verdienteDunkleMaterie)^gravityExponent */
+    gravityExponent: 0.5,
+  },
+  /**
+   * Upgrades für Dunkle Materie: maxLevel Stufen, Kosten = baseCost * costGrowth^stufe,
+   * perLevel ist die Wirkung je Stufe (Bedeutung siehe src/data/darkmatter.ts).
+   */
+  darkMatter: {
+    costGrowth: 2,
+    upgrades: {
+      autoklicker: { maxLevel: 10, baseCost: 1, perLevel: 5 },
+      autolevel: { maxLevel: 1, baseCost: 2, perLevel: 1 },
+      automodul: { maxLevel: 1, baseCost: 3, perLevel: 1 },
+      autosphaeren: { maxLevel: 1, baseCost: 5, perLevel: 1 },
+      autoboss: { maxLevel: 1, baseCost: 8, perLevel: 1 },
+      autosupernova: { maxLevel: 1, baseCost: 13, perLevel: 1 },
+      teamplaetze: { maxLevel: 4, baseCost: 3, perLevel: 1 },
+      erinnerung: { maxLevel: 4, baseCost: 5, perLevel: 0.25 },
+      brutplatz: { maxLevel: 3, baseCost: 4, perLevel: 1 },
+    },
+  },
+  automation: {
+    /** Klicks pro Sekunde des Autoklickers auf Stufe 1, jede weitere Stufe +perLevel */
+    autoclickBase: 10,
+    /** Abstand der übrigen Automatiken in Sekunden */
+    intervalSeconds: 1,
+    /** Autoboss versucht den Boss erneut nach so vielen Sekunden Farmmodus */
+    bossRetrySeconds: 30,
+    /** Startwerte der Einstellungen */
+    defaultSphereTarget: 10,
+    defaultSupernovaTarget: 100,
+  },
+  breeding: {
+    /** Brutplätze ohne Upgrade */
+    baseSlots: 1,
+    /** Fänge einer Art, die für ein Ei nötig sind */
+    requiredCaught: 2,
+    /** Brutzeit = baseSeconds * timeGrowth^bisherigeZuchtenDieserArt */
+    baseSeconds: 30 * 60,
+    timeGrowth: 1.25,
+    /** potenzialMult = 1 + perBreed * zuchten^flattening */
+    perBreed: 0.05,
+    flattening: 0.75,
+  },
   evolution: {
     /** Evolution: basisDPS × dpsMult je Stufe */
     dpsMult: 5,
