@@ -8,7 +8,7 @@
 
   export function add(text: string): void {
     const id = next++;
-    popups = [...popups.slice(-(MAX_POPUPS - 1)), { id, text, x: 20 + Math.random() * 60 }];
+    popups = [...popups.slice(-(MAX_POPUPS - 1)), { id, text, x: 35 + Math.random() * 30 }];
     setTimeout(() => {
       popups = popups.filter((p) => p.id !== id);
     }, LIFETIME_MS);

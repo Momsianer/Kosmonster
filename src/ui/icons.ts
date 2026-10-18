@@ -51,7 +51,7 @@ export const ICONS = {
     ],
   },
   darkMatter: {
-    palette: { k: '#05040d', d: '#2a1f4d', p: '#8f7bff', l: '#c9bcff' },
+    palette: { k: '#1a1238', d: '#45358a', p: '#a99bff', l: '#d8cfff' },
     rows: [
       '................',
       '.....kkkkkk.....',
