@@ -11,6 +11,14 @@ import { RESEARCH_BRANCHES, RESEARCH_TREE, researchPrerequisite, type ResearchBr
 import { currentSphereCost, totalSpheres } from '../systems/catching';
 import { AUTOMATION_ORDER, DM_UPGRADE_IDS, dmPrerequisite, type AutomationId, type DmUpgradeId } from '../data/darkmatter';
 import { canBlackHole, darkMatterGain } from '../systems/blackhole';
+import { CHALLENGE_IDS, type ChallengeId } from '../data/challenges';
+import { CONSTELLATIONS, type ConstellationId } from '../data/constellations';
+import { CONSTELLATION_TREE, UNIVERSE_RULES, type OriginId } from '../data/origin';
+import { canBigBang, originGain } from '../systems/bigbang';
+import { activeConstellations, constellationBonus } from '../systems/constellations';
+import { canBuyOrigin, isOriginMaxed, originCost } from '../systems/origin';
+import { originLevel } from '../systems/rules';
+import { theoremAvailable } from '../systems/theorem';
 import { breedingSeconds, breedingSlots, canBreed, isBreeding, potentialMult } from '../systems/breeding';
 import {
   autoclickRate,
@@ -107,7 +115,7 @@ export interface DmUpgradeView {
 }
 
 export interface AutomationView {
-  id: AutomationId;
+  id: AutomationId | 'autoschwarzloch';
   name: string;
   enabled: boolean;
 }
@@ -178,6 +186,105 @@ function breedingViews(state: GameState): { slots: BreedingSlotView[]; candidate
       time: formatDuration(breedingSeconds(entry.bred)),
     }));
   return { slots, candidates };
+}
+
+export interface OriginUpgradeView {
+  id: OriginId;
+  name: string;
+  description: string;
+  level: number;
+  maxLevel: number;
+  maxed: boolean;
+  cost: string;
+  affordable: boolean;
+}
+
+export interface ChallengeView {
+  id: ChallengeId;
+  name: string;
+  description: string;
+  goal: number;
+  reward: number;
+  bonus: string;
+  completed: boolean;
+  active: boolean;
+}
+
+export interface ConstellationView {
+  id: ConstellationId;
+  found: boolean;
+  active: boolean;
+  name: string;
+  hint: string;
+  bonus: string;
+}
+
+export interface StoryView {
+  system: number;
+  text: string;
+}
+
+function originViews(state: GameState, ids: readonly OriginId[]): OriginUpgradeView[] {
+  return ids.map((id) => {
+    const level = originLevel(state, id);
+    const per = BALANCING.origin.upgrades[id].perLevel;
+    const percent = id === 'sternenquelle' || id === 'urkraft' || id === 'urproduktion' || id === 'sternbilder';
+    return {
+      id,
+      name: t(`origin.${id}.name`),
+      description: t(`origin.${id}.description`, { per: percent ? formatPercent(per) : formatNumber(per) }),
+      level,
+      maxLevel: BALANCING.origin.upgrades[id].maxLevel,
+      maxed: isOriginMaxed(state, id),
+      cost: formatNumber(originCost(id, level)),
+      affordable: canBuyOrigin(state, id),
+    };
+  });
+}
+
+function challengeBonusText(id: ChallengeId): string {
+  const { kind, value } = BALANCING.challenges[id].bonus;
+  const shown = kind === 'offlineLimit' ? formatDuration(value) : formatNumber(value);
+  return t(`challenge.bonus.${kind}`, { value: shown });
+}
+
+function challengeViews(state: GameState): ChallengeView[] {
+  return CHALLENGE_IDS.map((id) => ({
+    id,
+    name: t(`challenge.${id}.name`),
+    description: t(`challenge.${id}.description`),
+    goal: BALANCING.challenges[id].goalZone,
+    reward: BALANCING.challenges[id].reward,
+    bonus: challengeBonusText(id),
+    completed: state.challenge.completed.includes(id),
+    active: state.challenge.active === id,
+  }));
+}
+
+function constellationViews(state: GameState): ConstellationView[] {
+  const active = new Set(activeConstellations(state));
+  const mapRevealed = originLevel(state, 'sternkarte') > 0;
+  return CONSTELLATIONS.map((c) => {
+    const found = state.constellationsFound.includes(c.id);
+    return {
+      id: c.id,
+      found,
+      active: active.has(c.id),
+      name: found ? t(`constellation.${c.id}.name`) : t('constellation.unknown'),
+      hint: found || !c.hidden || mapRevealed ? t(`constellation.${c.id}.hint`) : '???',
+      bonus: formatNumber(constellationBonus(state, c.hidden)),
+    };
+  });
+}
+
+function storyViews(state: GameState): StoryView[] {
+  return [...state.storySeen]
+    .sort((a, b) => a - b)
+    .map((system) => {
+      const key = `story.s${system}` as TranslationKey;
+      const text = t(key);
+      return { system, text: text === key ? t('story.beyond') : text };
+    });
 }
 
 export interface ResearchNodeView {
@@ -345,6 +452,30 @@ export interface GameView {
   supernovaTarget: number;
   breedingSlots: BreedingSlotView[];
   breedingCandidates: BreedingCandidateView[];
+  infinityCapped: boolean;
+  bigBangUnlocked: boolean;
+  challengesUnlocked: boolean;
+  constellationsUnlocked: boolean;
+  storyUnlocked: boolean;
+  originPoints: string;
+  showOrigin: boolean;
+  originGain: string;
+  canBigBang: boolean;
+  infinityEnergy: string;
+  bigBangs: number;
+  universeRules: OriginUpgradeView[];
+  constellationTree: OriginUpgradeView[];
+  ownsAutoBlackHole: boolean;
+  blackHoleTarget: number;
+  challenges: ChallengeView[];
+  activeChallenge: { name: string; goal: number; timeLeft: string } | null;
+  constellations: ConstellationView[];
+  constellationsFound: number;
+  story: StoryView[];
+  theoremAvailable: boolean;
+  theoremDefeated: boolean;
+  theorem: { hp: string; maxHp: string; fraction: number; time: string; timeFraction: number } | null;
+  showCredits: boolean;
   shopUnlocked: boolean;
   production: string;
   modules: ModuleView[];
@@ -498,11 +629,22 @@ export function createView(
     stardustCycle: formatNumber(state.stardustCycle),
     blackHoles: state.blackHoles,
     dmUpgrades: dmUpgradeViews(state),
-    automations: AUTOMATION_ORDER.filter((id) => ownsAutomation(state, id)).map((id) => ({
-      id,
-      name: t(`darkMatter.${id}.name`),
-      enabled: state.automation.enabled[id] !== false,
-    })),
+    automations: [
+      ...AUTOMATION_ORDER.filter((id) => ownsAutomation(state, id)).map((id) => ({
+        id,
+        name: t(`darkMatter.${id}.name`),
+        enabled: state.automation.enabled[id] !== false,
+      })),
+      ...(originLevel(state, 'autoschwarzloch') > 0
+        ? [
+            {
+              id: 'autoschwarzloch' as const,
+              name: t('origin.autoschwarzloch.name'),
+              enabled: state.automation.enabled.autoschwarzloch !== false,
+            },
+          ]
+        : []),
+    ],
     autoclickRate: formatNumber(autoclickRate(state)),
     ownsAutospheres: ownsAutomation(state, 'autosphaeren'),
     ownsAutosupernova: ownsAutomation(state, 'autosupernova'),
@@ -512,6 +654,49 @@ export function createView(
       const b = breedingViews(state);
       return { breedingSlots: b.slots, breedingCandidates: b.candidates };
     })(),
+    infinityCapped: state.bigBangs === 0 && state.energy.gte(BALANCING.bigBang.infinityEnergy),
+    bigBangUnlocked: isUnlocked(state, 'bigBang'),
+    challengesUnlocked: isUnlocked(state, 'challenges'),
+    constellationsUnlocked: isUnlocked(state, 'constellations'),
+    storyUnlocked: isUnlocked(state, 'story'),
+    originPoints: formatNumber(state.originPoints),
+    showOrigin: state.originTotal.gt(0),
+    originGain: formatNumber(originGain(state)),
+    canBigBang: canBigBang(state),
+    infinityEnergy: formatNumber(BALANCING.bigBang.infinityEnergy),
+    bigBangs: state.bigBangs,
+    universeRules: originViews(state, UNIVERSE_RULES),
+    constellationTree: originViews(state, CONSTELLATION_TREE),
+    ownsAutoBlackHole: originLevel(state, 'autoschwarzloch') > 0,
+    blackHoleTarget: state.automation.blackHoleTarget,
+    challenges: challengeViews(state),
+    activeChallenge: state.challenge.active
+      ? {
+          name: t(`challenge.${state.challenge.active}.name`),
+          goal: BALANCING.challenges[state.challenge.active].goalZone,
+          timeLeft:
+            state.challenge.active === 'lichtgeschwindigkeit'
+              ? formatDuration(
+                  Math.max(0, BALANCING.challengeRules.lightSpeedSeconds - (state.playTime - state.challenge.startTime)),
+                )
+              : '',
+        }
+      : null,
+    constellations: constellationViews(state),
+    constellationsFound: state.constellationsFound.length,
+    story: storyViews(state),
+    theoremAvailable: theoremAvailable(state),
+    theoremDefeated: state.theoremDefeated,
+    theorem: state.theorem
+      ? {
+          hp: formatNumber(state.theorem.hp),
+          maxHp: formatNumber(state.theorem.maxHp),
+          fraction: clamp01(state.theorem.hp.div(state.theorem.maxHp).toNumber()),
+          time: formatSeconds(state.theorem.timeLeft),
+          timeFraction: clamp01(state.theorem.timeLeft / BALANCING.theorem.timeLimitSeconds),
+        }
+      : null,
+    showCredits: state.theoremDefeated && !state.hintsSeen.includes('credits'),
     shopUnlocked: isUnlocked(state, 'shop'),
     production: formatNumber(totalProduction(state)),
     modules: stationModules(state, buyAmount),

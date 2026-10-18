@@ -521,6 +521,7 @@ export const de = {
     active: 'Aktiv',
     sphereTarget: 'Vorrat an Standardsphären',
     supernovaTarget: 'Supernova ab Sternenstaubgewinn',
+    blackHoleTarget: 'Schwarzes Loch ab Gewinn an Dunkler Materie',
     clicksPerSecond: '{rate} Klicks pro Sekunde',
   },
   breeding: {

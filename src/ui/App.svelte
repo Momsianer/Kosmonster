@@ -5,6 +5,8 @@
   import type { SpeciesId } from '../data/monsters';
   import type { ResearchId } from '../data/research';
   import type { AutomationId, DmUpgradeId } from '../data/darkmatter';
+  import type { ChallengeId } from '../data/challenges';
+  import type { OriginId } from '../data/origin';
   import type { SphereType } from '../data/spheres';
   import { actions, game } from '../core/game';
   import { t } from '../i18n';
@@ -15,7 +17,12 @@
   import HintBanner from './HintBanner.svelte';
   import OfflineReport from './OfflineReport.svelte';
   import Settings from './Settings.svelte';
+  import BigBangPanel from './BigBangPanel.svelte';
   import BreedingPanel from './BreedingPanel.svelte';
+  import ConstellationPanel from './ConstellationPanel.svelte';
+  import Credits from './Credits.svelte';
+  import StoryPanel from './StoryPanel.svelte';
+  import TheoremFight from './TheoremFight.svelte';
   import DarkMatterPanel from './DarkMatterPanel.svelte';
   import ResearchPanel from './ResearchPanel.svelte';
   import ShopPanel from './ShopPanel.svelte';
@@ -27,7 +34,7 @@
   let buyAmount = $state<BuyAmount>(1);
   let view = $state(createView(game.state, game.offlineReport));
   let showSettings = $state(false);
-  let tab = $state<'game' | 'research' | 'collection' | 'darkMatter' | 'breeding'>('game');
+  let tab = $state<'game' | 'research' | 'collection' | 'darkMatter' | 'breeding' | 'bigBang'>('game');
 
   function refresh() {
     view = createView(game.state, game.offlineReport, buyAmount);
@@ -61,7 +68,17 @@
   const evolve = act((id: SpeciesId) => actions.evolve(id));
   const triggerBlackHole = act(actions.blackHole);
   const buyDm = act((id: DmUpgradeId) => actions.buyDm(id));
-  const toggleAutomation = act((id: AutomationId, on: boolean) => actions.setAutomation(id, on));
+  const toggleAutomation = act((id: AutomationId | 'autoschwarzloch', on: boolean) => actions.setAutomation(id, on));
+  const setBlackHoleTarget = act((value: number) => actions.setBlackHoleTarget(value));
+  const triggerBigBang = act(actions.bigBang);
+  const buyOrigin = act((id: OriginId) => actions.buyOrigin(id));
+  const startChallenge = act((id: ChallengeId) => actions.startChallenge(id));
+  const abandonChallenge = act(actions.abandonChallenge);
+  const startTheorem = act(() => {
+    actions.startTheorem();
+    tab = 'game';
+  });
+  const closeCredits = act(actions.closeCredits);
   const setSphereTarget = act((value: number) => actions.setSphereTarget(value));
   const setSupernovaTarget = act((value: number) => actions.setSupernovaTarget(value));
   const startBreeding = act((id: SpeciesId) => actions.startBreeding(id));
@@ -100,7 +117,21 @@
     stardust={view.showStardust ? view.stardust : ''}
     bonus={view.stardustBonus}
     darkMatter={view.showDarkMatter ? view.darkMatter : ''}
+    origin={view.showOrigin ? view.originPoints : ''}
+    infinity={view.infinityCapped}
   />
+
+  {#if view.activeChallenge}
+    <div class="challenge-banner">
+      <span>{t('challenge.activeBanner', { name: view.activeChallenge.name, zone: view.activeChallenge.goal })}</span>
+      {#if view.activeChallenge.timeLeft}<span class="muted">{t('challenge.timeLeft', { time: view.activeChallenge.timeLeft })}</span>{/if}
+      <button type="button" onclick={abandonChallenge}>{t('challenge.abandon')}</button>
+    </div>
+  {/if}
+
+  {#if view.showCredits}
+    <Credits onclose={closeCredits} />
+  {/if}
 
   {#if view.teamUnlocked}
     <nav class="tabs">
@@ -115,10 +146,33 @@
       {#if view.breedingUnlocked}
         <button type="button" class:active={tab === 'breeding'} onclick={() => (tab = 'breeding')}>{t('tabs.breeding')}</button>
       {/if}
+      {#if view.bigBangUnlocked}
+        <button type="button" class:active={tab === 'bigBang'} onclick={() => (tab = 'bigBang')}>{t('tabs.bigBang')}</button>
+      {/if}
     </nav>
   {/if}
 
-  {#if tab === 'darkMatter' && view.blackHoleUnlocked}
+  {#if tab === 'bigBang' && view.bigBangUnlocked}
+    <BigBangPanel
+      originPoints={view.originPoints}
+      gain={view.originGain}
+      available={view.canBigBang}
+      infinity={view.infinityEnergy}
+      count={view.bigBangs}
+      inChallenge={view.activeChallenge !== null}
+      rules={view.universeRules}
+      tree={view.constellationTree}
+      challenges={view.challenges}
+      challengesUnlocked={view.challengesUnlocked}
+      theoremAvailable={view.theoremAvailable}
+      theoremDefeated={view.theoremDefeated}
+      onbigbang={triggerBigBang}
+      onbuy={buyOrigin}
+      onstart={startChallenge}
+      onabandon={abandonChallenge}
+      ontheorem={startTheorem}
+    />
+  {:else if tab === 'darkMatter' && view.blackHoleUnlocked}
     <DarkMatterPanel
       darkMatter={view.darkMatter}
       gravity={view.gravity}
@@ -134,6 +188,9 @@
       ownsAutosupernova={view.ownsAutosupernova}
       sphereTarget={view.sphereTarget}
       supernovaTarget={view.supernovaTarget}
+      ownsAutoBlackHole={view.ownsAutoBlackHole}
+      blackHoleTarget={view.blackHoleTarget}
+      onblackholetarget={setBlackHoleTarget}
       onblackhole={triggerBlackHole}
       onbuy={buyDm}
       ontoggle={toggleAutomation}
@@ -153,6 +210,12 @@
       onadd={addToTeam}
       onremove={removeFromTeam}
     />
+    {#if view.constellationsUnlocked}
+      <ConstellationPanel constellations={view.constellations} found={view.constellationsFound} unlocked={view.constellationsUnlocked} />
+    {/if}
+    {#if view.storyUnlocked}
+      <StoryPanel entries={view.story} />
+    {/if}
   {:else}
   <div class="layout">
     <section class="battle">
@@ -184,6 +247,16 @@
         <p class="hint">{t('combat.bossHint', { seconds: view.bossTimeLimit })}</p>
       {/if}
 
+      {#if view.theorem}
+        <TheoremFight
+          hp={view.theorem.hp}
+          maxHp={view.theorem.maxHp}
+          fraction={view.theorem.fraction}
+          time={view.theorem.time}
+          timeFraction={view.theorem.timeFraction}
+          onattack={attack}
+        />
+      {:else}
       <Enemy
         kind={view.enemyKind}
         speciesId={view.enemySpecies}
@@ -196,6 +269,7 @@
         fraction={view.enemyHpFraction}
         onattack={attack}
       />
+      {/if}
 
       <div class="notice" aria-live="polite">{view.catchNotice}</div>
 
@@ -302,6 +376,28 @@
     color: var(--text);
     border: 0.125rem solid #000;
     cursor: pointer;
+  }
+  .challenge-banner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.6rem 1rem;
+    background: #2a1f10;
+    border: 0.125rem solid var(--accent);
+  }
+  .challenge-banner button {
+    padding: 0.3rem 0.8rem;
+    font: inherit;
+    background: #2a2f4d;
+    color: var(--text);
+    border: 0.125rem solid #000;
+    cursor: pointer;
+  }
+  .muted {
+    color: var(--muted);
   }
   .tabs {
     display: flex;

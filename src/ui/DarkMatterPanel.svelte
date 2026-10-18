@@ -16,13 +16,16 @@
     autoclickRate,
     ownsAutospheres,
     ownsAutosupernova,
+    ownsAutoBlackHole = false,
     sphereTarget,
     supernovaTarget,
+    blackHoleTarget = 1,
     onblackhole,
     onbuy,
     ontoggle,
     onspheretarget,
     onsupernovatarget,
+    onblackholetarget = () => {},
   }: {
     darkMatter: string;
     gravity: string;
@@ -36,13 +39,16 @@
     autoclickRate: string;
     ownsAutospheres: boolean;
     ownsAutosupernova: boolean;
+    ownsAutoBlackHole?: boolean;
     sphereTarget: number;
     supernovaTarget: number;
+    blackHoleTarget?: number;
     onblackhole: () => void;
     onbuy: (id: DmUpgradeId) => void;
-    ontoggle: (id: AutomationId, on: boolean) => void;
+    ontoggle: (id: AutomationId | 'autoschwarzloch', on: boolean) => void;
     onspheretarget: (value: number) => void;
     onsupernovatarget: (value: number) => void;
+    onblackholetarget?: (value: number) => void;
   } = $props();
 
   let confirming = $state(false);
@@ -95,6 +101,12 @@
         <label class="row">
           {t('automation.supernovaTarget')}
           <input type="number" min="1" step="1" value={supernovaTarget} onchange={(e) => onsupernovatarget(numberFrom(e))} />
+        </label>
+      {/if}
+      {#if ownsAutoBlackHole}
+        <label class="row">
+          {t('automation.blackHoleTarget')}
+          <input type="number" min="1" step="1" value={blackHoleTarget} onchange={(e) => onblackholetarget(numberFrom(e))} />
         </label>
       {/if}
     </section>

@@ -16,6 +16,12 @@ import type { AutomationId, DmUpgradeId } from '../data/darkmatter';
 import { blackHole } from '../systems/blackhole';
 import { startBreeding } from '../systems/breeding';
 import { buyDm } from '../systems/darkmatter';
+import type { ChallengeId } from '../data/challenges';
+import type { OriginId } from '../data/origin';
+import { bigBang } from '../systems/bigbang';
+import { abandonChallenge, startChallenge } from '../systems/challenges';
+import { buyOrigin } from '../systems/origin';
+import { startTheorem } from '../systems/theorem';
 import { supernova } from '../systems/prestige';
 import { buyResearch } from '../systems/research';
 import { buySpheres } from '../systems/catching';
@@ -119,7 +125,7 @@ export const actions = {
     return ok;
   },
   buyDm: (id: DmUpgradeId) => buyDm(game.state, id),
-  setAutomation: (id: AutomationId, on: boolean) => {
+  setAutomation: (id: AutomationId | 'autoschwarzloch', on: boolean) => {
     game.state.automation.enabled[id] = on;
   },
   setSphereTarget: (value: number) => {
@@ -129,6 +135,25 @@ export const actions = {
     game.state.automation.supernovaTarget = Math.max(1, value);
   },
   startBreeding: (id: SpeciesId) => startBreeding(game.state, id),
+  bigBang: () => {
+    const ok = bigBang(game.state);
+    if (ok) saveGame();
+    return ok;
+  },
+  buyOrigin: (id: OriginId) => buyOrigin(game.state, id),
+  setBlackHoleTarget: (value: number) => {
+    game.state.automation.blackHoleTarget = Math.max(1, value);
+  },
+  startChallenge: (id: ChallengeId) => {
+    const ok = startChallenge(game.state, id);
+    if (ok) saveGame();
+    return ok;
+  },
+  abandonChallenge: () => abandonChallenge(game.state),
+  startTheorem: () => startTheorem(game.state),
+  closeCredits: () => {
+    if (!game.state.hintsSeen.includes('credits')) game.state.hintsSeen.push('credits');
+  },
   dismissHint: (id: UnlockId) => dismissHint(game.state, id),
 
   setCatchOnlyNew(value: boolean): void {
