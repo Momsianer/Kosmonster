@@ -393,7 +393,7 @@ Wählbar: deutsch (1,5 Mio., 2,3 Mrd.), wissenschaftlich (1,5e6), technisch (1,5
 | ✅ | M9 | Schwarzes Loch, Automatisierung, Brutstation |
 | ✅ | M10 | Urknall, Challenges, Konstellationen, Story, Theorem |
 | ✅ | M11 | Endgame Grundgerüst |
-| ⬜ | M12 | Grafik, Sound, Feinschliff, Tauri Build |
+| ✅ | M12 | Grafik, Sound, Feinschliff, Tauri Build |
 
 Jeder Meilenstein muss spielbar sein, bevor der nächste beginnt.
 
