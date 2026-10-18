@@ -3,8 +3,11 @@ import { enemyHp, enemyKind } from '../src/core/formulas';
 import { BALANCING } from '../src/data/balancing';
 import { planetForZone } from '../src/data/planets';
 import {
+  areaForZone,
+  areaPool,
   BOSS_SPECIES,
   bossForZone,
+  rareSpawnChance,
   MAIN_SPECIES,
   MONSTER_TYPES,
   MYTHIC_IDS,
@@ -37,23 +40,53 @@ describe('Monsterdaten', () => {
     for (const s of SPECIES) expect(s.sprite).toBe(`assets/monster/${s.id}.png`);
   });
 
-  it('Seltenheit nach Vorkommen: selten ab 25, episch ab 100, legendär sehr selten, mythisch und Bosse nie', () => {
-    for (const s of SPECIES) {
-      if (s.rarity === 'rare') expect(s.minZone).toBeGreaterThanOrEqual(25);
-      if (s.rarity === 'epic') expect(s.minZone).toBeGreaterThanOrEqual(100);
+  it('jedes Gebiet hat zwei gewöhnliche, eine ungewöhnliche und eine seltene Art', () => {
+    for (let area = 1; area <= BALANCING.pools.areas; area++) {
+      const zone = (area - 1) * BALANCING.world.zonesPerSystem + 1;
+      const { normals, rare } = areaPool(zone);
+      expect(normals.map((s) => s.rarity)).toEqual(['common', 'common', 'uncommon']);
+      const expected =
+        area % BALANCING.pools.legendaryEvery === 0 ? 'legendary' : area >= BALANCING.pools.epicFromArea ? 'epic' : 'rare';
+      expect(rare!.rarity).toBe(expected);
+      for (const s of [...normals, rare!]) {
+        expect(s.area).toBe(area);
+        expect(s.minZone).toBe(zone);
+        expect(s.maxZone).toBe(zone + BALANCING.world.zonesPerSystem - 1);
+      }
     }
-    const legendary = SPECIES.filter((s) => s.rarity === 'legendary');
-    expect(legendary).toHaveLength(8);
+    expect(SPECIES.filter((s) => s.rarity === 'legendary')).toHaveLength(
+      BALANCING.pools.areas / BALANCING.pools.legendaryEvery,
+    );
+  });
+
+  it('Arten kommen nur in ihrem Gebiet vor, danach wiederholen sich die Pools', () => {
+    expect(speciesInZone(1).map((s) => s.id)).toEqual(['art_001', 'art_002', 'art_003', 'art_004']);
+    expect(speciesInZone(10).map((s) => s.id)).toEqual(['art_001', 'art_002', 'art_003', 'art_004']);
+    expect(speciesInZone(11).map((s) => s.id)).toEqual(['art_005', 'art_006', 'art_007', 'art_008']);
+    const last = BALANCING.pools.areas * BALANCING.world.zonesPerSystem;
+    expect(areaForZone(last)).toBe(BALANCING.pools.areas);
+    expect(areaForZone(last + 1)).toBe(1);
+    expect(speciesInZone(last + 1).map((s) => s.id)).toEqual(speciesInZone(1).map((s) => s.id));
     for (let z = 1; z <= 600; z++) {
       expect(speciesInZone(z).some((s) => s.rarity === 'mythic' || s.boss !== null)).toBe(false);
     }
-    expect(speciesInZone(100).some((s) => s.rarity === 'legendary')).toBe(true);
-    expect(BALANCING.rarity.legendary.spawnWeight).toBeLessThan(BALANCING.rarity.epic.spawnWeight);
   });
 
-  it('neue Arten erscheinen bis Zone 500', () => {
-    expect(Math.max(...MAIN_SPECIES.map((s) => s.minZone))).toBeLessThanOrEqual(500);
-    expect(Math.max(...MAIN_SPECIES.map((s) => s.minZone))).toBeGreaterThan(400);
+  it('seltene Art: 1 % in der ersten Zone des Gebiets, je Zone +0,25 %', () => {
+    expect(rareSpawnChance(11)).toBeCloseTo(0.01, 10);
+    expect(rareSpawnChance(12)).toBeCloseTo(0.0125, 10);
+    expect(rareSpawnChance(13)).toBeCloseTo(0.015, 10);
+    expect(rareSpawnChance(19)).toBeCloseTo(0.03, 10);
+    expect(rareSpawnChance(21)).toBeCloseTo(0.01, 10);
+  });
+
+  it('Arten eines Gebiets sind gestaffelt stark wie Arten späterer Zonen', () => {
+    const { normals, rare } = areaPool(21);
+    BALANCING.pools.zoneOffset.forEach((offset, slot) => {
+      const species = slot < normals.length ? normals[slot]! : rare!;
+      expect(species.baseDps).toBeCloseTo(enemyHp(21 + offset).toNumber() * BALANCING.pools.dpsPerHp, 4);
+      expect(species.baseCost).toBeCloseTo(species.baseDps * BALANCING.pools.costPerDps, 4);
+    });
   });
 
   it('jede Zone hat mindestens eine Art', () => {

@@ -16,6 +16,7 @@
   import EnergyDisplay from './EnergyDisplay.svelte';
   import HintBanner from './HintBanner.svelte';
   import HitPopups from './HitPopups.svelte';
+  import AreaInfo from './AreaInfo.svelte';
   import Starfield from './Starfield.svelte';
   import { playSound, type SoundId } from './sound';
   import { detectSound, soundSnapshot } from './soundEvents';
@@ -100,6 +101,14 @@
   const challengeBoss = act(actions.challengeBoss);
   const zoneDown = act(() => actions.changeZone(view.zone - 1));
   const zoneUp = act(() => actions.changeZone(view.zone + 1));
+  let jumpTarget = $state<number | null>(null);
+  /** Springt in eine bereits erreichte Zone, Werte außerhalb werden auf den gültigen Bereich begrenzt */
+  const jumpToZone = act(() => {
+    if (jumpTarget === null || !Number.isFinite(jumpTarget)) return;
+    actions.changeZone(Math.min(view.highestZone, Math.max(1, Math.round(jumpTarget))));
+    jumpTarget = null;
+  });
+  const jumpToHighest = act(() => actions.changeZone(view.highestZone));
   const setAutoProgress = act(actions.setAutoProgress);
   const dismissOffline = act(actions.dismissOfflineReport);
   const levelUp = act((id: SpeciesId) => actions.levelUp(id, buyAmount));
@@ -136,7 +145,7 @@
 </script>
 
 <svelte:window {onkeydown} />
-<Starfield />
+<Starfield type={view.planetType} color={view.planetColor} />
 
 <main class:wide={view.teamUnlocked || view.stationUnlocked || view.shopUnlocked}>
   <div class="top">
@@ -355,11 +364,19 @@
           <button type="button" class="nav" aria-label={t('combat.zoneUp')} title={t('combat.zoneUp')}
             disabled={!view.canZoneUp} onclick={zoneUp}>▶</button>
         </div>
+        <form class="jump" onsubmit={(e) => { e.preventDefault(); jumpToZone(); }}>
+          <input type="number" min="1" max={view.highestZone} placeholder={t('combat.jumpPlaceholder')}
+            aria-label={t('combat.jumpPlaceholder')} bind:value={jumpTarget} />
+          <button type="submit" class="nav" disabled={jumpTarget === null}>{t('combat.jump')}</button>
+          <button type="button" class="nav" disabled={view.zone === view.highestZone} onclick={jumpToHighest}>
+            {t('combat.jumpHighest')}
+          </button>
+        </form>
         <div class="sub">
           {t('combat.starSystem', { system: view.starSystem })} · {t('combat.highestZone', { zone: view.highestZone })}
         </div>
         <div class="planet">
-          <span style:color={view.planetColor}>{view.planetName}</span> · {view.planetEffect}
+          <span style:color={view.planetTextColor}>{view.planetName}</span> · {view.planetEffect}
         </div>
         <div class="sub">{view.planetRecommended}</div>
         <label class="auto">
@@ -423,6 +440,9 @@
 
       <p class="hint">{t('combat.clickHint')}</p>
       <p class="hint">{t('combat.defeated', { count: view.enemiesDefeated })}</p>
+      {#if view.teamUnlocked}
+        <AreaInfo area={view.area} />
+      {/if}
     </section>
 
     <aside class="side">
@@ -578,6 +598,24 @@
     align-items: center;
     gap: 0.25rem;
     text-align: center;
+  }
+  .jump {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .jump input {
+    width: 6rem;
+    padding: 0.2rem 0.4rem;
+    font: inherit;
+    font-size: 0.85rem;
+    background: #10132a;
+    color: var(--text);
+    border: 0.125rem solid #000;
+  }
+  .jump .nav {
+    font-size: 0.85rem;
+    white-space: nowrap;
   }
   .zone-nav {
     display: flex;

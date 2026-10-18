@@ -263,8 +263,8 @@ describe('Challenges', () => {
     state.team = [];
     addCatch(state, 'art_001');
     addCatch(state, 'art_002');
-    addCatch(state, 'art_003');
-    expect(state.team).toEqual(['art_001', 'art_003']);
+    addCatch(state, 'art_009');
+    expect(state.team).toEqual(['art_001', 'art_009']);
     expect(addToTeam(state, 'art_002')).toBe(false);
   });
 
@@ -334,13 +334,13 @@ describe('Konstellationen', () => {
     const state = afterBigBang();
     state.team = [firstOf('euler'), firstOf('pi'), firstOf('null'), firstOf('unendlich')];
     expect(activeConstellations(state)).toContain('eulerscheIdentitaet');
-    state.team = ['art_001', 'art_003'];
+    state.team = ['art_001', 'art_009'];
     expect(activeConstellations(state)).toEqual(['primzwillinge']);
   });
 
   it('Bonus stapelt sich, Sternbilder verstärken', () => {
     const state = afterBigBang();
-    state.team = ['art_001', 'art_003', 'art_005'];
+    state.team = ['art_001', 'art_009', 'art_017'];
     expect(activeConstellations(state)).toEqual(['trio_prim']);
     expect(constellationMult(state).toNumber()).toBeCloseTo(BALANCING.constellations.simpleMult, 10);
     state.originUpgrades = { sternbilder: 4 };

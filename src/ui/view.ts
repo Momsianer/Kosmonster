@@ -1,10 +1,13 @@
 import type { OfflineReport } from '../core/game';
 import { enemyKind, isBossZone, starSystem, type EnemyKind } from '../core/formulas';
-import type { GameState } from '../core/state';
+import { rareChanceInZone, type GameState } from '../core/state';
 import { BALANCING } from '../data/balancing';
 import {
   getSpecies,
+  areaPool,
   BOSS_SPECIES,
+  bossForZone,
+  DARK_TYPES,
   MAIN_SPECIES,
   MONSTER_TYPES,
   MYTHIC_IDS,
@@ -62,11 +65,11 @@ import {
   bossTimeLimit,
   canBuyResearch,
   clickBonus,
-  catchResearchBonus,
   isResearchAvailable,
   isResearchMaxed,
   researchCost,
   researchLevel,
+  rareSpawnBoost,
 } from '../systems/research';
 import { catchChance, clickDamage } from '../core/formulas';
 import { levelUpCost, monsterDps, speciesStars, starsUnlimited, teamDps, teamSlots } from '../systems/monsters';
@@ -81,6 +84,9 @@ const CATCH_NOTICE_SECONDS = 3;
 
 
 /** Seltenheiten mit normaler Fangchance (Mythische haben Sonderbedingungen) */
+/** Textfarbe für Typen, deren Farbe auf dem dunklen Hintergrund nicht lesbar ist */
+const DARK_TYPE_TEXT = '#9a9ab4';
+
 const CATCH_TABLE_RARITIES = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'boss'] as const;
 export type BuyAmount = 1 | 10 | 100 | 'max';
 export const BUY_AMOUNTS: readonly BuyAmount[] = [1, 10, 100, 'max'];
@@ -572,6 +578,64 @@ export interface CollectionEntryView {
   origin: string;
 }
 
+export interface AreaEntryView {
+  id: SpeciesId;
+  caught: boolean;
+  shiny: boolean;
+  big: boolean;
+  name: string;
+  rarityName: string;
+  rarityColor: string;
+  /** Erscheinungschance in der aktuellen Zone, leer in Bosszonen */
+  chance: string;
+  /** Bossmonster: in welcher Zone es kommt */
+  zone: number | null;
+  current: boolean;
+}
+
+export interface AreaView {
+  system: number;
+  fromZone: number;
+  toZone: number;
+  species: AreaEntryView[];
+  bosses: AreaEntryView[];
+}
+
+/** Arten und Bossmonster des aktuellen Gebiets, nicht gefangene ohne Namen */
+function areaView(state: GameState): AreaView {
+  const zone = state.zone;
+  const { zonesPerSystem } = BALANCING.world;
+  const system = starSystem(zone);
+  const fromZone = (system - 1) * zonesPerSystem + 1;
+  const { normals, rare } = areaPool(zone);
+  const bossZone = isBossZone(zone);
+  const rareChance = rareChanceInZone(zone, rareSpawnBoost(state));
+  const weights: number[] = normals.map((s) => BALANCING.rarity[s.rarity].spawnWeight);
+  const total = weights.reduce((a, b) => a + b, 0);
+  const entry = (s: SpeciesData, chance: number | null, bossZoneOf: number | null): AreaEntryView => {
+    const caught = !!state.collection[s.id];
+    return {
+      id: s.id,
+      caught,
+      shiny: state.collection[s.id]?.shiny ?? false,
+      big: s.boss !== null || s.rarity === 'legendary',
+      name: caught ? speciesName(s.id, state.collection[s.id]?.evolution ?? 0) : t('collection.unknown'),
+      rarityName: t(`rarity.${s.rarity}`),
+      rarityColor: RARITY_COLORS[s.rarity],
+      chance: chance === null ? '' : formatPercent(chance, 2),
+      zone: bossZoneOf,
+      current: bossZoneOf === zone,
+    };
+  };
+  const species = normals.map((s, i) => entry(s, bossZone ? null : ((1 - rareChance) * (weights[i] ?? 0)) / total, null));
+  if (rare) species.push(entry(rare, bossZone ? null : rareChance, null));
+  const bosses = [fromZone + BALANCING.boss.bossEvery - 1, fromZone + zonesPerSystem - 1]
+    .map((z) => ({ z, boss: bossForZone(z) }))
+    .filter((b): b is { z: number; boss: SpeciesData } => b.boss !== null)
+    .map(({ z, boss }) => entry(boss, null, z));
+  return { system, fromZone, toZone: fromZone + zonesPerSystem - 1, species, bosses };
+}
+
 /** Eintrag der Sammlung für eine Art oder ein Bossmonster */
 function collectionEntry(state: GameState, s: SpeciesData): CollectionEntryView {
   const entry = state.collection[s.id];
@@ -619,6 +683,10 @@ export interface GameView {
   planetEffect: string;
   planetRecommended: string;
   planetColor: string;
+  /** Lesbare Textfarbe des Planeten (dunkle Typen werden aufgehellt) */
+  planetTextColor: string;
+  planetType: MonsterType;
+  area: AreaView;
   enemyHp: string;
   enemyMaxHp: string;
   /** Anteil der verbleibenden Leben zwischen 0 und 1 */
@@ -817,6 +885,9 @@ export function createView(
     }),
     planetRecommended: t('planet.recommended', { type: t(`types.${planet.boosted}.name`) }),
     planetColor: TYPE_COLORS[planet.boosted],
+    planetTextColor: DARK_TYPES.includes(planet.boosted) ? DARK_TYPE_TEXT : TYPE_COLORS[planet.boosted],
+    planetType: planet.boosted,
+    area: areaView(state),
     enemyHp: formatNumber(enemy.hp),
     enemyMaxHp: formatNumber(enemy.maxHp),
     enemyHpFraction: clamp01(fraction),

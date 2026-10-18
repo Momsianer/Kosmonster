@@ -56,14 +56,32 @@ export const BALANCING = {
     thousandMult: 10,
   },
   rarity: {
+    /** spawnWeight gilt für die normalen Arten im Pool, der seltene Platz hat eigene Chancen (pools) */
     common: { catchChance: 0.25, dpsMult: 1, spawnWeight: 3 },
     uncommon: { catchChance: 0.12, dpsMult: 2, spawnWeight: 1 },
-    rare: { catchChance: 0.05, dpsMult: 5, spawnWeight: 0.4 },
-    epic: { catchChance: 0.015, dpsMult: 15, spawnWeight: 0.15 },
-    legendary: { catchChance: 0.003, dpsMult: 50, spawnWeight: 0.05 },
+    rare: { catchChance: 0.05, dpsMult: 5, spawnWeight: 0 },
+    epic: { catchChance: 0.015, dpsMult: 15, spawnWeight: 0 },
+    legendary: { catchChance: 0.003, dpsMult: 50, spawnWeight: 0 },
     mythic: { catchChance: 0, dpsMult: 200, spawnWeight: 0 },
     /** Bossmonster: Stärke steckt in basisDPS (siehe bosses), deshalb ×1 */
     boss: { catchChance: 0.0025, dpsMult: 1, spawnWeight: 0 },
+  },
+  /**
+   * Gebietspools: Jedes Sternsystem hat drei normale Arten und eine seltene. Nach `areas`
+   * Gebieten wiederholen sich die Pools. Die seltene Art erscheint mit
+   * rareBaseChance + rareChancePerZone * (Zone im Gebiet − 1), legendär in jedem legendaryEvery. Gebiet,
+   * episch ab epicFromArea, sonst selten. basisDPS = hp(erste Zone + zoneOffset[Platz]) * dpsPerHp,
+   * so sind die Arten eines Gebiets gestaffelt wie früher Arten, die einige Zonen später erschienen.
+   */
+  pools: {
+    areas: 30,
+    dpsPerHp: 0.125,
+    costPerDps: 26,
+    zoneOffset: [0, 2, 3, 2],
+    rareBaseChance: 0.01,
+    rareChancePerZone: 0.0025,
+    legendaryEvery: 5,
+    epicFromArea: 11,
   },
   /**
    * Feste Bossmonster: je Sternsystem ein Miniboss (Zone 5) und ein Hauptboss (Zone 10),

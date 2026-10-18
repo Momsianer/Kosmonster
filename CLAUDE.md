@@ -86,7 +86,9 @@ Neue Spieler bekommen einen Hinweis „empfohlener Typ", Veteranen bauen gezielt
 
 ### Grundlagen
 * **120 Arten** im Hauptspiel (8 Typen × 15 Arten), dazu **8 Mythische** im Endgame.
-* Neue Arten erscheinen bis Zone 500, danach rotieren die Pools.
+* Jedes Sternsystem ist ein **Gebiet** mit eigenem Pool: 2 gewöhnliche, 1 ungewöhnliche und 1 seltene Art. Arten gibt es nur in ihrem Gebiet.
+* Die seltene Art erscheint in der ersten Zone des Gebiets mit 1 %, je weitere Zone +0,25 % (Zone 11: 1 %, Zone 19: 3 %). Sie ist selten, ab Gebiet 11 episch, in jedem 5. Gebiet legendär.
+* 30 Gebiete (Zone 1 bis 300) mit den 120 Arten, danach rotieren die Pools.
 * Teamplätze: Start 3, erweiterbar auf 6 (Forschung) und 10 (Dunkle Materie).
 * Alle Designs sind eigene Kreationen, keine Anlehnung an bestehende Marken.
 
@@ -96,9 +98,9 @@ Neue Spieler bekommen einen Hinweis „empfohlener Typ", Veteranen bauen gezielt
 |---|---|---|---|
 | Gewöhnlich | 25 % | ×1 | überall |
 | Ungewöhnlich | 12 % | ×2 | überall |
-| Selten | 5 % | ×5 | ab Zone 25 |
-| Episch | 1,5 % | ×15 | ab Zone 100 |
-| Legendär | 0,3 % | ×50 | sehr selten als normale Gegner in ihrem Zonenbereich |
+| Selten | 5 % | ×5 | seltene Art der Gebiete 1 bis 10 |
+| Episch | 1,5 % | ×15 | seltene Art ab Gebiet 11 |
+| Legendär | 0,3 % | ×50 | seltene Art jedes 5. Gebiets |
 | Mythisch | Sonderbedingung | ×200 | Endgame |
 | Boss | 0,25 % | eigene Basiswerte | nur das feste Bossmonster der Bosszone |
 

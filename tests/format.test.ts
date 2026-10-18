@@ -133,6 +133,8 @@ describe('formatDuration (deutsch)', () => {
 describe('formatPercent (deutsch)', () => {
   it('Prozent mit Komma', () => {
     expect(formatPercent(0.25).replace(/\s/g, ' ')).toBe('25 %');
+    expect(formatPercent(0.0125).replace(/\s/g, ' ')).toBe('1,3 %');
+    expect(formatPercent(0.0125, 2).replace(/\s/g, ' ')).toBe('1,25 %');
     expect(formatPercent(0.015).replace(/\s/g, ' ')).toBe('1,5 %');
   });
 });

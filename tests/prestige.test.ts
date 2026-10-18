@@ -257,16 +257,16 @@ describe('Evolution', () => {
   it('zweite Stufe nur für manche Arten ab Level 500', () => {
     const state = createInitialState(0);
     addCatch(state, 'art_001');
-    addCatch(state, 'art_003');
+    addCatch(state, 'art_002');
     state.stardust = D(1e6);
     state.collection.art_001!.level = 600;
-    state.collection.art_003!.level = 600;
+    state.collection.art_002!.level = 600;
     evolve(state, 'art_001');
-    evolve(state, 'art_003');
+    evolve(state, 'art_002');
     expect(getSpecies('art_001')!.evolutions).toBe(1);
     expect(evolve(state, 'art_001')).toBe(false);
-    expect(evolve(state, 'art_003')).toBe(true);
-    expect(state.collection.art_003!.evolution).toBe(2);
+    expect(evolve(state, 'art_002')).toBe(true);
+    expect(state.collection.art_002!.evolution).toBe(2);
   });
 
   it('bleibt über die Supernova erhalten', () => {

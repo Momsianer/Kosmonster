@@ -289,12 +289,11 @@ describe('Seltenheit und Bossmonster', () => {
     expect(getSpecies(spawnEnemy(state, 99).speciesId)!.boss).toBeNull();
   });
 
-  it('legendäre Arten erscheinen selten als normale Gegner', () => {
+  it('legendäre Arten erscheinen selten als seltene Art ihres Gebiets', () => {
     const state = createInitialState(0, 4);
     let legendary = 0;
-    for (let i = 0; i < 20000; i++) if (getSpecies(spawnEnemy(state, 101).speciesId)!.rarity === 'legendary') legendary += 1;
-    expect(legendary).toBeGreaterThan(0);
-    expect(legendary / 20000).toBeLessThan(0.05);
+    for (let i = 0; i < 20000; i++) if (getSpecies(spawnEnemy(state, 41).speciesId)!.rarity === 'legendary') legendary += 1;
+    expect(legendary / 20000).toBeCloseTo(BALANCING.pools.rareBaseChance, 2);
   });
 
   it('Bossmonster werden mit der besten Sphäre und sehr kleiner Chance gefangen', () => {
