@@ -85,15 +85,13 @@ describe('Monsterdaten', () => {
   });
 
   it('Arten sind so stark wie die Zone, ab der sie erscheinen', () => {
-    const { dpsPerHp, costPerDps, firstAreaCostPerDps, rareZoneOffset } = BALANCING.pools;
+    const { dpsPerHp, costPerDps, rareZoneOffset } = BALANCING.pools;
     const { normals, rare } = areaPool(21);
     for (const s of normals) {
       expect(s.baseDps).toBeCloseTo(enemyHp(s.minZone).toNumber() * dpsPerHp, 4);
       expect(s.baseCost).toBeCloseTo(s.baseDps * costPerDps, 4);
     }
     expect(rare!.baseDps).toBeCloseTo(enemyHp(21 + rareZoneOffset).toNumber() * dpsPerHp, 4);
-    const first = areaPool(1).normals[0]!;
-    expect(first.baseCost).toBeCloseTo(first.baseDps * firstAreaCostPerDps, 6);
   });
 
   it('jede Zone hat mindestens eine Art', () => {

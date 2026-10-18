@@ -341,11 +341,10 @@ function rareSlotRarity(area: number): Rarity {
  * art_001 bis art_004 gehören zu Gebiet 1, art_005 bis art_008 zu Gebiet 2 und so weiter.
  * Die Typen wechseln so, dass jeder Typ genau 15 Arten hat.
  * Normale Arten erscheinen ab erste Zone + slotStart[Platz] und sind so stark wie diese Zone,
- * die seltene ist so stark wie erste Zone + rareZoneOffset. basisKosten = basisDPS * costPerDps
- * (im ersten Gebiet firstAreaCostPerDps).
+ * die seltene ist so stark wie erste Zone + rareZoneOffset. basisKosten = basisDPS * costPerDps.
  */
 function areaSpecies(area: number, slot: number): SpeciesData {
-  const { dpsPerHp, costPerDps, firstAreaCostPerDps, slotStart, rareZoneOffset } = BALANCING.pools;
+  const { dpsPerHp, costPerDps, slotStart, rareZoneOffset } = BALANCING.pools;
   const { zonesPerSystem } = BALANCING.world;
   const number = (area - 1) * (NORMAL_SLOTS.length + 1) + slot + 1;
   const rarity = slot < NORMAL_SLOTS.length ? NORMAL_SLOTS[slot]! : rareSlotRarity(area);
@@ -363,7 +362,7 @@ function areaSpecies(area: number, slot: number): SpeciesData {
       type,
       rarity,
       baseDps,
-      baseDps * (area === 1 ? firstAreaCostPerDps : costPerDps),
+      baseDps * costPerDps,
       firstZone,
       minZone + zonesPerSystem - 1,
       evolutions,
