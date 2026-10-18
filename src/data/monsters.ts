@@ -340,21 +340,34 @@ function rareSlotRarity(area: number): Rarity {
  * Arten des Hauptspiels: Jedes Gebiet hat drei normale Arten und eine seltene.
  * art_001 bis art_004 gehören zu Gebiet 1, art_005 bis art_008 zu Gebiet 2 und so weiter.
  * Die Typen wechseln so, dass jeder Typ genau 15 Arten hat.
- * basisDPS = hp(erste Zone des Gebiets + zoneOffset[Platz]) * dpsPerHp, basisKosten = basisDPS * costPerDps.
+ * Normale Arten erscheinen ab erste Zone + slotStart[Platz] und sind so stark wie diese Zone,
+ * die seltene ist so stark wie erste Zone + rareZoneOffset. basisKosten = basisDPS * costPerDps
+ * (im ersten Gebiet firstAreaCostPerDps).
  */
 function areaSpecies(area: number, slot: number): SpeciesData {
-  const { dpsPerHp, costPerDps, zoneOffset } = BALANCING.pools;
+  const { dpsPerHp, costPerDps, firstAreaCostPerDps, slotStart, rareZoneOffset } = BALANCING.pools;
   const { zonesPerSystem } = BALANCING.world;
   const number = (area - 1) * (NORMAL_SLOTS.length + 1) + slot + 1;
   const rarity = slot < NORMAL_SLOTS.length ? NORMAL_SLOTS[slot]! : rareSlotRarity(area);
   const type = MONSTER_TYPES[((area - 1) * (NORMAL_SLOTS.length + 1) + slot) % MONSTER_TYPES.length]!;
   const minZone = (area - 1) * zonesPerSystem + 1;
-  const baseDps = enemyHp(minZone + (zoneOffset[slot] ?? 0))
+  const offset = slot < NORMAL_SLOTS.length ? (slotStart[slot] ?? 0) : rareZoneOffset;
+  const baseDps = enemyHp(minZone + offset)
     .mul(dpsPerHp)
     .toNumber();
   const evolutions = rarity === 'legendary' ? 1 : (area + slot) % 2 === 0 ? 2 : 1;
+  const firstZone = slot < NORMAL_SLOTS.length ? minZone + offset : minZone;
   return {
-    ...species(number, type, rarity, baseDps, baseDps * costPerDps, minZone, minZone + zonesPerSystem - 1, evolutions),
+    ...species(
+      number,
+      type,
+      rarity,
+      baseDps,
+      baseDps * (area === 1 ? firstAreaCostPerDps : costPerDps),
+      firstZone,
+      minZone + zonesPerSystem - 1,
+      evolutions,
+    ),
     area,
   };
 }
@@ -438,13 +451,24 @@ export function areaPool(zone: number): { normals: SpeciesData[]; rare: SpeciesD
  */
 export function rareSpawnChance(zone: number): number {
   const { rareBaseChance, rareChancePerZone } = BALANCING.pools;
-  const step = (zone - 1) % BALANCING.world.zonesPerSystem;
-  return rareBaseChance + rareChancePerZone * step;
+  return rareBaseChance + rareChancePerZone * zoneInArea(zone);
 }
 
-/** Alle Arten, die in Zone z als normale Gegner erscheinen können (Pool des Gebiets) */
+/** Zone innerhalb des Gebiets, 0 für die erste Zone */
+function zoneInArea(zone: number): number {
+  return (zone - 1) % BALANCING.world.zonesPerSystem;
+}
+
+/** Normale Arten, die in dieser Zone schon erscheinen (gestaffelt nach slotStart) */
+export function normalsInZone(zone: number): SpeciesData[] {
+  const step = zoneInArea(zone);
+  return areaPool(zone).normals.filter((_, slot) => step >= (BALANCING.pools.slotStart[slot] ?? 0));
+}
+
+/** Alle Arten, die in Zone z als normale Gegner erscheinen können */
 export function speciesInZone(zone: number): SpeciesData[] {
-  const { normals, rare } = areaPool(zone);
+  const { rare } = areaPool(zone);
+  const normals = normalsInZone(zone);
   return rare ? [...normals, rare] : normals;
 }
 

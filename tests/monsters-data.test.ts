@@ -48,9 +48,10 @@ describe('Monsterdaten', () => {
       const expected =
         area % BALANCING.pools.legendaryEvery === 0 ? 'legendary' : area >= BALANCING.pools.epicFromArea ? 'epic' : 'rare';
       expect(rare!.rarity).toBe(expected);
+      normals.forEach((s, slot) => expect(s.minZone).toBe(zone + BALANCING.pools.slotStart[slot]!));
+      expect(rare!.minZone).toBe(zone);
       for (const s of [...normals, rare!]) {
         expect(s.area).toBe(area);
-        expect(s.minZone).toBe(zone);
         expect(s.maxZone).toBe(zone + BALANCING.world.zonesPerSystem - 1);
       }
     }
@@ -60,9 +61,12 @@ describe('Monsterdaten', () => {
   });
 
   it('Arten kommen nur in ihrem Gebiet vor, danach wiederholen sich die Pools', () => {
-    expect(speciesInZone(1).map((s) => s.id)).toEqual(['art_001', 'art_002', 'art_003', 'art_004']);
-    expect(speciesInZone(10).map((s) => s.id)).toEqual(['art_001', 'art_002', 'art_003', 'art_004']);
-    expect(speciesInZone(11).map((s) => s.id)).toEqual(['art_005', 'art_006', 'art_007', 'art_008']);
+    // Normale Arten erscheinen gestaffelt ab Zone 1, 4 und 7 des Gebiets, die seltene im ganzen Gebiet
+    expect(speciesInZone(1).map((s) => s.id)).toEqual(['art_001', 'art_004']);
+    expect(speciesInZone(4).map((s) => s.id)).toEqual(['art_001', 'art_002', 'art_004']);
+    expect(speciesInZone(9).map((s) => s.id)).toEqual(['art_001', 'art_002', 'art_003', 'art_004']);
+    expect(speciesInZone(11).map((s) => s.id)).toEqual(['art_005', 'art_008']);
+    expect(areaPool(11).normals.map((s) => s.id)).toEqual(['art_005', 'art_006', 'art_007']);
     const last = BALANCING.pools.areas * BALANCING.world.zonesPerSystem;
     expect(areaForZone(last)).toBe(BALANCING.pools.areas);
     expect(areaForZone(last + 1)).toBe(1);
@@ -80,13 +84,16 @@ describe('Monsterdaten', () => {
     expect(rareSpawnChance(21)).toBeCloseTo(0.01, 10);
   });
 
-  it('Arten eines Gebiets sind gestaffelt stark wie Arten späterer Zonen', () => {
+  it('Arten sind so stark wie die Zone, ab der sie erscheinen', () => {
+    const { dpsPerHp, costPerDps, firstAreaCostPerDps, rareZoneOffset } = BALANCING.pools;
     const { normals, rare } = areaPool(21);
-    BALANCING.pools.zoneOffset.forEach((offset, slot) => {
-      const species = slot < normals.length ? normals[slot]! : rare!;
-      expect(species.baseDps).toBeCloseTo(enemyHp(21 + offset).toNumber() * BALANCING.pools.dpsPerHp, 4);
-      expect(species.baseCost).toBeCloseTo(species.baseDps * BALANCING.pools.costPerDps, 4);
-    });
+    for (const s of normals) {
+      expect(s.baseDps).toBeCloseTo(enemyHp(s.minZone).toNumber() * dpsPerHp, 4);
+      expect(s.baseCost).toBeCloseTo(s.baseDps * costPerDps, 4);
+    }
+    expect(rare!.baseDps).toBeCloseTo(enemyHp(21 + rareZoneOffset).toNumber() * dpsPerHp, 4);
+    const first = areaPool(1).normals[0]!;
+    expect(first.baseCost).toBeCloseTo(first.baseDps * firstAreaCostPerDps, 6);
   });
 
   it('jede Zone hat mindestens eine Art', () => {

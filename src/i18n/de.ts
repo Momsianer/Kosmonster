@@ -515,8 +515,9 @@ export const de = {
   area: {
     title: 'Gebiet: Sternsystem {system} (Zone {from} bis {to})',
     bossZone: 'Zone {zone}',
+    fromZone: 'ab Zone {zone}',
     unknownHint: 'Noch nicht gefangen',
-    hint: 'Diese Arten gibt es nur in diesem Gebiet. Die seltene Art wird mit jeder Zone etwas häufiger.',
+    hint: 'Diese Arten gibt es nur in diesem Gebiet. Weitere normale Arten kommen in späteren Zonen dazu, die seltene Art wird mit jeder Zone etwas häufiger.',
   },
   shop: {
     title: 'Fangsphären',
