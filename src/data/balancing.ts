@@ -283,13 +283,13 @@ export const BALANCING = {
     hpZone: 120,
     modes: {
       /** Belohnung: Team DPS ×(1 + reward * tiefsteStufe) */
-      multiversum: { hpMult: 10, growth: 1.25, timeLimitSeconds: 30, reward: 0.02 },
+      multiversum: { hpMult: 3000, growth: 1.25, timeLimitSeconds: 30, reward: 0.02 },
       /** Belohnung: Produktion ×(1 + reward * geschaffteStufen) */
-      collatz: { hpMult: 1, growth: 1.4, timeLimitSeconds: 10, reward: 0.1 },
+      collatz: { hpMult: 100, growth: 1.4, timeLimitSeconds: 10, reward: 0.1 },
       /** Belohnung: Fangchance +reward je Stufe (wie Fangglück) */
-      goldbach: { hpMult: 2, growth: 1.5, timeLimitSeconds: 60, reward: 0.02 },
+      goldbach: { hpMult: 180, growth: 1.5, timeLimitSeconds: 60, reward: 0.02 },
       /** Belohnung: Sternenstaub ×(1 + reward * erreichteNullstellen) */
-      riemann: { hpMult: 5, growth: 1.2, timeLimitSeconds: 30, reward: 0.25 },
+      riemann: { hpMult: 2000, growth: 1.2, timeLimitSeconds: 30, reward: 0.25 },
     },
     /** Goldbach Arena: so viele Monster auf Primplätzen zählen */
     goldbachPair: 2,

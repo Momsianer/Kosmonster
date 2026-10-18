@@ -720,7 +720,7 @@ export const de = {
       multiversum: 'Team DPS ×{value}',
       collatz: 'Produktion ×{value}',
       goldbach: 'Fangchance +{value}',
-      riemann: 'Sternenstaub ×{value} ({zeros} Nullstellen)',
+      riemann: 'Sternenstaub ×{value} · Nullstellen: {zeros}',
     },
     multiversum: {
       name: 'Multiversum',
@@ -762,7 +762,7 @@ export const de = {
       goldbach: 'Schaffe Stufe {value} in der Goldbach Arena',
       riemann: 'Erreiche Windung {value} in der Riemann Spirale',
     },
-    zeros: 'Erreiche {value} Nullstellen in der Riemann Spirale',
+    zeros: 'Erreiche Nullstelle Nummer {value} in der Riemann Spirale',
     collection: 'Fange alle {value} Arten des Hauptspiels',
     challengeTier: 'Schaffe jede Challenge auf Stufe {value}',
   },

@@ -268,7 +268,9 @@
         </label>
       </header>
 
-      {#if view.enemyKind === 'normal'}
+      {#if view.endgameRun || view.theorem}
+        <!-- Im Endgame und gegen das Theorem ruhen die Zonen -->
+      {:else if view.enemyKind === 'normal'}
         <div class="progress">{t('combat.progress', { kills: view.killsInZone, total: view.enemiesPerZone })}</div>
       {:else}
         <BossTimer time={view.bossTime} fraction={view.bossTimeFraction} />
