@@ -27,7 +27,7 @@ import { CONSTELLATION_TREE, UNIVERSE_RULES, type OriginId } from '../data/origi
 import { canBigBang, originGain } from '../systems/bigbang';
 import { activeConstellations, constellationBonus } from '../systems/constellations';
 import { canBuyOrigin, isOriginMaxed, originCost } from '../systems/origin';
-import { originLevel } from '../systems/rules';
+import { originLevel, ruleActive } from '../systems/rules';
 import { theoremAvailable } from '../systems/theorem';
 import { ENDGAME_MODES, isZeroStage, riemannZero, zerosUpTo, type EndgameMode } from '../data/endgame';
 import {
@@ -505,6 +505,7 @@ export interface TeamMemberView {
   shiny: boolean;
   ability: string;
   name: string;
+  type: MonsterType;
   typeName: string;
   typeColor: string;
   level: number;
@@ -550,6 +551,7 @@ export interface ModuleView {
 
 export interface CollectionEntryView {
   id: SpeciesId;
+  type: MonsterType;
   stage: number;
   stars: number;
   maxStars: number;
@@ -672,6 +674,8 @@ export interface GameView {
   modules: ModuleView[];
   teamDps: string;
   clickDamage: string;
+  /** Klicks machen gerade keinen Schaden (Stille Hände, Goldbach Arena) */
+  clickBlocked: boolean;
   team: TeamMemberView[];
   teamSlots: number;
   teamFull: boolean;
@@ -704,6 +708,7 @@ function teamMember(state: GameState, id: SpeciesId, amount: BuyAmount): TeamMem
     shiny: entry.shiny,
     ability: t(`types.${species.type}.ability`, { mult: abilityMult(species.type) }),
     name: speciesName(id, entry.evolution),
+    type: species.type,
     typeName: t(`types.${species.type}.name`),
     typeColor: TYPE_COLORS[species.type],
     level: entry.level,
@@ -910,6 +915,7 @@ export function createView(
     modules: stationModules(state, buyAmount),
     teamDps: formatNumber(dps),
     clickDamage: formatNumber(clickDamage(dps, clickBonus(state))),
+    clickBlocked: ruleActive(state, 'noClick') || state.endgame.run?.mode === 'goldbach',
     team: state.team
       .map((id) => teamMember(state, id, buyAmount))
       .filter((m): m is TeamMemberView => m !== null),
@@ -929,6 +935,7 @@ export function createView(
         number: s.number,
         caught: !!entry,
         name: speciesName(s.id, entry?.evolution ?? 0),
+        type: s.type,
         typeName: t(`types.${s.type}.name`),
         rarityName: t(`rarity.${s.rarity}`),
         caughtCount: entry?.caught ?? 0,

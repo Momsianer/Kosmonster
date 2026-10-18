@@ -4,6 +4,7 @@ export const de = {
     locale: 'de-DE',
   },
   game: {
+    windowTitle: '{energy} Energie · Kosmonster',
     title: 'Kosmonster',
   },
   currency: {

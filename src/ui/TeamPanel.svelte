@@ -4,6 +4,7 @@
   import { t } from '../i18n';
   import BuyAmountSelect from './BuyAmountSelect.svelte';
   import MonsterSprite from './MonsterSprite.svelte';
+  import PixelIcon from './PixelIcon.svelte';
   import type { BuyAmount, TeamMemberView } from './view';
 
   let {
@@ -51,7 +52,7 @@
           {#if member.shiny}<span class="shinymark" title={t('collection.shiny')}>✦</span>{/if}
         </div>
         <div class="muted">
-          <span class="type" style:color={member.typeColor} title={member.ability}>{member.typeName}</span>
+          <span class="type" style:color={member.typeColor} title={member.ability}><PixelIcon id={member.type} /> {member.typeName}</span>
           · {t('team.level', { level: member.level })} · {t('team.monsterDps', { dps: member.dps })}
         </div>
         <div class="actions">

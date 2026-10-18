@@ -15,6 +15,8 @@
   import Enemy from './Enemy.svelte';
   import EnergyDisplay from './EnergyDisplay.svelte';
   import HintBanner from './HintBanner.svelte';
+  import HitPopups from './HitPopups.svelte';
+  import Starfield from './Starfield.svelte';
   import OfflineReport from './OfflineReport.svelte';
   import Settings from './Settings.svelte';
   import BigBangPanel from './BigBangPanel.svelte';
@@ -54,7 +56,32 @@
     };
   }
 
-  const attack = act(actions.clickEnemy);
+  let popups = $state<HitPopups>();
+  let hit = $state(false);
+  let hitTimer: ReturnType<typeof setTimeout> | undefined;
+
+  /** Angriff mit Schadenszahl und kurzem Wackeln */
+  const attack = act(() => {
+    actions.clickEnemy();
+    if (view.clickBlocked) return;
+    popups?.add(view.clickDamage);
+    hit = true;
+    clearTimeout(hitTimer);
+    hitTimer = setTimeout(() => (hit = false), 120);
+  });
+
+  /** Leertaste greift an, außer in Eingabefeldern und auf Buttons */
+  function onkeydown(event: KeyboardEvent) {
+    if (event.key !== ' ' || event.repeat) return;
+    const target = event.target as HTMLElement | null;
+    if (target && ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(target.tagName)) return;
+    event.preventDefault();
+    attack();
+  }
+
+  $effect(() => {
+    document.title = t('game.windowTitle', { energy: view.energy });
+  });
   const challengeBoss = act(actions.challengeBoss);
   const zoneDown = act(() => actions.changeZone(view.zone - 1));
   const zoneUp = act(() => actions.changeZone(view.zone + 1));
@@ -92,6 +119,9 @@
   const setBuyAmount = act((amount: BuyAmount) => (buyAmount = amount));
   const dismissHint = act(() => view.hint && actions.dismissHint(view.hint));
 </script>
+
+<svelte:window {onkeydown} />
+<Starfield />
 
 <main class:wide={view.teamUnlocked || view.stationUnlocked}>
   <div class="top">
@@ -277,6 +307,7 @@
         <p class="hint">{t('combat.bossHint', { seconds: view.bossTimeLimit })}</p>
       {/if}
 
+      <div class="arena" class:hit>
       {#if view.endgameRun}
         <EndgameFight run={view.endgameRun} onattack={attack} onretreat={retreat} />
       {:else if view.theorem}
@@ -302,6 +333,8 @@
         onattack={attack}
       />
       {/if}
+        <HitPopups bind:this={popups} />
+      </div>
 
       <div class="notice" aria-live="polite">{view.catchNotice}</div>
 
@@ -515,6 +548,29 @@
   .progress {
     color: var(--muted);
     font-size: 0.9rem;
+  }
+  .arena {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+  .arena.hit {
+    animation: shake 120ms steps(3);
+  }
+  @keyframes shake {
+    33% {
+      transform: translateX(-0.25rem);
+    }
+    66% {
+      transform: translateX(0.25rem);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .arena.hit {
+      animation: none;
+    }
   }
   .notice {
     min-height: 1.5rem;
