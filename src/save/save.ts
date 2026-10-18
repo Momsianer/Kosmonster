@@ -6,7 +6,9 @@ import {
   createInitialState,
   createAutomationState,
   createChallengeState,
+  createEndgameState,
   type ChallengeState,
+  type EndgameState,
   type TheoremFight,
   emptySpheres,
   type AutomationState,
@@ -19,7 +21,8 @@ import {
 import { isModuleId, type ModuleId } from '../data/modules';
 import { isResearchId, type ResearchId } from '../data/research';
 import { isAutomationId, isDmUpgradeId, type DmUpgradeId } from '../data/darkmatter';
-import { isChallengeId } from '../data/challenges';
+import { isChallengeId, type ChallengeId } from '../data/challenges';
+import { ENDGAME_MODES, type EndgameMode } from '../data/endgame';
 import { isConstellationId } from '../data/constellations';
 import { isOriginId, type OriginId } from '../data/origin';
 import { SPHERE_TYPES, type SphereType } from '../data/spheres';
@@ -138,6 +141,7 @@ export function hydrate(raw: RawSave): GameState {
       : [],
     theorem: hydrateTheorem(raw.theorem),
     theoremDefeated: raw.theoremDefeated === true,
+    endgame: hydrateEndgame(raw.endgame),
     zone,
     highestZone: Math.max(zone, toZone(raw.highestZone, zone)),
     killsInZone: Math.min(toNumber(raw.killsInZone, 0), BALANCING.world.enemiesPerZone),
@@ -235,10 +239,50 @@ function hydrateChallenge(value: unknown): ChallengeState {
   if (!isRecord(value)) return challenge;
   challenge.active = isChallengeId(value.active) ? value.active : null;
   challenge.completed = Array.isArray(value.completed) ? [...new Set(value.completed.filter(isChallengeId))] : [];
+  const tiers: Partial<Record<ChallengeId, number>> = {};
+  if (isRecord(value.tiers)) {
+    for (const [id, tier] of Object.entries(value.tiers)) {
+      if (isChallengeId(id) && typeof tier === 'number' && Number.isInteger(tier) && tier >= 1) tiers[id] = tier;
+    }
+  }
+  // Jede abgeschlossene Challenge hat mindestens Stufe 1
+  for (const id of challenge.completed) tiers[id] = Math.max(1, tiers[id] ?? 0);
+  challenge.tiers = tiers;
+  challenge.tier = challenge.active ? Math.max(1, Math.floor(toNumber(value.tier, 1))) : 0;
   challenge.startTime = toNumber(value.startTime, 0);
   challenge.tideStart = toNumber(value.tideStart, 0);
   challenge.entropyTimer = toNumber(value.entropyTimer, 0);
   return challenge;
+}
+
+function isEndgameMode(value: unknown): value is EndgameMode {
+  return typeof value === 'string' && (ENDGAME_MODES as readonly string[]).includes(value);
+}
+
+function hydrateEndgame(value: unknown): EndgameState {
+  const endgame = createEndgameState();
+  if (!isRecord(value)) return endgame;
+  if (isRecord(value.records)) {
+    for (const mode of ENDGAME_MODES) endgame.records[mode] = Math.floor(toNumber(value.records[mode], 0));
+  }
+  const run = value.run;
+  if (isRecord(run) && isEndgameMode(run.mode)) {
+    const maxHp = toDecimal(run.maxHp, D(0));
+    const hp = toDecimal(run.hp, maxHp);
+    const level = Math.floor(toNumber(run.level, 0, 1));
+    if (maxHp.gt(0) && hp.gt(0) && level >= 1) {
+      endgame.run = {
+        mode: run.mode,
+        level,
+        step: Math.floor(toNumber(run.step, 0)),
+        value: Math.floor(toNumber(run.value, 0)),
+        hp: hp.min(maxHp),
+        maxHp,
+        timeLeft: toNumber(run.timeLeft, 0),
+      };
+    }
+  }
+  return endgame;
 }
 
 function hydrateTheorem(value: unknown): TheoremFight | null {

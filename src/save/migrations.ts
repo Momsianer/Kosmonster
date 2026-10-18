@@ -124,6 +124,21 @@ export const MIGRATIONS: Record<number, (save: RawSave) => RawSave> = {
     version: 10,
     spherePressure: { standard: 0, orbit: 0, nebel: 0, singularitaet: 0 },
   }),
+  // 10 → 11: Endgame (Multiversum, Vermutungen) und Challengestufen
+  10: (save) => {
+    const challenge = typeof save.challenge === 'object' && save.challenge ? (save.challenge as Record<string, unknown>) : {};
+    const completed = Array.isArray(challenge.completed) ? challenge.completed.filter((id) => typeof id === 'string') : [];
+    return {
+      ...save,
+      version: 11,
+      challenge: {
+        ...challenge,
+        tiers: Object.fromEntries(completed.map((id) => [id, 1])),
+        tier: challenge.active ? 1 : 0,
+      },
+      endgame: { records: { multiversum: 0, collatz: 0, goldbach: 0, riemann: 0 }, run: null },
+    };
+  },
 };
 
 /** Hebt einen Speicherstand schrittweise auf die aktuelle Version. */

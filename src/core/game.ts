@@ -22,6 +22,8 @@ import { bigBang } from '../systems/bigbang';
 import { abandonChallenge, startChallenge } from '../systems/challenges';
 import { buyOrigin } from '../systems/origin';
 import { startTheorem } from '../systems/theorem';
+import { endEndgame, startEndgame } from '../systems/endgame';
+import type { EndgameMode } from '../data/endgame';
 import { supernova } from '../systems/prestige';
 import { buyResearch } from '../systems/research';
 import { buySpheres } from '../systems/catching';
@@ -151,6 +153,8 @@ export const actions = {
   },
   abandonChallenge: () => abandonChallenge(game.state),
   startTheorem: () => startTheorem(game.state),
+  startEndgame: (mode: EndgameMode) => startEndgame(game.state, mode),
+  endEndgame: () => endEndgame(game.state),
   closeCredits: () => {
     if (!game.state.hintsSeen.includes('credits')) game.state.hintsSeen.push('credits');
   },

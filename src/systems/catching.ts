@@ -7,6 +7,12 @@ import { D, type Decimal } from '../util/decimal';
 import { nextRandom } from '../util/random';
 import { addToTeam } from './monsters';
 import { catchResearchBonus, researchLevel, sphereCostMult } from './research';
+import { goldbachCatchBonus } from './endgame';
+
+/** Fangbonus aus Forschung und Goldbach Arena */
+export function catchBonus(state: GameState): number {
+  return catchResearchBonus(state) + goldbachCatchBonus(state);
+}
 
 export function totalSpheres(state: GameState): number {
   return SPHERE_TYPES.reduce((sum, t) => sum + state.spheres[t], 0);
@@ -39,7 +45,7 @@ export function tryCatch(state: GameState, speciesId: SpeciesId, shiny = false):
   const chance = catchChance(
     BALANCING.rarity[species.rarity].catchChance,
     BALANCING.spheres[sphere].catchMult,
-    catchResearchBonus(state),
+    catchBonus(state),
   );
   if (nextRandom(state) >= chance) return false;
   addCatch(state, speciesId, shiny);

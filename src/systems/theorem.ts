@@ -15,7 +15,7 @@ export function theoremHp(): Decimal {
 }
 
 export function startTheorem(state: GameState): boolean {
-  if (!theoremAvailable(state) || state.theorem) return false;
+  if (!theoremAvailable(state) || state.theorem || state.endgame.run) return false;
   const maxHp = theoremHp();
   state.theorem = { hp: maxHp, maxHp, timeLeft: BALANCING.theorem.timeLimitSeconds };
   return true;

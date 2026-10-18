@@ -22,6 +22,7 @@ import { challengeMult, originEffect, purchaseAffordable, purchaseCost, ruleActi
 import { stardustBonus } from './prestige';
 import { productionToDpsShare, teamDpsResearchMult, teamSlotsFor } from './research';
 import { totalProduction } from './station';
+import { challengeTierMult, multiverseMult, shinySetMult } from './endgame';
 
 /** Sekunden seit dem letzten Klick sind mindestens nullIdleSeconds */
 export function isIdle(state: GameState): boolean {
@@ -59,19 +60,26 @@ export function typeMult(state: GameState, speciesId: SpeciesId, level: number):
   }
 }
 
+/** Im Endgame gibt es Sterne über maxStars */
+export function starsUnlimited(state: GameState): boolean {
+  return state.theoremDefeated;
+}
+
 /** Sterne einer Art aus ihren Duplikaten */
 export function speciesStars(state: GameState, speciesId: SpeciesId): number {
   const entry = state.collection[speciesId];
-  return entry ? starsFor(entry.caught - 1) : 0;
+  return entry ? starsFor(entry.caught - 1, starsUnlimited(state)) : 0;
 }
 
-/** globalMult: Sternenstaub, Forschung, Ursprung, Challenges und Konstellationen */
+/** globalMult: Sternenstaub, Forschung, Ursprung, Challenges, Konstellationen und Endgame */
 export function globalDpsMult(state: GameState): Decimal {
   return stardustBonus(state)
     .mul(teamDpsResearchMult(state))
     .mul(1 + originEffect(state, 'urkraft'))
     .mul(challengeMult(state, 'dps'))
-    .mul(constellationMult(state));
+    .mul(constellationMult(state))
+    .mul(multiverseMult(state))
+    .mul(challengeTierMult(state));
 }
 
 /** DPS einer gefangenen Art im aktuellen Zustand */
@@ -86,8 +94,9 @@ export function monsterDps(state: GameState, speciesId: SpeciesId): Decimal {
     BALANCING.rarity[species.rarity].dpsMult,
     typeMult(state, speciesId, entry.level),
   )
-    .mul(starsMult(starsFor(entry.caught - 1)))
+    .mul(starsMult(speciesStars(state, speciesId)))
     .mul(entry.shiny ? BALANCING.shiny.mult : 1)
+    .mul(shinySetMult(state, speciesId))
     .mul(potentialMult(entry.bred))
     .mul(planetMult(species.type, planet.boosted, planet.weakened))
     .mul(globalDpsMult(state));

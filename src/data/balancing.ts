@@ -274,6 +274,51 @@ export const BALANCING = {
     hpMult: 100,
     timeLimitSeconds: 60,
   },
+  /**
+   * Endgame nach dem Theorem: Multiversum und unbewiesene Vermutungen.
+   * Leben einer Stufe = hp(hpZone) * hpMult * growth^(stufe − 1), im Collatz Labyrinth
+   * zusätzlich ×(1 + log2(n)) für die aktuelle Zahl n. timeLimitSeconds gilt je Gegner.
+   */
+  endgame: {
+    hpZone: 120,
+    modes: {
+      /** Belohnung: Team DPS ×(1 + reward * tiefsteStufe) */
+      multiversum: { hpMult: 3000, growth: 1.25, timeLimitSeconds: 30, reward: 0.02 },
+      /** Belohnung: Produktion ×(1 + reward * geschaffteStufen) */
+      collatz: { hpMult: 100, growth: 1.4, timeLimitSeconds: 10, reward: 0.1 },
+      /** Belohnung: Fangchance +reward je Stufe (wie Fangglück) */
+      goldbach: { hpMult: 180, growth: 1.5, timeLimitSeconds: 60, reward: 0.02 },
+      /** Belohnung: Sternenstaub ×(1 + reward * erreichteNullstellen) */
+      riemann: { hpMult: 2000, growth: 1.2, timeLimitSeconds: 30, reward: 0.25 },
+    },
+    /** Goldbach Arena: so viele Monster auf Primplätzen zählen */
+    goldbachPair: 2,
+    /** Riemann Spirale: Schaden an Nullstellen */
+    zeroDamageMult: 3,
+    /** Challengestufen: Zielzone +tierZoneStep je Stufe, jede Stufe über 1 gibt ×tierDpsMult Team DPS */
+    tierZoneStep: 10,
+    tierDpsMult: 1.25,
+    /** Sterne über maxStars: Kopien je weiterem Stern und Bonus je weiterem Stern */
+    extraStarCopies: 100,
+    extraStarBonus: 0.2,
+    /** Polarstern Jagd: alle Polarsterne eines Typs geben diesem Typ ×setMult */
+    polarsternSetMult: 1.5,
+  },
+  /**
+   * Mythische Monster und ihre Sonderbedingungen.
+   * kind: record (Bestwert einer Endgamestufe), zeros (Nullstellen der Riemann Spirale),
+   * collection (gefangene Hauptarten), challengeTier (alle Challenges mindestens auf Stufe value)
+   */
+  mythic: {
+    art_121: { kind: 'record', mode: 'multiversum', value: 13 },
+    art_122: { kind: 'record', mode: 'multiversum', value: 21 },
+    art_123: { kind: 'zeros', mode: 'riemann', value: 3 },
+    art_124: { kind: 'record', mode: 'collatz', value: 10 },
+    art_125: { kind: 'zeros', mode: 'riemann', value: 1 },
+    art_126: { kind: 'collection', mode: null, value: 120 },
+    art_127: { kind: 'record', mode: 'goldbach', value: 8 },
+    art_128: { kind: 'challengeTier', mode: null, value: 2 },
+  },
   evolution: {
     /** Evolution: basisDPS × dpsMult je Stufe */
     dpsMult: 5,

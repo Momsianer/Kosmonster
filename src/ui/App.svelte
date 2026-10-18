@@ -23,6 +23,9 @@
   import Credits from './Credits.svelte';
   import StoryPanel from './StoryPanel.svelte';
   import TheoremFight from './TheoremFight.svelte';
+  import EndgameFight from './EndgameFight.svelte';
+  import EndgamePanel from './EndgamePanel.svelte';
+  import type { EndgameMode } from '../data/endgame';
   import DarkMatterPanel from './DarkMatterPanel.svelte';
   import ResearchPanel from './ResearchPanel.svelte';
   import ShopPanel from './ShopPanel.svelte';
@@ -34,7 +37,7 @@
   let buyAmount = $state<BuyAmount>(1);
   let view = $state(createView(game.state, game.offlineReport));
   let showSettings = $state(false);
-  let tab = $state<'game' | 'research' | 'collection' | 'darkMatter' | 'breeding' | 'bigBang'>('game');
+  let tab = $state<'game' | 'research' | 'collection' | 'darkMatter' | 'breeding' | 'bigBang' | 'endgame'>('game');
 
   function refresh() {
     view = createView(game.state, game.offlineReport, buyAmount);
@@ -78,6 +81,10 @@
     actions.startTheorem();
     tab = 'game';
   });
+  const startEndgame = act((mode: EndgameMode) => {
+    if (actions.startEndgame(mode)) tab = 'game';
+  });
+  const retreat = act(actions.endEndgame);
   const closeCredits = act(actions.closeCredits);
   const setSphereTarget = act((value: number) => actions.setSphereTarget(value));
   const setSupernovaTarget = act((value: number) => actions.setSupernovaTarget(value));
@@ -123,7 +130,11 @@
 
   {#if view.activeChallenge}
     <div class="challenge-banner">
-      <span>{t('challenge.activeBanner', { name: view.activeChallenge.name, zone: view.activeChallenge.goal })}</span>
+      <span>
+        {view.activeChallenge.tier > 1
+          ? t('challenge.activeBannerTier', { name: view.activeChallenge.name, tier: view.activeChallenge.tier, zone: view.activeChallenge.goal })
+          : t('challenge.activeBanner', { name: view.activeChallenge.name, zone: view.activeChallenge.goal })}
+      </span>
       {#if view.activeChallenge.timeLeft}<span class="muted">{t('challenge.timeLeft', { time: view.activeChallenge.timeLeft })}</span>{/if}
       <button type="button" onclick={abandonChallenge}>{t('challenge.abandon')}</button>
     </div>
@@ -149,10 +160,24 @@
       {#if view.bigBangUnlocked}
         <button type="button" class:active={tab === 'bigBang'} onclick={() => (tab = 'bigBang')}>{t('tabs.bigBang')}</button>
       {/if}
+      {#if view.endgameUnlocked}
+        <button type="button" class:active={tab === 'endgame'} onclick={() => (tab = 'endgame')}>{t('tabs.endgame')}</button>
+      {/if}
     </nav>
   {/if}
 
-  {#if tab === 'bigBang' && view.bigBangUnlocked}
+  {#if tab === 'endgame' && view.endgameUnlocked}
+    <EndgamePanel
+      modes={view.endgameModes}
+      canStart={view.canStartEndgame}
+      running={view.endgameRun !== null}
+      mythics={view.mythics}
+      shinySets={view.shinySets}
+      shinySetMult={view.shinySetMult}
+      extraStars={view.extraStars}
+      onstart={startEndgame}
+    />
+  {:else if tab === 'bigBang' && view.bigBangUnlocked}
     <BigBangPanel
       originPoints={view.originPoints}
       gain={view.originGain}
@@ -164,6 +189,8 @@
       tree={view.constellationTree}
       challenges={view.challenges}
       challengesUnlocked={view.challengesUnlocked}
+      endgameUnlocked={view.endgameUnlocked}
+      tierInfo={view.challengeTierInfo}
       theoremAvailable={view.theoremAvailable}
       theoremDefeated={view.theoremDefeated}
       onbigbang={triggerBigBang}
@@ -206,6 +233,7 @@
       entries={view.collection}
       count={view.collectionCount}
       shinyCount={view.shinyCount}
+      shinyTotal={view.shinyTotal}
       teamFull={view.teamFull}
       onadd={addToTeam}
       onremove={removeFromTeam}
@@ -240,14 +268,18 @@
         </label>
       </header>
 
-      {#if view.enemyKind === 'normal'}
+      {#if view.endgameRun || view.theorem}
+        <!-- Im Endgame und gegen das Theorem ruhen die Zonen -->
+      {:else if view.enemyKind === 'normal'}
         <div class="progress">{t('combat.progress', { kills: view.killsInZone, total: view.enemiesPerZone })}</div>
       {:else}
         <BossTimer time={view.bossTime} fraction={view.bossTimeFraction} />
         <p class="hint">{t('combat.bossHint', { seconds: view.bossTimeLimit })}</p>
       {/if}
 
-      {#if view.theorem}
+      {#if view.endgameRun}
+        <EndgameFight run={view.endgameRun} onattack={attack} onretreat={retreat} />
+      {:else if view.theorem}
         <TheoremFight
           hp={view.theorem.hp}
           maxHp={view.theorem.maxHp}

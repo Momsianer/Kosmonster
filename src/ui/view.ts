@@ -2,13 +2,23 @@ import type { OfflineReport } from '../core/game';
 import { enemyKind, isBossZone, starSystem, type EnemyKind } from '../core/formulas';
 import type { GameState } from '../core/state';
 import { BALANCING } from '../data/balancing';
-import { getSpecies, RARITY_COLORS, SPECIES, TYPE_COLORS, type MonsterType, type SpeciesId } from '../data/monsters';
+import {
+  getSpecies,
+  MAIN_SPECIES,
+  MONSTER_TYPES,
+  MYTHIC_IDS,
+  RARITY_COLORS,
+  SPECIES,
+  TYPE_COLORS,
+  type MonsterType,
+  type SpeciesId,
+} from '../data/monsters';
 import { planetForZone } from '../data/planets';
 import { SPHERE_TYPES, type SphereType } from '../data/spheres';
 import { starProgress, starsFor } from '../core/formulas';
 import { t, type TranslationKey } from '../i18n';
 import { RESEARCH_BRANCHES, RESEARCH_TREE, researchPrerequisite, type ResearchBranch, type ResearchId } from '../data/research';
-import { currentSphereCost, isSphereUnlocked, sphereBuyCost, totalSpheres } from '../systems/catching';
+import { catchBonus, currentSphereCost, isSphereUnlocked, sphereBuyCost, totalSpheres } from '../systems/catching';
 import { AUTOMATION_ORDER, DM_UPGRADE_IDS, dmPrerequisite, type AutomationId, type DmUpgradeId } from '../data/darkmatter';
 import { canBlackHole, darkMatterGain } from '../systems/blackhole';
 import { CHALLENGE_IDS, type ChallengeId } from '../data/challenges';
@@ -19,6 +29,20 @@ import { activeConstellations, constellationBonus } from '../systems/constellati
 import { canBuyOrigin, isOriginMaxed, originCost } from '../systems/origin';
 import { originLevel } from '../systems/rules';
 import { theoremAvailable } from '../systems/theorem';
+import { ENDGAME_MODES, isZeroStage, riemannZero, zerosUpTo, type EndgameMode } from '../data/endgame';
+import {
+  canStartEndgame,
+  completeShinySets,
+  endgameReward,
+  endgameUnlocked,
+  goldbachDps,
+  isMythicId,
+  mythicProgress,
+  shinyProgress,
+  zerosFound,
+} from '../systems/endgame';
+import { activeChallengeGoal, nextChallengeTier } from '../systems/challenges';
+import { challengeGoal } from '../systems/endgame';
 import { breedingSeconds, breedingSlots, canBreed, isBreeding, potentialMult } from '../systems/breeding';
 import {
   autoclickRate,
@@ -43,7 +67,7 @@ import {
   researchLevel,
 } from '../systems/research';
 import { catchChance, clickDamage } from '../core/formulas';
-import { levelUpCost, monsterDps, speciesStars, teamDps, teamSlots } from '../systems/monsters';
+import { levelUpCost, monsterDps, speciesStars, starsUnlimited, teamDps, teamSlots } from '../systems/monsters';
 import { activeHint, isUnlocked, type UnlockId } from '../systems/unlocks';
 import { MODULES, type ModuleId } from '../data/modules';
 import { moduleMult, nextModuleUpgrade } from '../core/formulas';
@@ -74,8 +98,8 @@ function abilityMult(type: MonsterType): string {
   return '';
 }
 
-function progressText(copies: number): string {
-  const progress = starProgress(copies);
+function progressText(copies: number, unlimited = false): string {
+  const progress = starProgress(copies, unlimited);
   return progress ? t('collection.nextStar', progress) : '';
 }
 
@@ -211,6 +235,49 @@ export interface ChallengeView {
   bonus: string;
   completed: boolean;
   active: boolean;
+  /** Höchste geschaffte Stufe, 0 = noch nie */
+  tier: number;
+  /** Stufe, die beim nächsten Start läuft */
+  nextTier: number;
+}
+
+export interface EndgameModeView {
+  mode: EndgameMode;
+  name: string;
+  description: string;
+  record: string;
+  reward: string;
+}
+
+export interface EndgameRunView {
+  mode: EndgameMode;
+  title: string;
+  info: string;
+  zero: boolean;
+  hp: string;
+  maxHp: string;
+  fraction: number;
+  time: string;
+  timeFraction: number;
+}
+
+export interface MythicView {
+  id: SpeciesId;
+  number: number;
+  caught: boolean;
+  name: string;
+  typeName: string;
+  condition: string;
+  progress: string;
+}
+
+export interface ShinySetView {
+  type: MonsterType;
+  name: string;
+  color: string;
+  have: number;
+  total: number;
+  complete: boolean;
 }
 
 export interface ConstellationView {
@@ -280,6 +347,92 @@ function challengeViews(state: GameState): ChallengeView[] {
     bonus: challengeBonusText(id),
     completed: state.challenge.completed.includes(id),
     active: state.challenge.active === id,
+    tier: state.challenge.tiers[id] ?? 0,
+    nextTier: nextChallengeTier(state, id),
+  })).map((c) => ({ ...c, goal: challengeGoal(c.id, c.nextTier) }));
+}
+
+/** Text der Belohnung eines Endgamemodus */
+function endgameRewardText(state: GameState, mode: EndgameMode): string {
+  const value = endgameReward(state, mode);
+  if (mode === 'goldbach') return t('endgame.reward.goldbach', { value: formatPercent(value) });
+  if (mode === 'riemann') return t('endgame.reward.riemann', { value: formatNumber(value), zeros: zerosFound(state) });
+  return t(`endgame.reward.${mode}`, { value: formatNumber(value) });
+}
+
+function endgameModeViews(state: GameState): EndgameModeView[] {
+  const modes = BALANCING.endgame.modes;
+  return ENDGAME_MODES.map((mode) => ({
+    mode,
+    name: t(`endgame.${mode}.name`),
+    description: t(`endgame.${mode}.description`, {
+      time: formatNumber(modes[mode].timeLimitSeconds),
+      pair: formatNumber(BALANCING.endgame.goldbachPair),
+      mult: formatNumber(BALANCING.endgame.zeroDamageMult),
+    }),
+    record: t(`endgame.${mode}.record`, { value: state.endgame.records[mode] }),
+    reward: endgameRewardText(state, mode),
+  }));
+}
+
+/** Nächste Windung der Spirale mit Nullstelle ab stage */
+function nextZeroStage(stage: number): number {
+  return Math.floor(riemannZero(zerosUpTo(stage - 1) + 1));
+}
+
+function endgameRunView(state: GameState): EndgameRunView | null {
+  const run = state.endgame.run;
+  if (!run) return null;
+  const zero = run.mode === 'riemann' && isZeroStage(run.level);
+  let info = '';
+  if (run.mode === 'collatz') info = t('endgame.collatz.info', { value: formatNumber(run.value), step: run.step + 1 });
+  else if (run.mode === 'goldbach') info = t('endgame.goldbach.info', { dps: formatNumber(goldbachDps(state)) });
+  else if (run.mode === 'riemann')
+    info = zero
+      ? t('endgame.riemann.zero', { mult: formatNumber(BALANCING.endgame.zeroDamageMult) })
+      : t('endgame.riemann.next', { level: nextZeroStage(run.level) });
+  else info = t('endgame.multiversum.info', { value: state.endgame.records.multiversum });
+  const limit = BALANCING.endgame.modes[run.mode].timeLimitSeconds;
+  return {
+    mode: run.mode,
+    title: t(`endgame.${run.mode}.stage`, { level: run.level }),
+    info,
+    zero,
+    hp: formatNumber(run.hp),
+    maxHp: formatNumber(run.maxHp),
+    fraction: clamp01(run.hp.div(run.maxHp).toNumber()),
+    time: formatSeconds(run.timeLeft),
+    timeFraction: clamp01(run.timeLeft / limit),
+  };
+}
+
+function mythicViews(state: GameState): MythicView[] {
+  return MYTHIC_IDS.filter(isMythicId).map((id) => {
+    const species = getSpecies(id);
+    const condition = BALANCING.mythic[id];
+    const { have, need } = mythicProgress(state, id);
+    const caught = !!state.collection[id];
+    const key = condition.kind === 'record' ? `mythic.record.${condition.mode}` : `mythic.${condition.kind}`;
+    return {
+      id,
+      number: species?.number ?? 0,
+      caught,
+      name: caught ? speciesName(id) : t('collection.unknown'),
+      typeName: species ? t(`types.${species.type}.name`) : '',
+      condition: t(key as TranslationKey, { value: need }),
+      progress: t('mythic.progress', { have: Math.min(have, need), need }),
+    };
+  });
+}
+
+function shinySetViews(state: GameState): ShinySetView[] {
+  const complete = new Set(completeShinySets(state));
+  return MONSTER_TYPES.map((type) => ({
+    type,
+    name: t(`types.${type}.name`),
+    color: TYPE_COLORS[type],
+    ...shinyProgress(state, type),
+    complete: complete.has(type),
   }));
 }
 
@@ -497,7 +650,16 @@ export interface GameView {
   ownsAutoBlackHole: boolean;
   blackHoleTarget: number;
   challenges: ChallengeView[];
-  activeChallenge: { name: string; goal: number; timeLeft: string } | null;
+  activeChallenge: { name: string; goal: number; tier: number; timeLeft: string } | null;
+  endgameUnlocked: boolean;
+  challengeTierInfo: string;
+  canStartEndgame: boolean;
+  endgameModes: EndgameModeView[];
+  endgameRun: EndgameRunView | null;
+  mythics: MythicView[];
+  shinySets: ShinySetView[];
+  shinySetMult: string;
+  extraStars: string;
   constellations: ConstellationView[];
   constellationsFound: number;
   story: StoryView[];
@@ -516,6 +678,7 @@ export interface GameView {
   collection: CollectionEntryView[];
   collectionCount: number;
   shinyCount: number;
+  shinyTotal: number;
   spheres: SphereView[];
   totalSpheres: number;
   catchOnlyNew: boolean;
@@ -702,7 +865,8 @@ export function createView(
     activeChallenge: state.challenge.active
       ? {
           name: t(`challenge.${state.challenge.active}.name`),
-          goal: BALANCING.challenges[state.challenge.active].goalZone,
+          goal: activeChallengeGoal(state) ?? 0,
+          tier: state.challenge.tier,
           timeLeft:
             state.challenge.active === 'lichtgeschwindigkeit'
               ? formatDuration(
@@ -716,6 +880,21 @@ export function createView(
     story: storyViews(state),
     theoremAvailable: theoremAvailable(state),
     theoremDefeated: state.theoremDefeated,
+    endgameUnlocked: endgameUnlocked(state),
+    challengeTierInfo: t('challenge.tierInfo', {
+      zones: formatNumber(BALANCING.endgame.tierZoneStep),
+      mult: formatNumber(BALANCING.endgame.tierDpsMult),
+    }),
+    canStartEndgame: canStartEndgame(state),
+    endgameModes: endgameModeViews(state),
+    endgameRun: endgameRunView(state),
+    mythics: mythicViews(state),
+    shinySets: shinySetViews(state),
+    shinySetMult: formatNumber(BALANCING.endgame.polarsternSetMult),
+    extraStars: t('endgame.stars', {
+      copies: formatNumber(BALANCING.endgame.extraStarCopies),
+      bonus: formatPercent(BALANCING.endgame.extraStarBonus),
+    }),
     theorem: state.theorem
       ? {
           hp: formatNumber(state.theorem.hp),
@@ -741,12 +920,12 @@ export function createView(
       return {
         id: s.id,
         stage: entry?.evolution ?? 0,
-        stars: entry ? starsFor(entry.caught - 1) : 0,
+        stars: entry ? starsFor(entry.caught - 1, starsUnlimited(state)) : 0,
         maxStars: BALANCING.stars.maxStars,
         shiny: entry?.shiny ?? false,
         rarityColor: RARITY_COLORS[s.rarity],
-        starProgress: entry ? progressText(entry.caught - 1) : '',
-        big: s.rarity === 'legendary',
+        starProgress: entry ? progressText(entry.caught - 1, starsUnlimited(state)) : '',
+        big: s.rarity === 'legendary' || s.rarity === 'mythic',
         number: s.number,
         caught: !!entry,
         name: speciesName(s.id, entry?.evolution ?? 0),
@@ -758,6 +937,7 @@ export function createView(
     }),
     collectionCount: Object.keys(state.collection).length,
     shinyCount: Object.values(state.collection).filter((e) => e?.shiny).length,
+    shinyTotal: MAIN_SPECIES.length,
     spheres: SPHERE_TYPES.filter((type) => isSphereUnlocked(state, type)).map((type) => {
       const cost1 = currentSphereCost(state, type);
       const cost10 = sphereBuyCost(state, 10, type);
@@ -779,7 +959,7 @@ export function createView(
       color: RARITY_COLORS[rarity],
       chances: SPHERE_TYPES.filter((type) => isSphereUnlocked(state, type)).map((type) =>
         formatPercent(
-          catchChance(BALANCING.rarity[rarity].catchChance, BALANCING.spheres[type].catchMult, catchResearchBonus(state)),
+          catchChance(BALANCING.rarity[rarity].catchChance, BALANCING.spheres[type].catchMult, catchBonus(state)),
         ),
       ),
     })),

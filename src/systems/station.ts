@@ -6,6 +6,7 @@ import { addEnergy } from '../core/state';
 import { D, type Decimal } from '../util/decimal';
 import { stardustBonus } from './prestige';
 import { tideMult } from './challenges';
+import { collatzMult } from './endgame';
 import { moduleCostMult, productionResearchMult } from './research';
 import { challengeMult, originEffect, purchaseAffordable, purchaseCost, ruleActive } from './rules';
 
@@ -13,14 +14,15 @@ export function moduleCount(state: GameState, id: ModuleId): number {
   return state.modules[id] ?? 0;
 }
 
-/** Bonus auf alle Produktion: Sternenstaub, Forschung, Ursprung, Challenges und Gezeiten */
+/** Bonus auf alle Produktion: Sternenstaub, Forschung, Ursprung, Challenges, Gezeiten und Collatz Labyrinth */
 export function productionMult(state: GameState): Decimal {
   if (ruleActive(state, 'noStation')) return D(0);
   return stardustBonus(state)
     .mul(productionResearchMult(state))
     .mul(1 + originEffect(state, 'urproduktion'))
     .mul(challengeMult(state, 'production'))
-    .mul(tideMult(state));
+    .mul(tideMult(state))
+    .mul(collatzMult(state));
 }
 
 /** Basiskosten eines Moduls nach Forschungsrabatt */

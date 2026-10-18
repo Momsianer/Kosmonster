@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { BALANCING } from '../data/balancing';
   import type { SpeciesId } from '../data/monsters';
   import { t } from '../i18n';
   import BuyAmountSelect from './BuyAmountSelect.svelte';
@@ -46,7 +47,7 @@
       <div class="info">
         <div class="name">
           {member.name}
-          {#if member.stars > 0}<span class="stars">{'★'.repeat(member.stars)}</span>{/if}
+          {#if member.stars > BALANCING.stars.maxStars}<span class="stars">★×{member.stars}</span>{:else if member.stars > 0}<span class="stars">{'★'.repeat(member.stars)}</span>{/if}
           {#if member.shiny}<span class="shinymark" title={t('collection.shiny')}>✦</span>{/if}
         </div>
         <div class="muted">

@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   legendariesInZone,
+  MAIN_SPECIES,
   MONSTER_TYPES,
+  MYTHIC_IDS,
   SPECIES,
   SPECIES_IDS,
   speciesInZone,
@@ -10,15 +12,18 @@ import {
 import { t } from '../src/i18n';
 
 describe('Monsterdaten', () => {
-  it('120 Arten mit eindeutigen Ids in Reihenfolge', () => {
-    expect(SPECIES).toHaveLength(120);
+  it('120 Arten im Hauptspiel und 8 Mythische mit eindeutigen Ids in Reihenfolge', () => {
+    expect(MAIN_SPECIES).toHaveLength(120);
+    expect(SPECIES).toHaveLength(128);
     expect(SPECIES.map((s) => s.id)).toEqual([...SPECIES_IDS]);
+    expect(MYTHIC_IDS).toHaveLength(8);
   });
 
-  it('8 Typen mit je 15 Arten, jeder Typ hat eine Farbe', () => {
+  it('8 Typen mit je 15 Arten und einer mythischen Art, jeder Typ hat eine Farbe', () => {
     expect(MONSTER_TYPES).toHaveLength(8);
     for (const type of MONSTER_TYPES) {
-      expect(SPECIES.filter((s) => s.type === type)).toHaveLength(15);
+      expect(MAIN_SPECIES.filter((s) => s.type === type)).toHaveLength(15);
+      expect(SPECIES.filter((s) => s.type === type && s.rarity === 'mythic')).toHaveLength(1);
       expect(TYPE_COLORS[type]).toMatch(/^#[0-9a-f]{6}$/i);
     }
   });
@@ -36,6 +41,7 @@ describe('Monsterdaten', () => {
     const legendary = SPECIES.filter((s) => s.rarity === 'legendary');
     expect(legendary).toHaveLength(8);
     for (let z = 1; z <= 600; z++) expect(speciesInZone(z).some((s) => s.rarity === 'legendary')).toBe(false);
+    for (let z = 1; z <= 600; z++) expect(speciesInZone(z, true).some((s) => s.rarity === 'mythic')).toBe(false);
     expect(legendariesInZone(100).length).toBeGreaterThan(0);
   });
 

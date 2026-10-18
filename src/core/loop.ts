@@ -4,6 +4,7 @@ import { updateBreeding } from '../systems/breeding';
 import { updateChallenge } from '../systems/challenges';
 import { discoverConstellations } from '../systems/constellations';
 import { updateTheorem } from '../systems/theorem';
+import { checkMythics, updateEndgame } from '../systems/endgame';
 import { applyTeamDamage, updateBossTimer } from '../systems/combat';
 import { typeCountInTeam } from '../systems/monsters';
 import { offlineBonus, offlineLimitSeconds } from '../systems/research';
@@ -13,7 +14,7 @@ import { addEnergy, type GameState } from './state';
 
 /**
  * Ein Logikschritt mit Zeitdifferenz in Sekunden:
- * Produktion der Raumstation, Schaden des Teams, Bosszeit, Brutstation, Automatisierung.
+ * Produktion der Raumstation, Schaden des Teams, Bosszeit, Brutstation, Endgame, Automatisierung.
  */
 export function tick(state: GameState, dtSeconds: number): void {
   if (dtSeconds <= 0) return;
@@ -23,7 +24,9 @@ export function tick(state: GameState, dtSeconds: number): void {
   updateBossTimer(state, dtSeconds);
   updateBreeding(state, dtSeconds);
   updateTheorem(state, dtSeconds);
+  updateEndgame(state, dtSeconds);
   updateChallenge(state, dtSeconds);
+  checkMythics(state);
   discoverConstellations(state);
   runAutomation(state, dtSeconds);
 }

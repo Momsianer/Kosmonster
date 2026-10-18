@@ -5,6 +5,7 @@ import type { AutomationId, DmUpgradeId } from '../data/darkmatter';
 import type { ChallengeId } from '../data/challenges';
 import type { ConstellationId } from '../data/constellations';
 import type { OriginId } from '../data/origin';
+import { ENDGAME_MODES, type EndgameMode } from '../data/endgame';
 import { legendariesInZone, speciesInZone, type SpeciesId } from '../data/monsters';
 import { SPHERE_TYPES, type SphereType } from '../data/spheres';
 import { D, type Decimal } from '../util/decimal';
@@ -13,7 +14,7 @@ import { weightedPick } from '../util/random';
 import { enemyMaxHp } from './formulas';
 
 /** Version des Speicherstands, wird bei jeder Strukturänderung erhöht */
-export const STATE_VERSION = 10;
+export const STATE_VERSION = 11;
 
 export interface EnemyState {
   zone: number;
@@ -58,6 +59,10 @@ export interface ChallengeState {
   active: ChallengeId | null;
   /** Abgeschlossene Challenges (dauerhaft) */
   completed: ChallengeId[];
+  /** Höchste geschaffte Stufe je Challenge (Challengestufen im Endgame) */
+  tiers: Partial<Record<ChallengeId, number>>;
+  /** Stufe der laufenden Challenge */
+  tier: number;
   /** playTime beim Start der laufenden Challenge */
   startTime: number;
   /** playTime beim letzten Bosssieg (Gezeitensperre) */
@@ -70,6 +75,26 @@ export interface TheoremFight {
   hp: Decimal;
   maxHp: Decimal;
   timeLeft: number;
+}
+
+/** Laufender Kampf im Multiversum oder gegen eine Vermutung */
+export interface EndgameRun {
+  mode: EndgameMode;
+  /** Tiefe im Multiversum, Stufe von Labyrinth, Arena oder Spirale */
+  level: number;
+  /** Besiegte Gegner im Collatz Labyrinth in dieser Stufe */
+  step: number;
+  /** Aktuelle Zahl im Collatz Labyrinth, sonst 0 */
+  value: number;
+  hp: Decimal;
+  maxHp: Decimal;
+  timeLeft: number;
+}
+
+export interface EndgameState {
+  /** Bestwerte je Modus: tiefste geschaffte Stufe */
+  records: Record<EndgameMode, number>;
+  run: EndgameRun | null;
 }
 
 export interface BreedingSlot {
@@ -128,6 +153,8 @@ export interface GameState {
   /** Laufender Kampf gegen das Theorem */
   theorem: TheoremFight | null;
   theoremDefeated: boolean;
+  /** Multiversum und Vermutungen nach dem Theorem */
+  endgame: EndgameState;
   zone: number;
   /** Höchste bisher erreichte Zone */
   highestZone: number;
@@ -201,7 +228,14 @@ export function createAutomationState(): AutomationState {
 }
 
 export function createChallengeState(): ChallengeState {
-  return { active: null, completed: [], startTime: 0, tideStart: 0, entropyTimer: 0 };
+  return { active: null, completed: [], tiers: {}, tier: 0, startTime: 0, tideStart: 0, entropyTimer: 0 };
+}
+
+export function createEndgameState(): EndgameState {
+  return {
+    records: Object.fromEntries(ENDGAME_MODES.map((m) => [m, 0])) as Record<EndgameMode, number>,
+    run: null,
+  };
 }
 
 export function emptySpheres(): Record<SphereType, number> {
@@ -262,6 +296,7 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     storySeen: [],
     theorem: null,
     theoremDefeated: false,
+    endgame: createEndgameState(),
     zone,
     highestZone: zone,
     killsInZone: 0,

@@ -84,9 +84,11 @@ export function runAutomation(state: GameState, dtSeconds: number): void {
   if (auto.timer > 0) return;
   const interval = BALANCING.automation.intervalSeconds;
   auto.timer = interval;
-  autoBlackHole(state);
+  // Ein Reset würde den laufenden Endgamekampf beenden, deshalb warten Supernova und Schwarzes Loch
+  const fighting = state.endgame.run !== null;
+  if (!fighting) autoBlackHole(state);
   if (automationActive(state, 'autoboss')) autoBoss(state, interval);
-  if (automationActive(state, 'autosupernova')) autoSupernova(state);
+  if (!fighting && automationActive(state, 'autosupernova')) autoSupernova(state);
   if (automationActive(state, 'autosphaeren')) autoSpheres(state);
   if (automationActive(state, 'autolevel')) autoLevel(state);
   if (automationActive(state, 'automodul')) autoModule(state);

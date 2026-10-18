@@ -8,6 +8,7 @@
     entries,
     count,
     shinyCount,
+    shinyTotal,
     teamFull,
     onadd,
     onremove,
@@ -15,6 +16,7 @@
     entries: CollectionEntryView[];
     count: number;
     shinyCount: number;
+    shinyTotal: number;
     teamFull: boolean;
     onadd: (id: SpeciesId) => void;
     onremove: (id: SpeciesId) => void;
@@ -25,7 +27,7 @@
   <h2>{t('collection.title')}</h2>
   <p class="muted">
     {t('collection.count', { caught: count, total: entries.length })} ·
-    {t('collection.shinies', { caught: shinyCount, total: entries.length })}
+    {t('collection.shinies', { caught: shinyCount, total: shinyTotal })}
   </p>
   <div class="grid">
     {#each entries as entry (entry.id)}
@@ -34,7 +36,7 @@
         {#if entry.caught}
           <div class="name">{entry.name}{#if entry.shiny} <span class="shinymark">✦</span>{/if}</div>
           <div class="muted">{entry.typeName} · <span style:color={entry.rarityColor}>{entry.rarityName}</span></div>
-          <div class="stars">{'★'.repeat(entry.stars)}{'☆'.repeat(entry.maxStars - entry.stars)}</div>
+          <div class="stars">{#if entry.stars > entry.maxStars}★×{entry.stars}{:else}{'★'.repeat(entry.stars)}{'☆'.repeat(entry.maxStars - entry.stars)}{/if}</div>
           <div class="muted">{t('collection.caught', { count: entry.caughtCount })}</div>
           {#if entry.starProgress}<div class="muted small">{entry.starProgress}</div>{/if}
           {#if entry.inTeam}

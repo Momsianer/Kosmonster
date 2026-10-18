@@ -117,6 +117,22 @@ describe('Migrationen', () => {
     expect(migrated.spherePressure).toEqual({ standard: 0, orbit: 0, nebel: 0, singularitaet: 0 });
   });
 
+  it('hebt Version 10 auf Version 11', () => {
+    const migrated = MIGRATIONS[10]!({
+      version: 10,
+      challenge: { active: 'entropie', completed: ['monokultur', 'quadratisch'], startTime: 1 },
+    });
+    expect(migrated.version).toBe(11);
+    expect(migrated.challenge).toEqual({
+      active: 'entropie',
+      completed: ['monokultur', 'quadratisch'],
+      startTime: 1,
+      tiers: { monokultur: 1, quadratisch: 1 },
+      tier: 1,
+    });
+    expect(migrated.endgame).toEqual({ records: { multiversum: 0, collatz: 0, goldbach: 0, riemann: 0 }, run: null });
+  });
+
   it('migrierter Stand hat dieselben Felder wie ein neuer Zustand', () => {
     const fresh = JSON.parse(JSON.stringify(createInitialState(0)));
     const migrated = migrate({ ...fresh, version: 1 });

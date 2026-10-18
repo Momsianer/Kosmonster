@@ -5,6 +5,7 @@ import { getSpecies } from '../data/monsters';
 import { spawnEnemy } from './spawning';
 import { ruleActive } from './rules';
 import { damageTheorem } from './theorem';
+import { damageEndgame, endgameTeamDps } from './endgame';
 import { relaxSpherePrices, tryCatch } from './catching';
 import { teamDps, typeCountInTeam } from './monsters';
 import { D, type Decimal, type DecimalSource } from '../util/decimal';
@@ -24,14 +25,18 @@ export function enterZone(state: GameState, zone: number, killsInZone = 0): void
 }
 
 /**
- * Fügt dem aktuellen Gegner Schaden zu.
- * Überschüssiger Schaden verfällt. Gibt true zurück, wenn der Gegner besiegt wurde.
+ * Fügt dem aktuellen Gegner Schaden zu, im Theoremkampf dem Theorem, im Endgamekampf dessen Gegner.
+ * Überschüssiger Schaden verfällt. Gibt true zurück, wenn ein normaler Gegner besiegt wurde.
  */
-export function dealDamage(state: GameState, amount: DecimalSource): boolean {
+export function dealDamage(state: GameState, amount: DecimalSource, fromClick = false): boolean {
   const damage = D(amount);
   if (damage.lte(0)) return false;
   if (state.theorem) {
     damageTheorem(state, damage);
+    return false;
+  }
+  if (state.endgame.run) {
+    damageEndgame(state, damage, fromClick);
     return false;
   }
 
@@ -95,9 +100,9 @@ export function updateBossTimer(state: GameState, dtSeconds: number): void {
 
 /** Schadensmultiplikator gegen den aktuellen Gegner (Bossschaden, Primzahlwelt) */
 function targetMult(state: GameState): Decimal {
-  const boss = state.theorem !== null || isBossZone(state.enemy.zone);
+  const boss = state.theorem !== null || state.endgame.run !== null || isBossZone(state.enemy.zone);
   let mult = boss ? bossDamageMult(state) : D(1);
-  if (ruleActive(state, 'primeWorld') && !state.theorem && !isPrime(state.enemy.zone)) {
+  if (ruleActive(state, 'primeWorld') && !state.theorem && !state.endgame.run && !isPrime(state.enemy.zone)) {
     mult = mult.mul(BALANCING.challengeRules.nonPrimeDamage);
   }
   return mult;
@@ -123,13 +128,13 @@ export function clickEnemy(state: GameState, manual = true): boolean {
   let damage = clickDamage(dps, clickBonus(state)).add(piBonus).mul(targetMult(state));
   const chance = critChance(state);
   if (chance > 0 && nextRandom(state) < chance) damage = damage.mul(critMult(state));
-  return dealDamage(state, damage);
+  return dealDamage(state, damage, true);
 }
 
 /** Schaden des Teams über dtSeconds. Wird von der Tickschleife aufgerufen. */
 export function applyTeamDamage(state: GameState, dtSeconds: number): void {
   if (dtSeconds <= 0) return;
-  const dps = teamDps(state);
+  const dps = state.endgame.run ? endgameTeamDps(state) : teamDps(state);
   if (dps.lte(0)) return;
   dealDamage(state, dps.mul(dtSeconds).mul(targetMult(state)));
 }

@@ -145,35 +145,48 @@ export function planetMult(type: string, boosted: string, weakened: string): Dec
   return D(1);
 }
 
-/** kopienFürStern(s) = copiesBase * copiesGrowth^(s − 1): Kopien für den Schritt auf Stern s */
+/**
+ * kopienFürStern(s) = copiesBase * copiesGrowth^(s − 1): Kopien für den Schritt auf Stern s.
+ * Über maxStars (nur im Endgame) kostet jeder weitere Stern extraStarCopies Kopien.
+ */
 export function copiesForStar(star: number): number {
-  const { copiesBase, copiesGrowth } = BALANCING.stars;
+  const { copiesBase, copiesGrowth, maxStars } = BALANCING.stars;
+  if (star > maxStars) return BALANCING.endgame.extraStarCopies;
   return copiesBase * copiesGrowth ** (star - 1);
 }
 
-/** Sterne aus der Zahl der Duplikate (alle Fänge außer dem ersten), höchstens maxStars */
-export function starsFor(copies: number): number {
+/** Sterne aus der Zahl der Duplikate (alle Fänge außer dem ersten), ohne unlimited höchstens maxStars */
+export function starsFor(copies: number, unlimited = false): number {
+  const { maxStars } = BALANCING.stars;
   let stars = 0;
   let remaining = copies;
-  while (stars < BALANCING.stars.maxStars && remaining >= copiesForStar(stars + 1)) {
+  while (stars < maxStars && remaining >= copiesForStar(stars + 1)) {
     remaining -= copiesForStar(stars + 1);
     stars += 1;
   }
-  return stars;
+  if (!unlimited || stars < maxStars) return stars;
+  // Über maxStars kostet jeder Stern gleich viel
+  return stars + Math.floor(remaining / BALANCING.endgame.extraStarCopies);
 }
 
 /** Kopien seit dem letzten Stern und Bedarf für den nächsten, null wenn alle Sterne erreicht */
-export function starProgress(copies: number): { have: number; need: number } | null {
-  const stars = starsFor(copies);
-  if (stars >= BALANCING.stars.maxStars) return null;
+export function starProgress(copies: number, unlimited = false): { have: number; need: number } | null {
+  const stars = starsFor(copies, unlimited);
+  if (!unlimited && stars >= BALANCING.stars.maxStars) return null;
   let used = 0;
-  for (let s = 1; s <= stars; s++) used += copiesForStar(s);
+  for (let s = 1; s <= Math.min(stars, BALANCING.stars.maxStars); s++) used += copiesForStar(s);
+  used += Math.max(0, stars - BALANCING.stars.maxStars) * BALANCING.endgame.extraStarCopies;
   return { have: copies - used, need: copiesForStar(stars + 1) };
 }
 
-/** sterneMult = starMult^sterne */
+/**
+ * sterneMult = starMult^sterne bis maxStars,
+ * darüber abflachend: starMult^maxStars * (1 + extraStarBonus * (sterne − maxStars))
+ */
 export function starsMult(stars: number): Decimal {
-  return powInt(BALANCING.stars.starMult, stars);
+  const { starMult, maxStars } = BALANCING.stars;
+  if (stars <= maxStars) return powInt(starMult, stars);
+  return powInt(starMult, maxStars).mul(1 + BALANCING.endgame.extraStarBonus * (stars - maxStars));
 }
 
 /** Grundformel: monsterDPS = basisDPS * level * meilensteinMult * seltenheitMult * typMult */
