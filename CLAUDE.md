@@ -51,6 +51,8 @@ Fortschritt verlangsamt sich → Prestige (Reset) gegen dauerhafte Boni
 * 10 Zonen bilden ein **Sternsystem** mit eigenem Namen, Planetentyp und Monsterpool.
 * Pro Zone müssen **10 Gegner** besiegt werden.
 * **Boss** jede 5. Zone, **Systemboss** jede 10. Zone, mit 30 Sekunden Zeitlimit.
+* Bosse sind feste **Bossmonster**: Jedes Sternsystem hat einen eigenen Miniboss (Zone 5) und Hauptboss (Zone 10) mit dem gestärkten Typ des Planeten. 50 Systeme (100 Bossmonster), danach wiederholen sie sich.
+* Bossmonster sind fangbar (0,25 % Grundchance), etwas stärker als normale Arten der Zone, entwickeln sich nicht und haben in der Sammlung einen eigenen Reiter.
 * Scheitert man am Boss, bleibt man in der Zone davor (Farmmodus).
 
 ### Gegnerleben (Startwerte, per Simulator tunen)
@@ -96,8 +98,9 @@ Neue Spieler bekommen einen Hinweis „empfohlener Typ", Veteranen bauen gezielt
 | Ungewöhnlich | 12 % | ×2 | überall |
 | Selten | 5 % | ×5 | ab Zone 25 |
 | Episch | 1,5 % | ×15 | ab Zone 100 |
-| Legendär | 0,3 % | ×50 | nur Systembosse |
+| Legendär | 0,3 % | ×50 | sehr selten als normale Gegner in ihrem Zonenbereich |
 | Mythisch | Sonderbedingung | ×200 | Endgame |
+| Boss | 0,25 % | eigene Basiswerte | nur das feste Bossmonster der Bosszone |
 
 ### Fangen
 * Besiegte Gegner können mit einer **Fangsphäre** gefangen werden (automatisch, wenn Sphären vorhanden).
@@ -422,14 +425,14 @@ Das Spiel heißt **Kosmonster**.
 * Stil: **Pixelart**
 * Monstersprites: 32×32 Pixel, in der Oberfläche ganzzahlig skaliert (×2, ×3, ×4)
 * Kleine Symbole (Währungen, Typen): 16×16 Pixel
-* Bosse und Legendäre: 64×64 Pixel
+* Bossmonster, Legendäre und Mythische: 64×64 Pixel
 * Rendering mit `image-rendering: pixelated`, nie weichgezeichnet
 * Solange Sprites fehlen: farbige Platzhalter nach Typfarbe mit Artnummer
 
 ### Monsterarten
 * Namen und Designs erstellt Moritz selbst.
 * Claude Code legt in `src/data/monsters.ts` nur Platzhalter an (z. B. `art_001`, Name „Art 001"), mit Typ, Seltenheit, Basiswerten und Zonenbereich.
-* Spritepfad nach Schema `assets/monster/art_001.png`, damit fertige Grafiken nur in den Ordner gelegt werden müssen.
+* Spritepfad nach Schema `assets/monster/art_001.png`, damit fertige Grafiken nur in den Ordner gelegt werden müssen. Bossmonster: `assets/monster/boss_001.png` (Miniboss System 1), `boss_002.png` (Hauptboss System 1) und so weiter. Bindestrich und mehr führende Nullen werden auch erkannt.
 
 ### Plattform
 * Zuerst nur **Desktop Browser**.

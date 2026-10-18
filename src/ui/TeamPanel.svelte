@@ -44,6 +44,7 @@
 
   {#each team as member (member.id)}
     <div class="member">
+      <button type="button" class="remove" title={t('team.remove')} aria-label={t('team.remove')} onclick={() => onremove(member.id)}>✕</button>
       <MonsterSprite speciesId={member.id} scale={2} stage={member.stage} shiny={member.shiny} />
       <div class="info">
         <div class="name">
@@ -51,7 +52,7 @@
           {#if member.stars > BALANCING.stars.maxStars}<span class="stars">★×{member.stars}</span>{:else if member.stars > 0}<span class="stars">{'★'.repeat(member.stars)}</span>{/if}
           {#if member.shiny}<span class="shinymark" title={t('collection.shiny')}>✦</span>{/if}
         </div>
-        <div class="muted">
+        <div class="muted line">
           <span class="type" style:color={member.typeColor} title={member.ability}><PixelIcon id={member.type} /> {member.typeName}</span>
           · {t('team.level', { level: member.level })} · {t('team.monsterDps', { dps: member.dps })}
         </div>
@@ -59,7 +60,6 @@
           <button type="button" class="primary" disabled={!member.affordable} onclick={() => onlevelup(member.id)}>
             {t('team.levelUp', { levels: member.levels })} · {t('team.cost', { cost: member.cost })}
           </button>
-          <button type="button" onclick={() => onremove(member.id)}>{t('team.remove')}</button>
         </div>
         {#if evolutionUnlocked && member.evolutionCost}
           <div class="actions">
@@ -83,8 +83,8 @@
 <style>
   .stats {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem 1rem;
+    flex-direction: column;
+    gap: 0.25rem;
     font-variant-numeric: tabular-nums;
   }
   .actions {
@@ -94,11 +94,19 @@
     gap: 0.4rem;
   }
   .member {
+    position: relative;
     display: flex;
     gap: 0.75rem;
     align-items: center;
-    padding: 0.5rem;
+    padding: 0.5rem 2rem 0.5rem 0.5rem;
     background: #10132a;
+  }
+  .remove {
+    position: absolute;
+    top: 0.3rem;
+    right: 0.3rem;
+    padding: 0 0.35rem !important;
+    line-height: 1.4;
   }
   .member.empty {
     justify-content: center;
@@ -108,9 +116,17 @@
   }
   .info {
     display: flex;
+    flex: 1;
     flex-direction: column;
     gap: 0.3rem;
     min-width: 0;
+  }
+  /* Zeilen brechen nicht um, damit sich die Höhe beim Aktualisieren nicht ändert */
+  .name,
+  .line {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
   .name {
     font-weight: 600;

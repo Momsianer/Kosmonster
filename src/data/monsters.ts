@@ -4,10 +4,14 @@
  * Fertige Sprites einfach unter assets/monster/<id>.png ablegen.
  */
 
-export type Rarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic';
+import { BALANCING } from './balancing';
+import { enemyHp } from '../core/formulas';
+import { planetForSystem } from './planets';
+import { MONSTER_TYPES, type MonsterType } from './types';
 
-export const MONSTER_TYPES = ['prim', 'fibonacci', 'pi', 'euler', 'null', 'unendlich', 'fraktal', 'vektor'] as const;
-export type MonsterType = (typeof MONSTER_TYPES)[number];
+export { MONSTER_TYPES, type MonsterType };
+
+export type Rarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic' | 'boss';
 
 export const TYPE_COLORS: Record<MonsterType, string> = {
   prim: '#d6453d',
@@ -30,6 +34,7 @@ export const RARITY_COLORS: Record<Rarity, string> = {
   epic: '#b06ae0',
   legendary: '#f2a53c',
   mythic: '#ff5c8a',
+  boss: '#e8604c',
 };
 
 export const SPECIES_IDS = [
@@ -161,6 +166,106 @@ export const SPECIES_IDS = [
   'art_126',
   'art_127',
   'art_128',
+  'boss_001',
+  'boss_002',
+  'boss_003',
+  'boss_004',
+  'boss_005',
+  'boss_006',
+  'boss_007',
+  'boss_008',
+  'boss_009',
+  'boss_010',
+  'boss_011',
+  'boss_012',
+  'boss_013',
+  'boss_014',
+  'boss_015',
+  'boss_016',
+  'boss_017',
+  'boss_018',
+  'boss_019',
+  'boss_020',
+  'boss_021',
+  'boss_022',
+  'boss_023',
+  'boss_024',
+  'boss_025',
+  'boss_026',
+  'boss_027',
+  'boss_028',
+  'boss_029',
+  'boss_030',
+  'boss_031',
+  'boss_032',
+  'boss_033',
+  'boss_034',
+  'boss_035',
+  'boss_036',
+  'boss_037',
+  'boss_038',
+  'boss_039',
+  'boss_040',
+  'boss_041',
+  'boss_042',
+  'boss_043',
+  'boss_044',
+  'boss_045',
+  'boss_046',
+  'boss_047',
+  'boss_048',
+  'boss_049',
+  'boss_050',
+  'boss_051',
+  'boss_052',
+  'boss_053',
+  'boss_054',
+  'boss_055',
+  'boss_056',
+  'boss_057',
+  'boss_058',
+  'boss_059',
+  'boss_060',
+  'boss_061',
+  'boss_062',
+  'boss_063',
+  'boss_064',
+  'boss_065',
+  'boss_066',
+  'boss_067',
+  'boss_068',
+  'boss_069',
+  'boss_070',
+  'boss_071',
+  'boss_072',
+  'boss_073',
+  'boss_074',
+  'boss_075',
+  'boss_076',
+  'boss_077',
+  'boss_078',
+  'boss_079',
+  'boss_080',
+  'boss_081',
+  'boss_082',
+  'boss_083',
+  'boss_084',
+  'boss_085',
+  'boss_086',
+  'boss_087',
+  'boss_088',
+  'boss_089',
+  'boss_090',
+  'boss_091',
+  'boss_092',
+  'boss_093',
+  'boss_094',
+  'boss_095',
+  'boss_096',
+  'boss_097',
+  'boss_098',
+  'boss_099',
+  'boss_100',
 ] as const;
 export type SpeciesId = (typeof SPECIES_IDS)[number];
 
@@ -178,9 +283,11 @@ export interface SpeciesData {
   minZone: number;
   /** Letzte Zone, in der die Art erscheint, null = ohne Ende */
   maxZone: number | null;
-  /** Mögliche Evolutionsstufen (0 bei Mythischen, sonst 1 oder 2) */
+  /** Mögliche Evolutionsstufen (0 bei Mythischen und Bossen, sonst 1 oder 2) */
   evolutions: number;
   sprite: string;
+  /** Bossmonster: Miniboss (Zone 5 des Systems) oder Hauptboss (Zone 10), sonst null */
+  boss: 'mini' | 'main' | null;
 }
 
 function species(
@@ -194,11 +301,23 @@ function species(
   evolutions = 1,
 ): SpeciesData {
   const id = `art_${String(number).padStart(3, '0')}` as SpeciesId;
-  return { id, number, type, rarity, baseDps, baseCost, minZone, maxZone, evolutions, sprite: `assets/monster/${id}.png` };
+  return {
+    id,
+    number,
+    type,
+    rarity,
+    baseDps,
+    baseCost,
+    minZone,
+    maxZone,
+    evolutions,
+    sprite: `assets/monster/${id}.png`,
+    boss: null,
+  };
 }
 
 
-export const SPECIES: readonly SpeciesData[] = [
+const WILD_SPECIES: readonly SpeciesData[] = [
   species(1, 'prim', 'common', 1, 40, 1, 15),
   species(2, 'fibonacci', 'common', 1, 40, 1, 15),
   species(3, 'prim', 'uncommon', 3, 80, 3, 25, 2),
@@ -330,8 +449,41 @@ export const SPECIES: readonly SpeciesData[] = [
   species(128, 'vektor', 'mythic', 1.64e23, 4.26e24, 1, null, 0),
 ];
 
-/** Die 120 Arten des Hauptspiels ohne Mythische */
-export const MAIN_SPECIES: readonly SpeciesData[] = SPECIES.filter((s) => s.rarity !== 'mythic');
+/**
+ * Bossmonster: boss_001 ist der Miniboss von System 1 (Zone 5), boss_002 dessen Hauptboss
+ * (Zone 10), boss_003 der Miniboss von System 2 und so weiter.
+ */
+function bossSpecies(index: number): SpeciesData {
+  const system = Math.floor(index / 2) + 1;
+  const kind = index % 2 === 0 ? 'mini' : 'main';
+  const { zonesPerSystem } = BALANCING.world;
+  const { miniDpsFactor, mainDpsFactor, costPerDps } = BALANCING.bosses;
+  const zone = kind === 'mini' ? system * zonesPerSystem - BALANCING.boss.bossEvery : system * zonesPerSystem;
+  const baseDps = enemyHp(zone).mul(kind === 'mini' ? miniDpsFactor : mainDpsFactor).toNumber();
+  const id = `boss_${String(index + 1).padStart(3, '0')}` as SpeciesId;
+  return {
+    id,
+    number: index + 1,
+    type: planetForSystem(system).boosted,
+    rarity: 'boss',
+    baseDps,
+    baseCost: baseDps * costPerDps,
+    minZone: zone,
+    maxZone: zone,
+    evolutions: 0,
+    sprite: `assets/monster/${id}.png`,
+    boss: kind,
+  };
+}
+
+export const BOSS_SPECIES: readonly SpeciesData[] = Array.from({ length: BALANCING.bosses.systems * 2 }, (_, i) =>
+  bossSpecies(i),
+);
+
+export const SPECIES: readonly SpeciesData[] = [...WILD_SPECIES, ...BOSS_SPECIES];
+
+/** Die 120 Arten des Hauptspiels ohne Mythische und Bosse */
+export const MAIN_SPECIES: readonly SpeciesData[] = SPECIES.filter((s) => s.rarity !== 'mythic' && !s.boss);
 
 export const MYTHIC_IDS: readonly SpeciesId[] = SPECIES.filter((s) => s.rarity === 'mythic').map((s) => s.id);
 
@@ -345,18 +497,24 @@ export function isSpeciesId(id: unknown): id is SpeciesId {
   return typeof id === 'string' && BY_ID.has(id);
 }
 
-/** Alle Arten, die in Zone z erscheinen können (legendäre nur als Systemboss, mythische nie) */
-export function speciesInZone(zone: number, includeLegendary = false): SpeciesData[] {
+/** Alle Arten, die in Zone z als normale Gegner erscheinen können (legendäre sehr selten, mythische und Bosse nie) */
+export function speciesInZone(zone: number): SpeciesData[] {
   return SPECIES.filter(
     (s) =>
       s.rarity !== 'mythic' &&
+      !s.boss &&
       zone >= s.minZone &&
-      (s.maxZone === null || zone <= s.maxZone) &&
-      (includeLegendary ? true : s.rarity !== 'legendary'),
+      (s.maxZone === null || zone <= s.maxZone),
   );
 }
 
-/** Legendäre Arten, die als Systemboss in Zone z erscheinen können */
-export function legendariesInZone(zone: number): SpeciesData[] {
-  return speciesInZone(zone, true).filter((s) => s.rarity === 'legendary');
+/** Das feste Bossmonster einer Bosszone, nach `systems` Sternsystemen wiederholen sie sich */
+export function bossForZone(zone: number): SpeciesData | null {
+  const { zonesPerSystem } = BALANCING.world;
+  const inSystem = ((zone - 1) % zonesPerSystem) + 1;
+  const kind = inSystem === zonesPerSystem ? 1 : inSystem === BALANCING.boss.bossEvery ? 0 : null;
+  if (kind === null) return null;
+  const system = Math.ceil(zone / zonesPerSystem);
+  const index = ((system - 1) % BALANCING.bosses.systems) * 2 + kind;
+  return BOSS_SPECIES[index] ?? null;
 }

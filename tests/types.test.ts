@@ -277,25 +277,35 @@ describe('Sphärentypen', () => {
   });
 });
 
-describe('Seltenheit und legendäre Systembosse', () => {
-  it('Systembosse sind legendär, wenn es in der Zone eine legendäre Art gibt', () => {
+describe('Seltenheit und Bossmonster', () => {
+  it('Bosszonen haben immer ihr festes Bossmonster mit Bossleben', () => {
     const state = createInitialState(0, 4);
-    const enemy = spawnEnemy(state, 100);
-    expect(getSpecies(enemy.speciesId)!.rarity).toBe('legendary');
-    expect(enemy.maxHp.eq(enemyMaxHp(100))).toBe(true);
-    expect(getSpecies(spawnEnemy(state, 99).speciesId)!.rarity).not.toBe('legendary');
+    for (let i = 0; i < 20; i++) {
+      const enemy = spawnEnemy(state, 100);
+      expect(enemy.speciesId).toBe('boss_020');
+      expect(enemy.maxHp.eq(enemyMaxHp(100))).toBe(true);
+    }
+    expect(spawnEnemy(state, 95).speciesId).toBe('boss_019');
+    expect(getSpecies(spawnEnemy(state, 99).speciesId)!.boss).toBeNull();
   });
 
-  it('legendäre Systembosse sind fangbar, andere Bosse nicht', () => {
+  it('legendäre Arten erscheinen selten als normale Gegner', () => {
+    const state = createInitialState(0, 4);
+    let legendary = 0;
+    for (let i = 0; i < 20000; i++) if (getSpecies(spawnEnemy(state, 101).speciesId)!.rarity === 'legendary') legendary += 1;
+    expect(legendary).toBeGreaterThan(0);
+    expect(legendary / 20000).toBeLessThan(0.05);
+  });
+
+  it('Bossmonster werden mit der besten Sphäre und sehr kleiner Chance gefangen', () => {
     const state = createInitialState(0, 4);
     state.settings.catchOnlyNew = false;
-    state.spheres.standard = 10;
-    enterZone(state, 100);
-    dealDamage(state, state.enemy.hp);
-    expect(state.spheres.standard).toBe(9);
-    enterZone(state, 95);
-    dealDamage(state, state.enemy.hp);
-    expect(state.spheres.standard).toBe(9);
+    state.spheres = { standard: 0, orbit: 0, nebel: 5000, singularitaet: 0 };
+    let caught = 0;
+    for (let i = 0; i < 5000; i++) if (tryCatch(state, 'boss_020')) caught += 1;
+    expect(state.spheres.nebel).toBe(0);
+    expect(caught / 5000).toBeLessThan(0.02);
+    expect(BALANCING.rarity.boss.catchChance * BALANCING.spheres.nebel.catchMult).toBeCloseTo(0.00625, 8);
   });
 
   it('Forschung Seltenheitsradar macht seltene Arten häufiger', () => {
@@ -303,7 +313,7 @@ describe('Seltenheit und legendäre Systembosse', () => {
       const state = createInitialState(0, 3);
       state.research = { seltenheit: boost };
       let rare = 0;
-      for (let i = 0; i < 20000; i++) if (getSpecies(spawnEnemy(state, 30).speciesId)!.rarity === 'rare') rare += 1;
+      for (let i = 0; i < 20000; i++) if (getSpecies(spawnEnemy(state, 31).speciesId)!.rarity === 'rare') rare += 1;
       return rare;
     };
     expect(count(10)).toBeGreaterThan(count(0) * 2);

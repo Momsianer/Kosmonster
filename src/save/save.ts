@@ -27,7 +27,7 @@ import { isConstellationId } from '../data/constellations';
 import { isOriginId, type OriginId } from '../data/origin';
 import { SPHERE_TYPES, type SphereType } from '../data/spheres';
 import { bossTimeLimitFor, teamSlotsFor } from '../systems/research';
-import { getSpecies, isSpeciesId, speciesInZone, type SpeciesId } from '../data/monsters';
+import { bossForZone, getSpecies, isSpeciesId, speciesInZone, type SpeciesId } from '../data/monsters';
 import { D, type Decimal } from '../util/decimal';
 import { isNumberFormat } from '../util/format';
 import { migrate, type RawSave } from './migrations';
@@ -94,8 +94,10 @@ export function hydrate(raw: RawSave): GameState {
   // Gewürfelt wird nur, wenn nötig, damit Neuladen den Zufall nicht verschiebt.
   const rawEnemy = isRecord(raw.enemy) && raw.enemy.zone === zone ? raw.enemy : null;
   const rawSpecies = rawEnemy?.speciesId;
-  const speciesId =
-    isSpeciesId(rawSpecies) && speciesInZone(zone).some((s) => s.id === rawSpecies)
+  const boss = bossForZone(zone);
+  const speciesId = boss
+    ? boss.id
+    : isSpeciesId(rawSpecies) && speciesInZone(zone).some((s) => s.id === rawSpecies)
       ? rawSpecies
       : pickSpecies(rng, zone);
   let enemy = createEnemy(zone, speciesId, rawEnemy?.shiny === true && rawEnemy.speciesId === speciesId);

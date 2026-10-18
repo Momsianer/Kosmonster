@@ -60,8 +60,22 @@ export const BALANCING = {
     uncommon: { catchChance: 0.12, dpsMult: 2, spawnWeight: 1 },
     rare: { catchChance: 0.05, dpsMult: 5, spawnWeight: 0.4 },
     epic: { catchChance: 0.015, dpsMult: 15, spawnWeight: 0.15 },
-    legendary: { catchChance: 0.003, dpsMult: 50, spawnWeight: 0 },
+    legendary: { catchChance: 0.003, dpsMult: 50, spawnWeight: 0.05 },
     mythic: { catchChance: 0, dpsMult: 200, spawnWeight: 0 },
+    /** Bossmonster: Stärke steckt in basisDPS (siehe bosses), deshalb ×1 */
+    boss: { catchChance: 0.0025, dpsMult: 1, spawnWeight: 0 },
+  },
+  /**
+   * Feste Bossmonster: je Sternsystem ein Miniboss (Zone 5) und ein Hauptboss (Zone 10),
+   * Typ wie der gestärkte Typ des Planeten. Nach `systems` Sternsystemen wiederholen sie sich.
+   * basisDPS = hp(Zone) * dpsFactor (normale gewöhnliche Arten liegen bei etwa 0,125 * hp),
+   * basisKosten = basisDPS * costPerDps.
+   */
+  bosses: {
+    systems: 50,
+    miniDpsFactor: 0.5,
+    mainDpsFactor: 0.8,
+    costPerDps: 26,
   },
   types: {
     /** Prim: ×primeZoneMult in Zonen mit Primzahlnummer */
