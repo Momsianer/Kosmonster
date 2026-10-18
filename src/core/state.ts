@@ -6,11 +6,11 @@ import type { ChallengeId } from '../data/challenges';
 import type { ConstellationId } from '../data/constellations';
 import type { OriginId } from '../data/origin';
 import { ENDGAME_MODES, type EndgameMode } from '../data/endgame';
-import { bossForZone, speciesInZone, type SpeciesId } from '../data/monsters';
+import { areaPool, bossForZone, rareSpawnChance, type SpeciesId } from '../data/monsters';
 import { SPHERE_TYPES, type SphereType } from '../data/spheres';
 import { D, type Decimal } from '../util/decimal';
 import type { NumberFormat } from '../util/format';
-import { weightedPick } from '../util/random';
+import { nextRandom, weightedPick } from '../util/random';
 import { enemyMaxHp } from './formulas';
 
 /** Version des Speicherstands, wird bei jeder Strukturänderung erhöht */
@@ -249,26 +249,24 @@ export function emptySpheres(): Record<SphereType, number> {
   return Object.fromEntries(SPHERE_TYPES.map((t) => [t, 0])) as Record<SphereType, number>;
 }
 
-/** Seltenheiten, deren Erscheinen die Forschung „Seltenheit“ verstärkt */
-const BOOSTED_RARITIES: readonly string[] = ['rare', 'epic', 'legendary'];
+/** Chance auf die seltene Art des Gebiets in einer Zone, verstärkt durch die Forschung, höchstens 1 */
+export function rareChanceInZone(zone: number, rareBoost = 1): number {
+  return Math.min(1, rareSpawnChance(zone) * rareBoost);
+}
 
 /**
- * Wählt die Art eines Gegners: In Bosszonen immer das feste Bossmonster,
- * sonst aus dem Pool der Zone, gewichtet nach Seltenheit.
- * rareBoost verstärkt das Gewicht seltener, epischer und legendärer Arten.
+ * Wählt die Art eines Gegners: In Bosszonen immer das feste Bossmonster, sonst aus dem
+ * Pool des Gebiets. Die seltene Art erscheint mit rareChanceInZone, sonst eine der normalen
+ * Arten gewichtet nach Seltenheit. rareBoost kommt aus der Forschung „Seltenheit“.
  */
 export function pickSpecies(holder: { rngState: number }, zone: number, rareBoost = 1): SpeciesId {
   const boss = bossForZone(zone);
   if (boss) return boss.id;
-  const pool = speciesInZone(zone);
-  const picked = weightedPick(holder, pool, (s) => {
-    const weight = BALANCING.rarity[s.rarity].spawnWeight;
-    return BOOSTED_RARITIES.includes(s.rarity) ? weight * rareBoost : weight;
-  });
-  const fallback = pool[0] ?? speciesInZone(BALANCING.world.startZone)[0];
-  const species = picked ?? fallback;
-  if (!species) throw new Error(`Keine Art für Zone ${zone}`);
-  return species.id;
+  const { normals, rare } = areaPool(zone);
+  if (rare && nextRandom(holder) < rareChanceInZone(zone, rareBoost)) return rare.id;
+  const picked = weightedPick(holder, normals, (s) => BALANCING.rarity[s.rarity].spawnWeight) ?? normals[0];
+  if (!picked) throw new Error(`Keine Art für Zone ${zone}`);
+  return picked.id;
 }
 
 export function createInitialState(now: number = Date.now(), seed: number = now): GameState {
