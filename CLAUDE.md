@@ -390,7 +390,7 @@ Wählbar: deutsch (1,5 Mio., 2,3 Mrd.), wissenschaftlich (1,5e6), technisch (1,5
 | ✅ | M6 | Simulator, erste Balancingrunde bis Zone 60 |
 | ✅ | M7 | Supernova, Forschungsbaum, Evolution |
 | ✅ | M8 | Alle 8 Typen, Planetentypen, Seltenheit, Sterne, Shinies |
-| ⬜ | M9 | Schwarzes Loch, Automatisierung, Brutstation |
+| ✅ | M9 | Schwarzes Loch, Automatisierung, Brutstation |
 | ⬜ | M10 | Urknall, Challenges, Konstellationen, Story, Theorem |
 | ⬜ | M11 | Endgame Grundgerüst |
 | ⬜ | M12 | Grafik, Sound, Feinschliff, Tauri Build |
