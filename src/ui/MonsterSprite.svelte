@@ -24,7 +24,11 @@
   const size = $derived((big ? 64 : 32) * scale);
   const color = $derived(species && !unknown ? TYPE_COLORS[species.type] : '#2a2f4d');
   const lightText = $derived(!!species && !unknown && DARK_TYPES.includes(species.type));
-  const label = $derived(species ? String(species.number).padStart(3, '0') + (stage > 0 ? '+'.repeat(stage) : '') : '');
+  const label = $derived(
+    species
+      ? (species.boss ? 'B' : '') + String(species.number).padStart(3, '0') + (stage > 0 ? '+'.repeat(stage) : '')
+      : '',
+  );
 </script>
 
 <div class="sprite" class:shiny style:width="{size / 16}rem" style:height="{size / 16}rem">

@@ -41,7 +41,8 @@
   let buyAmount = $state<BuyAmount>(1);
   let view = $state(createView(game.state, game.offlineReport));
   let showSettings = $state(false);
-  let tab = $state<'game' | 'research' | 'collection' | 'darkMatter' | 'breeding' | 'bigBang' | 'endgame'>('game');
+  let tab = $state<'game' | 'research' | 'collection' | 'story' | 'darkMatter' | 'breeding' | 'bigBang' | 'endgame'>('game');
+  let collectionTab = $state<'species' | 'bosses' | 'constellations'>('species');
 
   let soundPrev = soundSnapshot(game.state);
 
@@ -137,7 +138,7 @@
 <svelte:window {onkeydown} />
 <Starfield />
 
-<main class:wide={view.teamUnlocked || view.stationUnlocked}>
+<main class:wide={view.teamUnlocked || view.stationUnlocked || view.shopUnlocked}>
   <div class="top">
     <h1>{t('game.title')}</h1>
     <button type="button" class="toggle" onclick={() => (showSettings = !showSettings)}>
@@ -195,6 +196,9 @@
         <button type="button" class:active={tab === 'research'} onclick={() => (tab = 'research')}>{t('tabs.research')}</button>
       {/if}
       <button type="button" class:active={tab === 'collection'} onclick={() => (tab = 'collection')}>{t('tabs.collection')}</button>
+      {#if view.storyUnlocked}
+        <button type="button" class:active={tab === 'story'} onclick={() => (tab = 'story')}>{t('tabs.story')}</button>
+      {/if}
       {#if view.blackHoleUnlocked}
         <button type="button" class:active={tab === 'darkMatter'} onclick={() => (tab = 'darkMatter')}>{t('tabs.darkMatter')}</button>
       {/if}
@@ -272,24 +276,76 @@
     <BreedingPanel slots={view.breedingSlots} candidates={view.breedingCandidates} onbreed={startBreeding} />
   {:else if tab === 'research' && view.researchUnlocked}
     <ResearchPanel branches={view.research} stardust={view.stardust} bonus={view.stardustBonus} onbuy={buyResearch} />
+  {:else if tab === 'story' && view.storyUnlocked}
+    <StoryPanel entries={view.story} />
   {:else if tab === 'collection' && view.teamUnlocked}
-    <CollectionPanel
-      entries={view.collection}
-      count={view.collectionCount}
-      shinyCount={view.shinyCount}
-      shinyTotal={view.shinyTotal}
-      teamFull={view.teamFull}
-      onadd={addToTeam}
-      onremove={removeFromTeam}
-    />
-    {#if view.constellationsUnlocked}
+    <nav class="subtabs">
+      <button type="button" class:active={collectionTab === 'species'} onclick={() => (collectionTab = 'species')}>
+        {t('collection.tabSpecies')}
+      </button>
+      <button type="button" class:active={collectionTab === 'bosses'} onclick={() => (collectionTab = 'bosses')}>
+        {t('collection.tabBosses')}
+      </button>
+      {#if view.constellationsUnlocked}
+        <button type="button" class:active={collectionTab === 'constellations'} onclick={() => (collectionTab = 'constellations')}>
+          {t('collection.tabConstellations')}
+        </button>
+      {/if}
+    </nav>
+    {#if collectionTab === 'constellations' && view.constellationsUnlocked}
       <ConstellationPanel constellations={view.constellations} found={view.constellationsFound} unlocked={view.constellationsUnlocked} />
-    {/if}
-    {#if view.storyUnlocked}
-      <StoryPanel entries={view.story} />
+    {:else if collectionTab === 'bosses'}
+      <CollectionPanel
+        entries={view.bossCollection}
+        count={view.bossCount}
+        shinyCount={view.shinyCount}
+        shinyTotal={view.shinyTotal}
+        bosses={true}
+        teamFull={view.teamFull}
+        onadd={addToTeam}
+        onremove={removeFromTeam}
+      />
+    {:else}
+      <CollectionPanel
+        entries={view.collection}
+        count={view.collectionCount}
+        shinyCount={view.shinyCount}
+        shinyTotal={view.shinyTotal}
+        teamFull={view.teamFull}
+        onadd={addToTeam}
+        onremove={removeFromTeam}
+      />
     {/if}
   {:else}
   <div class="layout">
+    <aside class="side">
+        {#if view.teamUnlocked}
+          <TeamPanel
+            team={view.team}
+            slots={view.teamSlots}
+            dps={view.teamDps}
+            clickDamage={view.clickDamage}
+            {buyAmount}
+            onbuyamount={setBuyAmount}
+            onlevelup={levelUp}
+            onremove={removeFromTeam}
+            evolutionUnlocked={view.evolutionUnlocked}
+            onevolve={evolve}
+          />
+        {/if}
+        {#if view.shopUnlocked}
+          <ShopPanel
+            spheres={view.spheres}
+            total={view.totalSpheres}
+            catchTable={view.catchTable}
+            locked={view.sphereLocked}
+            onlyNew={view.catchOnlyNew}
+            onbuy={buySpheres}
+            ononlynew={setCatchOnlyNew}
+          />
+        {/if}
+    </aside>
+
     <section class="battle">
       <header>
         <div class="zone-nav">
@@ -369,22 +425,7 @@
       <p class="hint">{t('combat.defeated', { count: view.enemiesDefeated })}</p>
     </section>
 
-    {#if view.teamUnlocked || view.stationUnlocked || view.shopUnlocked || view.supernovaUnlocked}
-      <aside class="side">
-        {#if view.teamUnlocked}
-          <TeamPanel
-            team={view.team}
-            slots={view.teamSlots}
-            dps={view.teamDps}
-            clickDamage={view.clickDamage}
-            {buyAmount}
-            onbuyamount={setBuyAmount}
-            onlevelup={levelUp}
-            onremove={removeFromTeam}
-            evolutionUnlocked={view.evolutionUnlocked}
-            onevolve={evolve}
-          />
-        {/if}
+    <aside class="side">
         {#if view.supernovaUnlocked}
           <SupernovaPanel
             gain={view.stardustGain}
@@ -403,19 +444,7 @@
             onbuy={buyModule}
           />
         {/if}
-        {#if view.shopUnlocked}
-          <ShopPanel
-            spheres={view.spheres}
-            total={view.totalSpheres}
-            catchTable={view.catchTable}
-            locked={view.sphereLocked}
-            onlyNew={view.catchOnlyNew}
-            onbuy={buySpheres}
-            ononlynew={setCatchOnlyNew}
-          />
-        {/if}
-      </aside>
-    {/if}
+    </aside>
   </div>
 
   {/if}
@@ -433,7 +462,7 @@
     padding: 2rem 1rem;
   }
   main.wide {
-    max-width: 80rem;
+    max-width: 120rem;
   }
   .top {
     position: relative;
@@ -497,14 +526,38 @@
     color: var(--text);
     border-bottom-color: var(--accent);
   }
+  .subtabs {
+    display: flex;
+    gap: 0.4rem;
+    width: 100%;
+  }
+  .subtabs button {
+    padding: 0.35rem 0.9rem;
+    font: inherit;
+    font-size: 0.9rem;
+    background: #1c2140;
+    color: var(--muted);
+    border: 0.125rem solid #000;
+    cursor: pointer;
+  }
+  .subtabs button.active {
+    color: #000;
+    background: var(--accent);
+    font-weight: 700;
+  }
   .layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 1.25rem;
     width: 100%;
   }
+  /* Drei Spalten: links Team und Sphären, Mitte Kampf, rechts Station und Supernova */
   main.wide .layout {
-    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    grid-template-columns: minmax(22rem, 1fr) minmax(26rem, 1.15fr) minmax(22rem, 1fr);
+    align-items: start;
+  }
+  main:not(.wide) .layout > .side {
+    display: none;
   }
   .side {
     display: flex;

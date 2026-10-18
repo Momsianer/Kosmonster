@@ -10,6 +10,7 @@
     count,
     shinyCount,
     shinyTotal,
+    bosses = false,
     teamFull,
     onadd,
     onremove,
@@ -18,6 +19,8 @@
     count: number;
     shinyCount: number;
     shinyTotal: number;
+    /** Ansicht der Bossmonster statt der Arten */
+    bosses?: boolean;
     teamFull: boolean;
     onadd: (id: SpeciesId) => void;
     onremove: (id: SpeciesId) => void;
@@ -25,11 +28,17 @@
 </script>
 
 <section class="panel">
-  <h2>{t('collection.title')}</h2>
-  <p class="muted">
-    {t('collection.count', { caught: count, total: entries.length })} ·
-    {t('collection.shinies', { caught: shinyCount, total: shinyTotal })}
-  </p>
+  {#if bosses}
+    <h2>{t('collection.tabBosses')}</h2>
+    <p class="muted">{t('collection.bossCount', { caught: count, total: entries.length })}</p>
+    <p class="muted">{t('collection.bossIntro')}</p>
+  {:else}
+    <h2>{t('collection.title')}</h2>
+    <p class="muted">
+      {t('collection.count', { caught: count, total: entries.length })} ·
+      {t('collection.shinies', { caught: shinyCount, total: shinyTotal })}
+    </p>
+  {/if}
   <div class="grid">
     {#each entries as entry (entry.id)}
       <div class="entry" class:unknown={!entry.caught} style:border-color={entry.caught ? entry.rarityColor : undefined}>
@@ -39,6 +48,7 @@
           <div class="muted"><PixelIcon id={entry.type} /> {entry.typeName} · <span style:color={entry.rarityColor}>{entry.rarityName}</span></div>
           <div class="stars">{#if entry.stars > entry.maxStars}★×{entry.stars}{:else}{'★'.repeat(entry.stars)}{'☆'.repeat(entry.maxStars - entry.stars)}{/if}</div>
           <div class="muted">{t('collection.caught', { count: entry.caughtCount })}</div>
+          {#if entry.origin}<div class="muted small">{entry.origin}</div>{/if}
           {#if entry.starProgress}<div class="muted small">{entry.starProgress}</div>{/if}
           {#if entry.inTeam}
             <button type="button" onclick={() => onremove(entry.id)}>{t('team.remove')}</button>
@@ -48,7 +58,8 @@
             </button>
           {/if}
         {:else}
-          <div class="name muted">#{String(entry.number).padStart(3, '0')} {t('collection.unknown')}</div>
+          <div class="name muted">#{bosses ? 'B' : ''}{String(entry.number).padStart(3, '0')} {t('collection.unknown')}</div>
+          {#if entry.origin}<div class="muted small">{entry.origin}</div>{/if}
         {/if}
       </div>
     {/each}

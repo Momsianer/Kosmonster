@@ -27,15 +27,13 @@
   {#each modules as module (module.id)}
     <div class="module">
       <div class="info">
-        <div class="name">
-          {module.name}
-          {#if module.owned > 0}<span class="muted">· {t('station.owned', { count: module.owned })}</span>{/if}
-        </div>
+        <div class="name">{module.name}</div>
         {#if module.owned > 0}
           <div class="muted">
-            {t('station.moduleProduction', { amount: module.production })} · {t('station.multiplier', {
-              mult: module.mult,
-            })} ·
+            {t('station.owned', { count: module.owned })} · {t('station.moduleProduction', { amount: module.production })} ·
+            {t('station.multiplier', { mult: module.mult })}
+          </div>
+          <div class="muted">
             {module.nextUpgrade === null
               ? t('station.allUpgrades')
               : t('station.nextUpgrade', { count: module.nextUpgrade })}
@@ -55,7 +53,7 @@
   }
   .module {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
@@ -64,9 +62,19 @@
   }
   .info {
     display: flex;
+    flex: 1;
     flex-direction: column;
     gap: 0.2rem;
     min-width: 0;
+  }
+  /* Zeilen brechen nicht um, damit sich die Höhe beim Aktualisieren nicht ändert */
+  .info > div {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  button {
+    flex: none;
   }
   .name {
     font-weight: 600;

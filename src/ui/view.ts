@@ -4,6 +4,7 @@ import type { GameState } from '../core/state';
 import { BALANCING } from '../data/balancing';
 import {
   getSpecies,
+  BOSS_SPECIES,
   MAIN_SPECIES,
   MONSTER_TYPES,
   MYTHIC_IDS,
@@ -11,6 +12,7 @@ import {
   SPECIES,
   TYPE_COLORS,
   type MonsterType,
+  type SpeciesData,
   type SpeciesId,
 } from '../data/monsters';
 import { planetForZone } from '../data/planets';
@@ -79,7 +81,7 @@ const CATCH_NOTICE_SECONDS = 3;
 
 
 /** Seltenheiten mit normaler Fangchance (Mythische haben Sonderbedingungen) */
-const CATCH_TABLE_RARITIES = ['common', 'uncommon', 'rare', 'epic', 'legendary'] as const;
+const CATCH_TABLE_RARITIES = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'boss'] as const;
 export type BuyAmount = 1 | 10 | 100 | 'max';
 export const BUY_AMOUNTS: readonly BuyAmount[] = [1, 10, 100, 'max'];
 
@@ -566,6 +568,37 @@ export interface CollectionEntryView {
   rarityName: string;
   caughtCount: number;
   inTeam: boolean;
+  /** Bossmonster: wo es vorkommt, sonst leer */
+  origin: string;
+}
+
+/** Eintrag der Sammlung für eine Art oder ein Bossmonster */
+function collectionEntry(state: GameState, s: SpeciesData): CollectionEntryView {
+  const entry = state.collection[s.id];
+  return {
+    id: s.id,
+    stage: entry?.evolution ?? 0,
+    stars: entry ? starsFor(entry.caught - 1, starsUnlimited(state)) : 0,
+    maxStars: BALANCING.stars.maxStars,
+    shiny: entry?.shiny ?? false,
+    rarityColor: RARITY_COLORS[s.rarity],
+    starProgress: entry ? progressText(entry.caught - 1, starsUnlimited(state)) : '',
+    big: s.rarity === 'legendary' || s.rarity === 'mythic' || s.boss !== null,
+    number: s.number,
+    caught: !!entry,
+    name: speciesName(s.id, entry?.evolution ?? 0),
+    type: s.type,
+    typeName: t(`types.${s.type}.name`),
+    rarityName: t(`rarity.${s.rarity}`),
+    caughtCount: entry?.caught ?? 0,
+    inTeam: state.team.includes(s.id),
+    origin: s.boss
+      ? t(s.boss === 'mini' ? 'collection.originMini' : 'collection.originMain', {
+          system: starSystem(s.minZone),
+          zone: s.minZone,
+        })
+      : '',
+  };
 }
 
 /** Aufbereitete Werte für die Oberfläche, damit Komponenten keine Spiellogik brauchen */
@@ -680,6 +713,8 @@ export interface GameView {
   teamSlots: number;
   teamFull: boolean;
   collection: CollectionEntryView[];
+  bossCollection: CollectionEntryView[];
+  bossCount: number;
   collectionCount: number;
   shinyCount: number;
   shinyTotal: number;
@@ -921,28 +956,10 @@ export function createView(
       .filter((m): m is TeamMemberView => m !== null),
     teamSlots: teamSlots(state),
     teamFull: state.team.length >= teamSlots(state),
-    collection: SPECIES.map((s) => {
-      const entry = state.collection[s.id];
-      return {
-        id: s.id,
-        stage: entry?.evolution ?? 0,
-        stars: entry ? starsFor(entry.caught - 1, starsUnlimited(state)) : 0,
-        maxStars: BALANCING.stars.maxStars,
-        shiny: entry?.shiny ?? false,
-        rarityColor: RARITY_COLORS[s.rarity],
-        starProgress: entry ? progressText(entry.caught - 1, starsUnlimited(state)) : '',
-        big: s.rarity === 'legendary' || s.rarity === 'mythic',
-        number: s.number,
-        caught: !!entry,
-        name: speciesName(s.id, entry?.evolution ?? 0),
-        type: s.type,
-        typeName: t(`types.${s.type}.name`),
-        rarityName: t(`rarity.${s.rarity}`),
-        caughtCount: entry?.caught ?? 0,
-        inTeam: state.team.includes(s.id),
-      };
-    }),
-    collectionCount: Object.keys(state.collection).length,
+    collection: SPECIES.filter((s) => !s.boss).map((s) => collectionEntry(state, s)),
+    bossCollection: BOSS_SPECIES.map((s) => collectionEntry(state, s)),
+    bossCount: BOSS_SPECIES.filter((s) => state.collection[s.id]).length,
+    collectionCount: SPECIES.filter((s) => !s.boss && state.collection[s.id]).length,
     shinyCount: Object.values(state.collection).filter((e) => e?.shiny).length,
     shinyTotal: MAIN_SPECIES.length,
     spheres: SPHERE_TYPES.filter((type) => isSphereUnlocked(state, type)).map((type) => {

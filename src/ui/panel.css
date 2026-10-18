@@ -18,6 +18,8 @@
 }
 .panel button {
   padding: 0.3rem 0.7rem;
+  /* Buttons brechen nie um, damit sich das Layout beim Aktualisieren nicht verschiebt */
+  white-space: nowrap;
   font: inherit;
   font-size: 0.85rem;
   background: #2a2f4d;
