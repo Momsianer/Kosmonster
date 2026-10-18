@@ -230,18 +230,18 @@ export const BALANCING = {
    * bonus.kind: dps, production, stardust, moduleCost, levelCost, bossTime, offlineLimit
    */
   challenges: {
-    stilleHaende: { goalZone: 40, reward: 2, bonus: { kind: 'dps', value: 1.5 } },
-    quadratisch: { goalZone: 40, reward: 2, bonus: { kind: 'moduleCost', value: 0.8 } },
-    einzelgaenger: { goalZone: 45, reward: 3, bonus: { kind: 'dps', value: 1.5 } },
-    leeresUniversum: { goalZone: 40, reward: 2, bonus: { kind: 'production', value: 2 } },
-    primzahlwelt: { goalZone: 35, reward: 3, bonus: { kind: 'dps', value: 1.5 } },
-    gezeitensperre: { goalZone: 40, reward: 2, bonus: { kind: 'production', value: 2 } },
-    monokultur: { goalZone: 45, reward: 3, bonus: { kind: 'dps', value: 1.5 } },
-    teilbarkeit: { goalZone: 35, reward: 3, bonus: { kind: 'bossTime', value: 10 } },
-    entropie: { goalZone: 40, reward: 2, bonus: { kind: 'levelCost', value: 0.9 } },
-    ohneGedaechtnis: { goalZone: 45, reward: 3, bonus: { kind: 'stardust', value: 1.5 } },
-    lichtgeschwindigkeit: { goalZone: 40, reward: 3, bonus: { kind: 'offlineLimit', value: 4 * 3600 } },
-    derBeweis: { goalZone: 30, reward: 5, bonus: { kind: 'dps', value: 3 } },
+    stilleHaende: { goalZone: 65, reward: 2, bonus: { kind: 'dps', value: 1.5 } },
+    quadratisch: { goalZone: 65, reward: 2, bonus: { kind: 'moduleCost', value: 0.8 } },
+    einzelgaenger: { goalZone: 70, reward: 3, bonus: { kind: 'dps', value: 1.5 } },
+    leeresUniversum: { goalZone: 65, reward: 2, bonus: { kind: 'production', value: 2 } },
+    primzahlwelt: { goalZone: 60, reward: 3, bonus: { kind: 'dps', value: 1.5 } },
+    gezeitensperre: { goalZone: 65, reward: 2, bonus: { kind: 'production', value: 2 } },
+    monokultur: { goalZone: 70, reward: 3, bonus: { kind: 'dps', value: 1.5 } },
+    teilbarkeit: { goalZone: 60, reward: 3, bonus: { kind: 'bossTime', value: 10 } },
+    entropie: { goalZone: 65, reward: 2, bonus: { kind: 'levelCost', value: 0.9 } },
+    ohneGedaechtnis: { goalZone: 70, reward: 3, bonus: { kind: 'stardust', value: 1.5 } },
+    lichtgeschwindigkeit: { goalZone: 65, reward: 3, bonus: { kind: 'offlineLimit', value: 4 * 3600 } },
+    derBeweis: { goalZone: 55, reward: 5, bonus: { kind: 'dps', value: 3 } },
   },
   challengeRules: {
     /** Primzahlwelt: Schaden außerhalb von Primzahlzonen */
@@ -266,7 +266,7 @@ export const BALANCING = {
   },
   theorem: {
     /** Leben des Theorems: hp(hpZone) * hpMult */
-    hpZone: 100,
+    hpZone: 130,
     hpMult: 100,
     timeLimitSeconds: 60,
   },
