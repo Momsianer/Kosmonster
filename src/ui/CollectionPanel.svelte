@@ -11,6 +11,7 @@
     shinyCount,
     shinyTotal,
     bosses = false,
+    trophySummary = '',
     teamFull,
     onadd,
     onremove,
@@ -21,6 +22,7 @@
     shinyTotal: number;
     /** Ansicht der Bossmonster statt der Arten */
     bosses?: boolean;
+    trophySummary?: string;
     teamFull: boolean;
     onadd: (id: SpeciesId) => void;
     onremove: (id: SpeciesId) => void;
@@ -32,6 +34,7 @@
     <h2>{t('collection.tabBosses')}</h2>
     <p class="muted">{t('collection.bossCount', { caught: count, total: entries.length })}</p>
     <p class="muted">{t('collection.bossIntro')}</p>
+    <p class="trophies">{trophySummary}</p>
   {:else}
     <h2>{t('collection.title')}</h2>
     <p class="muted">
@@ -49,6 +52,7 @@
           <div class="stars">{#if entry.stars > entry.maxStars}★×{entry.stars}{:else}{'★'.repeat(entry.stars)}{'☆'.repeat(entry.maxStars - entry.stars)}{/if}</div>
           <div class="muted">{t('collection.caught', { count: entry.caughtCount })}</div>
           {#if entry.origin}<div class="muted small">{entry.origin}</div>{/if}
+          {#if entry.trophy}<div class="trophy small">{entry.trophy}</div>{/if}
           {#if entry.starProgress}<div class="muted small">{entry.starProgress}</div>{/if}
           {#if entry.inTeam}
             <button type="button" onclick={() => onremove(entry.id)}>{t('team.remove')}</button>
@@ -60,6 +64,7 @@
         {:else}
           <div class="name muted">#{bosses ? 'B' : ''}{String(entry.number).padStart(3, '0')} {t('collection.unknown')}</div>
           {#if entry.origin}<div class="muted small">{entry.origin}</div>{/if}
+          {#if entry.trophy}<div class="muted small">{entry.trophy}</div>{/if}
         {/if}
       </div>
     {/each}
@@ -91,6 +96,14 @@
   }
   .shinymark {
     color: #fff6b0;
+  }
+  .trophies {
+    margin: 0;
+    color: var(--accent);
+    font-size: 0.9rem;
+  }
+  .trophy {
+    color: var(--accent);
   }
   .small {
     font-size: 0.75rem;

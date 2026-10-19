@@ -35,6 +35,7 @@ import { activeConstellations, constellationBonus } from '../systems/constellati
 import { canBuyOrigin, isOriginMaxed, originCost } from '../systems/origin';
 import { originLevel, ruleActive } from '../systems/rules';
 import { theoremAvailable } from '../systems/theorem';
+import { trophyBossDamageMult, trophyEnergyMult } from '../systems/trophies';
 import { ENDGAME_MODES, isZeroStage, riemannZero, zerosUpTo, type EndgameMode } from '../data/endgame';
 import {
   canStartEndgame,
@@ -577,6 +578,8 @@ export interface CollectionEntryView {
   inTeam: boolean;
   /** Bossmonster: wo es vorkommt, sonst leer */
   origin: string;
+  /** Bossmonster: Bonus der Trophäe, sonst leer */
+  trophy: string;
 }
 
 export interface AreaEntryView {
@@ -668,7 +671,16 @@ function collectionEntry(state: GameState, s: SpeciesData): CollectionEntryView 
           zone: s.minZone,
         })
       : '',
+    trophy: s.boss ? trophyText(s.boss) : '',
   };
+}
+
+/** Text der Trophäe eines Bossmonsters */
+function trophyText(kind: 'mini' | 'main'): string {
+  const { miniEnergyBonus, mainBossDamageBonus } = BALANCING.bosses.trophies;
+  return kind === 'mini'
+    ? t('collection.trophyMini', { value: formatPercent(miniEnergyBonus) })
+    : t('collection.trophyMain', { value: formatPercent(mainBossDamageBonus) });
 }
 
 /** Aufbereitete Werte für die Oberfläche, damit Komponenten keine Spiellogik brauchen */
@@ -789,6 +801,7 @@ export interface GameView {
   collection: CollectionEntryView[];
   bossCollection: CollectionEntryView[];
   bossCount: number;
+  trophySummary: string;
   collectionCount: number;
   shinyCount: number;
   shinyTotal: number;
@@ -1036,6 +1049,10 @@ export function createView(
     collection: SPECIES.filter((s) => !s.boss).map((s) => collectionEntry(state, s)),
     bossCollection: BOSS_SPECIES.map((s) => collectionEntry(state, s)),
     bossCount: BOSS_SPECIES.filter((s) => state.collection[s.id]).length,
+    trophySummary: t('collection.trophySummary', {
+      energy: formatPercent(trophyEnergyMult(state) - 1),
+      damage: formatPercent(trophyBossDamageMult(state) - 1),
+    }),
     collectionCount: SPECIES.filter((s) => !s.boss && state.collection[s.id]).length,
     shinyCount: Object.values(state.collection).filter((e) => e?.shiny).length,
     shinyTotal: MAIN_SPECIES.length,
