@@ -6,6 +6,7 @@ import { spawnEnemy } from './spawning';
 import { ruleActive } from './rules';
 import { damageTheorem } from './theorem';
 import { damageEndgame, endgameTeamDps } from './endgame';
+import { trophyBossDamageMult, trophyEnergyMult } from './trophies';
 import { relaxSpherePrices, tryCatch } from './catching';
 import { teamDps, typeCountInTeam } from './monsters';
 import { D, type Decimal, type DecimalSource } from '../util/decimal';
@@ -55,7 +56,7 @@ export function dealDamage(state: GameState, amount: DecimalSource, fromClick = 
  */
 export function defeatEnemy(state: GameState): void {
   const zone = state.enemy.zone;
-  addEnergy(state, enemyReward(zone));
+  addEnergy(state, enemyReward(zone).mul(trophyEnergyMult(state)));
   relaxSpherePrices(state, zone);
   state.enemiesDefeated += 1;
 
@@ -96,10 +97,10 @@ export function updateBossTimer(state: GameState, dtSeconds: number): void {
   if (state.bossTimeLeft === 0) failBoss(state);
 }
 
-/** Schadensmultiplikator gegen den aktuellen Gegner (Bossschaden, Primzahlwelt) */
+/** Schadensmultiplikator gegen den aktuellen Gegner (Bossschaden, Trophäen, Primzahlwelt) */
 function targetMult(state: GameState): Decimal {
   const boss = state.theorem !== null || state.endgame.run !== null || isBossZone(state.enemy.zone);
-  let mult = boss ? bossDamageMult(state) : D(1);
+  let mult = boss ? bossDamageMult(state).mul(trophyBossDamageMult(state)) : D(1);
   if (ruleActive(state, 'primeWorld') && !state.theorem && !state.endgame.run && !isPrime(state.enemy.zone)) {
     mult = mult.mul(BALANCING.challengeRules.nonPrimeDamage);
   }

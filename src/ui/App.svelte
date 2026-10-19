@@ -310,6 +310,7 @@
         shinyCount={view.shinyCount}
         shinyTotal={view.shinyTotal}
         bosses={true}
+        trophySummary={view.trophySummary}
         teamFull={view.teamFull}
         onadd={addToTeam}
         onremove={removeFromTeam}

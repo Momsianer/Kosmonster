@@ -91,14 +91,21 @@ export const BALANCING = {
   /**
    * Feste Bossmonster: je Sternsystem ein Miniboss (Zone 5) und ein Hauptboss (Zone 10),
    * Typ wie der gestärkte Typ des Planeten. Nach `systems` Sternsystemen wiederholen sie sich.
-   * basisDPS = hp(Zone) * dpsFactor (normale gewöhnliche Arten liegen bei etwa 0,125 * hp),
-   * basisKosten = basisDPS * costPerDps.
+   * basisDPS = hp(Zone) * dpsFactor, damit etwa so stark wie die normalen Arten des Gebiets
+   * (Miniboss) bzw. die erste Art des nächsten Gebiets (Hauptboss). basisKosten = basisDPS * costPerDps.
    */
   bosses: {
     systems: 50,
-    miniDpsFactor: 0.5,
-    mainDpsFactor: 0.8,
+    miniDpsFactor: 0.1,
+    mainDpsFactor: 0.15,
     costPerDps: 65,
+    /** Trophäen: jedes gefangene Bossmonster gibt dauerhaft einen kleinen Bonus, auch außerhalb des Teams */
+    trophies: {
+      /** Miniboss: Energie aus besiegten Gegnern +miniEnergyBonus */
+      miniEnergyBonus: 0.02,
+      /** Hauptboss: Schaden gegen Bosse +mainBossDamageBonus */
+      mainBossDamageBonus: 0.05,
+    },
   },
   types: {
     /** Prim: ×primeZoneMult in Zonen mit Primzahlnummer */
@@ -307,7 +314,7 @@ export const BALANCING = {
   },
   theorem: {
     /** Leben des Theorems: hp(hpZone) * hpMult */
-    hpZone: 120,
+    hpZone: 117,
     hpMult: 100,
     timeLimitSeconds: 60,
   },

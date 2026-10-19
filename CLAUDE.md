@@ -52,7 +52,8 @@ Fortschritt verlangsamt sich → Prestige (Reset) gegen dauerhafte Boni
 * Pro Zone müssen **10 Gegner** besiegt werden.
 * **Boss** jede 5. Zone, **Systemboss** jede 10. Zone, mit 30 Sekunden Zeitlimit.
 * Bosse sind feste **Bossmonster**: Jedes Sternsystem hat einen eigenen Miniboss (Zone 5) und Hauptboss (Zone 10) mit dem gestärkten Typ des Planeten. 50 Systeme (100 Bossmonster), danach wiederholen sie sich.
-* Bossmonster sind fangbar (0,25 % Grundchance), etwas stärker als normale Arten der Zone, entwickeln sich nicht und haben in der Sammlung einen eigenen Reiter.
+* Bossmonster sind fangbar (0,25 % Grundchance), etwa so stark wie die normalen Arten ihres Gebiets, entwickeln sich nicht und haben in der Sammlung einen eigenen Reiter.
+* Jedes gefangene Bossmonster gibt dauerhaft eine **Trophäe**: Miniboss +2 % Energie aus Gegnern, Hauptboss +5 % Schaden gegen Bosse.
 * Scheitert man am Boss, bleibt man in der Zone davor (Farmmodus).
 
 ### Gegnerleben (Startwerte, per Simulator tunen)

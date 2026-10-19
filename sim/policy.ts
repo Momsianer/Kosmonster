@@ -319,6 +319,10 @@ function handleBigBang(state: GameState, memory: PolicyMemory, now: number): voi
 /** Fordert das Theorem heraus, sobald der Schaden in der Zeit reichen könnte */
 function handleTheorem(state: GameState, options: PolicyOptions): void {
   if (state.theoremDefeated || state.theorem || !theoremAvailable(state)) return;
+  // Wie ein Mensch vor dem Endkampf: automatische Resets pausieren, damit der Durchlauf
+  // seinen Höchstschaden erreicht (sonst löst die Autosupernova ständig aus)
+  state.automation.enabled.autosupernova = false;
+  state.automation.enabled.autoschwarzloch = false;
   const dps = teamDps(state).add(clickDamage(teamDps(state), clickBonus(state)).mul(options.clicksPerSecond));
   if (dps.mul(BALANCING.theorem.timeLimitSeconds).mul(bossDamageMult(state)).gte(theoremHp())) startTheorem(state);
 }
