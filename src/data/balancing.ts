@@ -314,7 +314,7 @@ export const BALANCING = {
   },
   theorem: {
     /** Leben des Theorems: hp(hpZone) * hpMult */
-    hpZone: 120,
+    hpZone: 117,
     hpMult: 100,
     timeLimitSeconds: 60,
   },
